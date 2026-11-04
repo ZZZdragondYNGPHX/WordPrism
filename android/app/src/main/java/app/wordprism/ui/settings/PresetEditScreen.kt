@@ -85,7 +85,7 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
     val c = Wp.colors
 
     var name by rememberSaveable { mutableStateOf("") }
-    var adapterId by rememberSaveable { mutableStateOf("openai_compatible") }
+    var adapterId by rememberSaveable { mutableStateOf("") }
     var baseUrl by rememberSaveable { mutableStateOf("") }
     var model by rememberSaveable { mutableStateOf("") }
     var maxTokens by rememberSaveable { mutableStateOf("1200") }
@@ -123,7 +123,11 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
                 )
                 ExposedDropdownMenu(protocolMenu, { protocolMenu = false }) {
-                    adapters.forEach { a -> DropdownMenuItem(text = { Text(a.label) }, onClick = { adapterId = a.id; baseUrl = a.defaultBaseUrl.orEmpty(); protocolMenu = false }) }
+                    adapters.forEach { a -> DropdownMenuItem(text = { Text(a.label) }, onClick = {
+                        adapterId = a.id
+                        if (baseUrl.isBlank()) baseUrl = a.defaultBaseUrl.orEmpty()
+                        protocolMenu = false
+                    }) }
                 }
             }
             Field("服务地址", baseUrl, { baseUrl = it }, fe("baseUrl"), keyboard = KeyboardType.Uri)

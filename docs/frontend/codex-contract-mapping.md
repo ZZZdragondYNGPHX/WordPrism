@@ -26,7 +26,7 @@
 | 学习日与计划 | `GetLearningDay`、`SetTimer`、`FinishSession`、`FinishLearningDay` | 计划目标数、新词数、预算和自动分析状态直接使用核心投影；暂停与结束当天分开 |
 | `overview` | `Overview`、`ConfusionEvidence` | 用户与 AI 共享事实；观察、预测、表达评价、低样本和投入序列均由核心定义 |
 | `adaptation` | `Settings`、`SetSettings`、`AnalyzeLearning`、`PolicyChanges`、`OperationEffects`、`Capabilities` | 读取实际生效策略及内容变化；手动、自动、锁定和撤销共享业务规则 |
-| `presets` | `Presets`、`SavePreset`、`DeletePreset`、`BindPreset`、`UnbindPreset`、`CallPolicy`、`SetCallPolicy`、`TestConnection`、`GetUsage` | 版本化编辑、默认/独立/备用绑定、调用控制、测试状态及真实用量；不读取完整密钥 |
+| `presets` | `Protocols`、`Presets`、`SavePreset`、`DeletePreset`、`BindPreset`、`UnbindPreset`、`CallPolicy`、`SetCallPolicy`、`TestConnection`、`GetUsage` | 协议目录与名称、版本化编辑、默认/独立/备用绑定、调用控制、测试状态及真实用量；不读取完整密钥 |
 | `dataTransfer` | `GetPackagePreview`、流式预览/导出、`CommitImport`、`RestoreBackup` | 正式 `.wordprism` 容器；预览绑定资料库修订；同目的地导出收据去重，恢复可重试 |
 | `operations` | `Operations`、`GetOperation`、`CancelOperation`、`RetryOperation`、`UndoOperation` | 显示真实终态与动作，不根据页面动画猜测任务结果 |
 | 答案草稿 | `SaveDraft`、`GetDraft` | 持久版本化草稿；AI 添加的纯界面草稿继续使用前端 DataStore |
@@ -54,8 +54,10 @@
 
 早期 B 系列需求保留在[契约需求](contract-requirements.md)，其中模拟实现的行为不是业务权威。例如撤销有历史引用的内容采用归档，不能照搬模拟后端的删除规则。当前异步表达反馈可在对应会话或任务中查询；门面没有另外新增待评价列表。手动分析复用已有任务身份，没有额外的 `reused` 布尔字段。
 
+Chat Completions 与原生 Responses 通过相同预设页面配置。`observeAdapters()` 和已保存预设的 `adapterLabel` 均来自核心 `Query.Protocols`，不在门面写死名称；切换协议保留用户填写的服务地址。详细 ID 和样例见[LLM 协议接入](../backend/api-protocols.md)。
+
 ## 验证
 
-`sdk-codex` 已执行 14 个 JVM 测试：6 个门面映射测试，以及 8 个使用真实 `CoreEngine + SQLite + Rust JNI` 的集成测试。后者覆盖进程重开后的作答幂等、理解步骤、原子编辑/撤销、调用额度、正式备份流、统一总览与保留后续学习的撤销、持久拼写选择，以及关闭自动分析后的迟到结果。
+`sdk-codex` 已执行 15 个 JVM 测试：6 个门面映射测试，以及 9 个使用真实 `CoreEngine + SQLite + Rust JNI` 的集成测试。后者覆盖 SQLite 重开后的作答幂等、理解步骤、原子编辑/撤销、调用额度、正式备份流、统一总览与保留后续学习的撤销、持久拼写选择、关闭自动分析后的迟到结果，以及 Responses 协议标签、独立绑定和离线任务重开。
 
 实际 Android 应用也已在 API 35 x86_64 模拟器完成正式包导入、学习、强停恢复、总览、SAF 导出和完整替换恢复。详细记录与最终 APK 检查见[后端与集成验证](../backend/validation.md)。[Claude 的早期验证](validation-2026-11-03.md)保留为模拟前端阶段记录，不能作为真实 API 或核心验证。

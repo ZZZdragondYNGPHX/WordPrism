@@ -12,19 +12,22 @@
 
 应用要求 Android 8.0 / API 26 以上，打包 `arm64-v8a` 与 `x86_64`。Debug APK 可直接安装，release 当前为未签名构建。首次启动是空词库，可在“设置 → 导入与导出”导入[三个示例词的正式内容包](docs/backend/packages/example-content.wordprism)，离线开始学习。AI 功能需要在 API 预设中填写自己的连接与凭证；连接测试也会调用供应商。
 
+可直接下载 [v0.4.0-test.2 测试版 APK](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/tag/v0.4.0-test.2)，包含原生 Responses 支持，可覆盖安装上一测试版。仓库为私有，需要登录有访问权的 GitHub 账号。
+
 ## 已实现
 
 - 稳定词条、义项与组关系；离线混合训练、真实作答历史、FSRS 调度、本机参数拟合与评估。
 - AI 添加与持续归组、拼写和归组选择、额外推荐点击加入；持久任务、重复提交保护、取消与可追溯撤销。
 - 用户与 AI 共用的总览、日终分析去重、手动与关闭控制；遵守用户设置的策略及内容调整，撤销保留之后的作答。
-- 多 API 预设、默认及按功能绑定、备用与重试控制、设备凭证、按实际请求记录用量。
+- Chat Completions 与原生 Responses、多 API 预设、默认及按功能绑定、备用与重试控制、设备凭证、按实际请求记录用量。
 - 正式 `.wordprism` 内容包与完整备份、预览、版本迁移和原子恢复；恢复后关闭自动调用并重新配置凭证。
 
 ## 实现入口与验证
 
 - [本地后端契约](docs/backend/contract.md)：唯一业务类型、命令、查询、错误、任务与契约样例入口。
+- [LLM 协议接入](docs/backend/api-protocols.md)：Chat Completions / Responses 配置、请求与错误映射、可复用样例。
 - [前端对应关系](docs/frontend/codex-contract-mapping.md)、[前端说明](docs/frontend/README.md)：所有门面接口的映射、视觉与模块结构。
-- [验证记录](docs/backend/validation.md)：66 个 JVM 测试、Android 平台测试、实际模拟器中的导入、作答、强停恢复及完整备份恢复，以及最终 APK 检查。
+- [验证记录](docs/backend/validation.md)：核心与门面测试、Android 平台测试、实际模拟器中的导入、作答、强停恢复、完整备份恢复及协议配置，以及最终 APK 检查。
 - [方案索引](docs/plan/index.md)：已确认需求、产品模块和职责边界。
 - [第三方源码与许可](backend/third-party/wordprism-notices/README.md)：随应用打包的组件记录、许可与必需源码附件。
 

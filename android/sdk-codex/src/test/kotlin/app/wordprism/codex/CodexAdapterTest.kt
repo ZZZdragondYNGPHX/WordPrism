@@ -35,6 +35,7 @@ private class FakeCore : WordPrism {
         else -> Reply(revision.value, fault = Fault(CErr.VALIDATION, "unsupported in fake"))
     }
     override suspend fun query(query: Query): Reply = readFault?.let { Reply(revision.value, fault = it) } ?: when (query) {
+        is Query.Protocols -> Reply(revision.value, View.Protocols(ApiProtocols.supported))
         is Query.Presets -> Reply(revision.value, View.Presets(presets.toList(), emptyList()))
         is Query.GetOperation -> ops[query.id.value]?.let { Reply(revision.value, View.OperationResult(it)) } ?: Reply(revision.value, fault = Fault(CErr.NOT_FOUND, "无"))
         is Query.Operations -> Reply(revision.value, View.Operations(ops.values.toList()))

@@ -33,6 +33,7 @@
 | U21 | 首版先做本地存储、离线学习和手机直接调用 API，暂时不做云同步 | [本机架构](implementation-plan.md)、[本机运行边界](frontend-backend-boundary.md#本机运行边界) |
 | U22 | 自动分析每天学习结束后执行一次，同时保留手动触发和关闭选项 | [每日分析与手动控制](adaptive-learning.md#每日分析与手动控制) |
 | U23 | 每天大致投入半小时以内，优先提高记忆质量，愿意配合有效训练，具体学习量和时长按实际表现动态调整 | [个人目标与动态预算](adaptive-learning.md#个人目标与动态预算) |
+| U24 | 扩大 API 接口，增加原生 Responses 协议 | [API 预设](api-presets.md)、[LLM 协议接入](../backend/api-protocols.md) |
 
 ## 方向决策状态
 
@@ -53,7 +54,7 @@
 | D11 | 前后端分工 | Codex 负责数据与业务、LLM、调度和接口；Claude 负责界面与交互实现；共同遵循接口契约 | 已按同一核心契约接入，门面映射不复制业务规则 |
 | D12 | 学习总结 | 后端计算统一事实快照，前端给用户浏览，AI 从同一口径读取并查询明细 | 已接入“学习总览”，区分观察、预测与 AI 评价 |
 | D13 | 自动调整权限与运行 | 应用业务层最高权限；每天学习结束后自动分析一次，支持手动和关闭，保留可撤销记录 | 方向与触发已确认，执行细节见模块 |
-| D14 | API 预设 | 可保存多个连接与模型配置，按功能绑定；任务保留预设版本，调用受用户控制 | 已实现 Chat Completions 兼容协议；真实供应商尚未验证 |
+| D14 | API 预设 | 可保存多个连接与模型配置，按功能绑定；任务保留预设版本，调用受用户控制 | 已实现 Chat Completions 与原生 Responses；真实供应商尚未验证 |
 | D15 | 个人优化目标 | 记忆质量优先；默认日预算 30 分钟以内，词数、题型和计划时长按实际表现调整 | 已确认；预算计时与执行细则为方案 |
 
 ## 讨论安排
@@ -71,6 +72,8 @@
 
 实施入口：[本地后端契约](../backend/contract.md)。正式类型以 `backend/core-contract` 为唯一权威；`backend/` 提供本机核心，Claude 的前端经 `android/sdk-codex` 消费已发布的本地 Maven 构件。契约、[样例](../backend/fixtures/)、[schema](../backend/schemas/)、[参考包](../backend/packages/README.md)、[运行](../backend/running.md)与[验证记录](../backend/validation.md)维护在 `docs/backend/`。
 
+API 协议扩展入口：[LLM 协议接入](../backend/api-protocols.md)。原生 Responses 使用现有 `Protocols / SavePreset / BindPreset` 等接口，目录和配置夹具由核心类型生成。
+
 按当前议题选读，详细规则由对应模块维护：
 
 1. 总体范围：[产品方向](product-direction.md)
@@ -87,7 +90,7 @@
 | --- | --- |
 | Android 前端与绑定 | 原生 Kotlin / Compose；所有门面已接真实核心，见[对应关系](../frontend/codex-contract-mapping.md) |
 | 算法内核与拟合 | 源码与许可核对、宿主/JNI 与 Android 执行已完成；真机资源及长期质量待验证 |
-| API 适配与配置 | HTTPS Chat Completions 兼容适配器、多预设及凭证已实现；本地 HTTP 和脚本响应测试已通过，无真实 API 凭证验证 |
+| API 适配与配置 | HTTPS Chat Completions 与原生 Responses、多预设及凭证已实现；本地 HTTP 和脚本响应测试已通过，无真实 API 凭证验证 |
 | 类型、数据库与专属格式 | 同源契约/schema/样例已生成，Room 迁移与完整恢复已验证 |
 | Android 分发 | Debug 与 unsigned release 已构建；两个 ABI 和 16 KiB 对齐已检查，无物理手机与发行签名证据 |
 
@@ -102,3 +105,4 @@
 | v0.3 | 2026-11-03 | 确认混合训练、推荐后点击加入与撤销、仅专属格式；加入统一学习总览、最高业务权限的 AI 自动调整、参数评估与回退，以及按功能分配 API 预设；同步更新前后端接口范围并进入第三轮讨论 |
 | v0.4 | 2026-11-03 | 确认本地存储、离线学习、手机直连 API 与暂不云同步；固定每日学习结束后的自动分析及手动和关闭；落实半小时以内、记忆质量优先的动态预算；新增本机实施方案并补查调度和优化内核候选 |
 | v0.4 实现 | 2026-11-03 | 固定类型权威、版本与许可；实现本机核心及全部前端门面；完成测试、构建、实际模拟器学习/恢复验证，记录真实 API 与真机证据限制 |
+| v0.4 协议扩展 | 2026-11-03 | 增加原生 Responses 请求与解析，共用预设、功能绑定、任务和用量；同步类型目录、前端协议选择与契约样例 |

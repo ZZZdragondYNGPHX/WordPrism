@@ -90,7 +90,7 @@ adb -s emulator-5556 shell am start -n app.wordprism/.MainActivity
 
 ## 运行边界
 
-- API 首个适配器为 `openai_chat_completions`，`baseUrl` 指向例如供应商的 `/v1` 根；实际路径追加 `/chat/completions`。HTTP 跳转不转发凭证。限流或服务不可用时，任务按用户的 `maxRetries` 重试，并可使用用户配置的备用预设；每次实际使用的预设与版本写入尝试及用量。超时或结果未知的请求不自动重发。JSON mode 可按模型能力关闭。
+- API 支持 `openai_chat_completions` 和原生 `openai_responses`，在现有预设中选择；`baseUrl` 为供应商的 API 根路径。请求、用量、失败、重试及配置样例见[LLM 协议接入](api-protocols.md)。
 - 一个模型任务最多 50 个词；手动添加最多 200 个。资料库限制 10,000 词、100,000 作答、30,000 题目；专属包压缩 32 MiB、展开 64 MiB。超限会明确失败。
 - 个人拟合在本机执行，单线程、5 个 epoch、最长 256 条目标历史、最多 5,000 个样本、30 秒可取消预算。选取近期样本并保留各目标首次延迟前缀，避免把中段历史当作首次学习；按时间切分评估，数据不足保留原参数。
 - SQLite/Room 按稳定身份存储独立记录，只写变化行；当前事务仍读取并解码资料库快照。目标规模的响应时间和内存需要设备验证，不能用桌面测试推断真机性能。

@@ -189,7 +189,7 @@ object Contract {
 )
 @Serializable data class ApiPreset(
     val id: Id, val version: Long = 1, val name: String, val baseUrl: String, val model: String,
-    val protocol: String = "openai_chat_completions", val enabled: Boolean = true,
+    val protocol: String = ApiProtocols.OPENAI_CHAT_COMPLETIONS, val enabled: Boolean = true,
     val timeoutSeconds: Int = 45, val maxOutputTokens: Int = 2048,
     val jsonMode: Boolean = true, val temperature: Float? = null,
 )

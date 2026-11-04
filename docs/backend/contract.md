@@ -2,7 +2,7 @@
 
 契约版本：`1` · 产品：`v0.4` · 实现与联调：2026-11-03。
 
-唯一业务类型权威是 [WordPrism.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/WordPrism.kt)、[Models.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Models.kt) 和 [Projections.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Projections.kt)。命令、查询、错误、实体和派生事实均从这里定义；[JSON schema](schemas/) 与 [样例](fixtures/) 由同源序列化描述生成。
+唯一业务类型权威是 [WordPrism.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/WordPrism.kt)、[Models.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Models.kt)、[Projections.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Projections.kt) 和 [ApiProtocols.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ApiProtocols.kt)。命令、查询、错误、实体、派生事实和协议目录均从这里定义；[JSON schema](schemas/) 与 [样例](fixtures/) 由同源序列化描述生成。
 
 Claude 的 Compose 前端现通过 `android/sdk-codex` 调用已发布的本地 Maven 构件。`android/sdk-contract` 是界面门面，适配器负责格式、标签和类型映射；存储、判分、归组、调度和统计集中在 `backend/`。具体对应见[前端映射](../frontend/codex-contract-mapping.md)，构建见 [running.md](running.md)。
 
@@ -31,6 +31,8 @@ JSON 使用 `type` 判别、枚举原名和字符串 ID。进程内 Kotlin 客�
 | 文件与任务 | 流式 `previewPackage` / `exportPackage`；`CommitImport`、`RestoreBackup`、`GetPackagePreview`；任务查询、取消、重试和撤销 |
 
 具体签名、默认值与完整操作集合以类型源为准。派生状态不由前端自行猜测：例如计划的 `newCount` 是新学习**目标**数量，`DaySummary.plannedNewWords` 才是去重的新词数量；接触基本义后可显示“学习中”，但不会凭空产生 FSRS 复习或独立回忆证据。
+
+`Protocols` 提供 Chat Completions 与原生 Responses 的稳定 ID、名称和说明；预设选择、调用与用量共用上述接口。协议请求映射、错误语义和兼容样例统一维护在[LLM 协议接入](api-protocols.md)。
 
 ## 任务与迟到结果
 

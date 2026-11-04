@@ -5,6 +5,7 @@ import dev.wordprism.contract.Binding
 import dev.wordprism.contract.Command
 import dev.wordprism.contract.Feature
 import dev.wordprism.contract.Query
+import dev.wordprism.contract.ProtocolInfo
 import dev.wordprism.contract.Ref
 import dev.wordprism.contract.View
 import kotlinx.coroutines.flow.*
@@ -15,14 +16,19 @@ import dev.wordprism.contract.PresetView as CPresetView
 
 class CodexPresets(private val b: CodexBridge) : PresetsApi {
     override fun observeAdapters() = b.live(Query.Protocols) { (it as? View.Protocols)?.protocols?.map { p -> ProtocolAdapter(p.id, p.label, p.defaultBaseUrl, p.notes) } }.map { it.orEmpty() }
-    private fun CPresetView.map(bindings: List<Binding>) = ApiPreset(PresetId(preset.id.value), preset.name, preset.version.toInt(), preset.protocol,
-        "OpenAI 兼容接口", preset.baseUrl, preset.model, preset.maxOutputTokens, preset.timeoutSeconds, CredentialState(hasCredential, null), preset.enabled,
+    private fun CPresetView.map(bindings: List<Binding>, protocols: List<ProtocolInfo>) = ApiPreset(PresetId(preset.id.value), preset.name, preset.version.toInt(), preset.protocol,
+        protocols.firstOrNull { it.id == preset.protocol }?.label ?: preset.protocol, preset.baseUrl, preset.model, preset.maxOutputTokens, preset.timeoutSeconds, CredentialState(hasCredential, null), preset.enabled,
         lastTest?.let { ConnectionTestResult(it.ok, it.atMs, it.message, it.latencyMs) }, bindings.filter { it.presetId == preset.id }.map { it.feature.toSdk() })
-    override fun observePresets(): Flow<List<ApiPreset>> = b.live(Query.Presets) { v -> (v as? View.Presets)?.let { it.presets.map { p -> p.map(it.bindings) } } }.map { it.orEmpty() }
+    private suspend fun protocols() = (b.view(Query.Protocols) as View.Protocols).protocols
+    override fun observePresets(): Flow<List<ApiPreset>> = b.live {
+        val v = b.view(Query.Presets) as View.Presets
+        val protocols = protocols()
+        v.presets.map { it.map(v.bindings, protocols) }
+    }
     private suspend fun current(id: PresetId) = (b.view(Query.Presets) as View.Presets).presets.firstOrNull { it.preset.id.value == id.value }
     private suspend fun read(id: PresetId): SdkResult<ApiPreset> {
         val v = b.view(Query.Presets) as View.Presets
-        return v.presets.firstOrNull { it.preset.id.value == id.value }?.let { SdkResult.Ok(it.map(v.bindings)) } ?: notFound()
+        return v.presets.firstOrNull { it.preset.id.value == id.value }?.let { SdkResult.Ok(it.map(v.bindings, protocols())) } ?: notFound()
     }
 
     override suspend fun savePreset(draft: PresetDraft, request: ClientRequestId): SdkResult<ApiPreset> = safely {

@@ -113,7 +113,7 @@ class CoreEngine(
                 db.policy.copy(version = change.after.version) == change.after && db.changes.values.none { it.after.version > change.after.version && it.undoneBy == null } }.map { it.id }.toSet())
             Query.Presets -> View.Presets(db.presets.values.map { PresetView(it, hasCredential(db, it.id), db.connectionTest(it)) }, db.bindings.values.toList())
             Query.CallPolicy -> View.CallPolicy(db.callPolicy())
-            Query.Protocols -> View.Protocols(listOf(ProtocolInfo("openai_chat_completions", "OpenAI 兼容接口", "https://api.openai.com/v1", "HTTPS Chat Completions；需支持 JSON 对象输出，模型与地址由用户设置")))
+            Query.Protocols -> View.Protocols(ApiProtocols.supported)
             is Query.GetPackagePreview -> View.ImportPreview(db.previews[query.token].found("导入预览").preview)
             is Query.ExportScope -> View.ExportScope(query.purpose,
                 if (query.purpose == PackagePurpose.BACKUP) listOf("完整词库、义项与组关系", "真实作答、内容版本与会话", "记忆状态、策略与拟合评估", "分析、调整、撤销与任务记录", "API 非敏感配置、功能绑定与用量")

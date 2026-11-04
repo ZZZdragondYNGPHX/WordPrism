@@ -42,13 +42,19 @@ fun main(args: Array<String>) {
     samples["undo-preserves-later-answers"] = Reply(8, View.PolicyChanges(listOf(change.copy(undoneBy = Id("fixture-undo-after-answer")))))
     samples["migration-preview"] = Reply(8, View.ImportPreview(PackagePreview(Id("fixture-preview"), Id("fixture-package"), PackagePurpose.BACKUP,
         "0".repeat(64), 8, 2, 0, emptyList(), listOf("library:1->2"), emptyList(), true)))
+    samples["api-protocols"] = Reply(8, View.Protocols(ApiProtocols.supported))
+    val responsesPreset = ApiPreset(Id("fixture-responses-preset"), name = "Responses 示例", baseUrl = "https://api.openai.com/v1",
+        model = "your-responses-model", protocol = ApiProtocols.OPENAI_RESPONSES, maxOutputTokens = 4096)
+    samples["responses-preset"] = Reply(9, View.Presets(listOf(PresetView(responsesPreset, hasCredential = false)),
+        listOf(Binding(Feature.WORD_INTAKE, responsesPreset.id))))
     samples.forEach { (name, value) ->
         val json = Contract.json.encodeToString(value)
         check(Contract.json.decodeFromString<Reply>(json) == value)
         File(output, "$name.json").writeText(json + "\n")
     }
     File(output, "submit-intake.request.json").writeText(Contract.json.encodeToString(Request("fixture-intake-key", Command.SubmitIntake("linear / liner"))) + "\n")
+    File(output, "save-responses-preset.request.json").writeText(Contract.json.encodeToString(Request("fixture-responses-key", Command.SavePreset(responsesPreset))) + "\n")
     writeSchemas(File(output.parentFile, "schemas"))
     if ("--skip-packages" !in args) kotlinx.coroutines.runBlocking { writeReferencePackages(File(output.parentFile, "packages")) }
-    println("Validated ${samples.size} typed response fixtures and one request fixture in ${output.absolutePath}")
+    println("Validated ${samples.size} typed response fixtures and two request fixtures in ${output.absolutePath}")
 }

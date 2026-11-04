@@ -71,9 +71,11 @@ class PackageTest {
         assertTrue(found)
     }
     @Test fun `full backup restores history and policy audit without credentials or automatic work`() = runBlocking {
-        val h = Harness(); h.configure(); h.seed(); h.answer()
+        val h = Harness(); h.configure(protocol = ApiProtocols.OPENAI_RESPONSES); h.seed(); h.answer()
         val marker = java.util.UUID.randomUUID().toString()
         val presetId = h.store.read().presets.keys.single()
+        val chatPreset = ApiPreset(Id("chat-preset"), name = "Chat fallback", baseUrl = "https://example.invalid/v1", model = "test-model")
+        h.command(Command.SavePreset(chatPreset)); h.command(Command.BindPreset(Binding(Feature.EXPLANATION, chatPreset.id)))
         h.core.setCredential(presetId, marker.toCharArray())
         h.clock.advance(30_000); h.command(Command.SetTimer(h.store.read().sessions.keys.single(), TimerMode.PAUSED))
         h.command(Command.ApplyPolicy(PolicyPatch(mapOf("newTargetLimit" to json("3")), "test"), 1))
@@ -89,13 +91,16 @@ class PackageTest {
         val original = h.store.read(); val after = restored.store.read()
         assertEquals(original.words, after.words); assertEquals(original.answers, after.answers); assertEquals(original.schedules, after.schedules)
         assertEquals(original.changes, after.changes); assertEquals(original.bindings, after.bindings); assertEquals(original.timeSpans, after.timeSpans)
+        assertEquals(original.presets, after.presets)
+        assertEquals(setOf(ApiProtocols.OPENAI_CHAT_COMPLETIONS, ApiProtocols.OPENAI_RESPONSES), after.presets.values.map { it.protocol }.toSet())
+        assertEquals(ApiProtocols.OPENAI_RESPONSES, after.operations.getValue(pending.operation.id).preset!!.protocol)
         assertTrue(after.credentialRefs.isEmpty())
         assertTrue((restored.core.query(Query.Presets).value as View.Presets).presets.none { it.hasCredential })
         assertFalse(after.settings.automaticAnalysis); assertEquals(OperationStatus.RESTORED_PENDING, after.operations[pending.operation.id]!!.status)
         restored.core.tasks.runPending(true); assertTrue(restored.provider.requests.isEmpty())
         restored.core.setCredential(presetId, java.util.UUID.randomUUID().toString().toCharArray())
         restored.command(Command.RestoreBackup(token), "restore-once"); assertEquals(original.answers.size, restored.store.read().answers.size)
-        assertTrue((restored.core.query(Query.Presets).value as View.Presets).presets.single().hasCredential)
+        assertTrue((restored.core.query(Query.Presets).value as View.Presets).presets.single { it.preset.id == presetId }.hasCredential)
     }
     @Test fun `preview cannot overwrite learning that happened afterwards`() = runBlocking {
         val h = Harness(); h.seed(); h.answer()

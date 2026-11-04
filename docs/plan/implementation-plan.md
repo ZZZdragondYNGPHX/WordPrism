@@ -32,7 +32,7 @@ flowchart TD
 | 本地业务接口与 Android 集成 | Kotlin 类型化命令、查询与 `Flow` 修订通知 | [契约](../backend/contract.md)、同源 schema 与样例 |
 | 词库、历史、计划和任务存储 | Android Room；宿主 SQLite 测试平台 | 事务、迁移、重启与备份恢复已验证 |
 | Android 持久任务 | WorkManager 唤醒，核心数据库领取与提交任务 | 系统任务与数据库去重共同验证 |
-| API 与凭证 | OkHttp / Chat Completions 兼容适配器；Keystore AES-GCM | 本地 HTTP、错误分支与模拟器凭证验证；真实供应商待验证 |
+| API 与凭证 | OkHttp / Chat Completions 与原生 Responses；Keystore AES-GCM | [协议接入](../backend/api-protocols.md)、本地 HTTP、错误分支与模拟器凭证验证；真实供应商待验证 |
 | 记忆调度与个人拟合 | `fsrs-rs`，JNI，调度/拟合/评估共用 Rust 内核 | 发布源码、版本和许可已核对；双 ABI 构建与 x86_64 模拟器执行 |
 | 前端消费方式 | Claude 的原生 Compose + `android/sdk-codex` 门面 | 本地 Maven 构件接入，真实核心集成测试 |
 | 可携带数据 | 版本化 `.wordprism` ZIP 容器及模块 schema | [参考包](../backend/packages/README.md)、迁移与完整恢复 |

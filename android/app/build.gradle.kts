@@ -12,8 +12,8 @@ android {
         applicationId = "app.wordprism"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.4.0"
+        versionCode = 2
+        versionName = "0.4.0-test.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Match the packaged memory kernel; transitive libraries also contain unsupported 32-bit ABIs.
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }

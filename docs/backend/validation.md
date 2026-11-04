@@ -2,25 +2,25 @@
 
 记录日期：2026-11-03 · 产品：`v0.4` · 执行环境：Windows，独立 API 35 x86_64 Android 模拟器。
 
-Claude 的 Compose 前端已经通过 `sdk-codex` 接入真实本机核心。当前 JVM 测试、debug/release 构建、Lint、契约样例及 APK 检查均通过。下文分别记录真实代码执行、模型替身、Android 模拟器和未验证范围；不将模拟模型响应作为真实供应商或长期学习效果证据。
+Claude 的 Compose 前端已经通过 `sdk-codex` 接入真实本机核心，并增加原生 Responses 协议。当前相关 JVM 测试、debug/release 构建、Lint、契约样例及 APK 检查均通过。下文分别记录真实代码执行、模型替身、Android 模拟器和未验证范围；不将模拟模型响应作为真实供应商或长期学习效果证据。
 
 ## 测试与构建
 
 | 检查 | 实际结果 | 覆盖 |
 | --- | --- | --- |
-| `:core-engine:test` | 47 tests，0 failures / errors / skipped | 业务一致性、AI 任务、每日分析、学习历史、策略与撤销、包格式、HTTP 适配 |
+| `:core-engine:test` | 56 tests，0 failures / errors / skipped | 业务一致性、AI 任务、每日分析、学习历史、策略与撤销、包格式、Chat Completions / Responses HTTP 适配及跨协议任务 |
 | `:platform-jvm:test` | 4 tests，全部通过 | 真实 SQLite 持久化、恢复及数据版本 |
 | `:memory-core:test` | 1 test，通过 | 真实 Rust JNI 调度/拟合/评估边界 |
-| `android :sdk-codex:test` | 14 tests，全部通过 | 6 个门面测试；8 个真实 `CoreEngine + SQLite + Rust JNI` 集成测试 |
+| `android :sdk-codex:test` | 15 tests，全部通过 | 6 个门面测试；9 个真实 `CoreEngine + SQLite + Rust JNI` 集成测试，包含 Responses 标签、功能绑定、离线任务和重开 |
 | `AndroidCoreTest` | 5 tests，通过 | Room、JNI 调度与本机拟合、Keystore、Room 1→2、应用平台与 WorkManager |
 | `ProcessRestartProbeTest` | 写入、真实 force-stop、读取两段均通过 | 跨新 PID 保留已提交状态，不以重建对象代替进程终止 |
 | 后端 Maven 发布 | 五模块发布成功 | `core-contract / memory-core / core-engine / platform-jvm / platform-android` |
 | Android 构建 | `assembleDebug / assembleRelease` 通过 | 可安装 debug 与 unsigned release；release 不包含模拟业务类 |
 | `lintDebug` | 0 errors，3 warnings | 目标 API、低 API 忽略 localeConfig、依赖 catalog 提醒 |
-| 契约校验脚本 | 11 schemas、21 messages、7 个参考包模块通过 | 同源 JSON Schema、20 个响应与 1 个请求夹具、两个正式包 |
+| 契约校验脚本 | 11 schemas、24 messages、7 个参考包模块通过 | 同源 JSON Schema、22 个响应与 2 个请求夹具、两个正式包 |
 | 最终 APK 校验脚本 | debug / release 均通过 | 两个 ABI 的 6 个原生库、ELF/ZIP 16 KiB 对齐、249 个组件许可、源码附件、字体摘要 |
 
-最终 JVM 合计 66 个，结果来自各模块 `build/test-results/test/TEST-*.xml`。Android 平台 instrumentation 在本次集成期间执行；末轮又修改了派生统计字段、读取错误映射和打包设置，平台 instrumentation 未为这些改动重复运行。末轮执行了全部上述 JVM 测试、应用构建及最终 APK 冷启动/恢复检查。
+当前 JVM 测试集共 76 个，结果来自各模块 `build/test-results/test/TEST-*.xml`。本轮 Responses 扩展执行了核心 56 个、SQLite 平台 4 个、前端门面及集成 15 个，共 75 个；未修改的 `memory-core` 1 个沿用此前通过的结果。Android 平台的 5 个 instrumentation 测试及独立进程探针在前一轮集成执行，本轮未重复。本轮另执行了应用 debug/release 构建、Lint、契约和 APK 检查，并在实际模拟器安装新版后验证协议配置、冷启动与数据保留。
 
 运行命令与依赖版本集中维护在[构建与接入](running.md)。测试报告、APK、模拟器截图和临时数据库位于已忽略的 `build/`，不提交个人数据或构建缓存。
 
@@ -38,7 +38,9 @@ Claude 的 Compose 前端已经通过 `sdk-codex` 接入真实本机核心。当
 - 完整恢复保留身份及历史，关闭自动调用，清除凭证引用，将未完成任务置为 `RESTORED_PENDING`；预览后继续学习会使旧预览失效。
 - 文件流导出/恢复的幂等，原始表单版本重放，成员顺序，区分“未找到”与存储故障，故障后的原订阅重试。
 
-模型业务使用明确的脚本替身，允许有意模拟取消后的迟到返回。HTTP 测试使用真实 OkHttp 适配器连接本地 `MockWebServer`，检查选定模型、返回用量、限流、截断、非法 JSON、跳转和传输校验；它没有连接真实 LLM 供应商。
+模型业务使用明确的脚本替身，允许有意模拟取消后的迟到返回。HTTP 测试使用真实 OkHttp 适配器连接本地 `MockWebServer`，检查两种协议的路径、请求字段、JSON mode、返回用量、限流、截断、非法 JSON、跳转和传输校验；它没有连接真实 LLM 供应商。
+
+Responses 新增覆盖：推理项在前、多段文本、SDK 便利属性不作为原始输出、拒绝/失败/未完成状态、畸形 token 数、真实 HTTP 取消、校验失败清理凭证；任务执行覆盖离线排队、同键重放、提交后修改预设仍用原协议快照，以及用户配置的 Responses → Chat Completions 备用重试。完整备份测试加入两种协议，确认恢复预设、绑定、未完成任务快照，保留作答和策略审计并清除凭证。
 
 ## Android 应用实际流程
 
@@ -54,6 +56,16 @@ Claude 的 Compose 前端已经通过 `sdk-codex` 接入真实本机核心。当
 操作证据位于本机 `backend/build/reports/app-ui/`：`restart-before.json`、`restart-after.json`、`backup-restored.json`、`force-stop-feedback.png`、`backup-preview-visible.png`、`backup-restored.png`、`final-apk-feedback.png`、`final-apk-library.png`、`final-apk-overview.png`。正式备份副本为 `emulator-export.wordprism`；这些是公开合成资料的本地调试产物，不随仓库发布。
 
 本次 UI 操作发现并修复了输入法 composition 残留导致明确点击“提交”静默无效的问题，使用相同步骤重新输入并点击后成功保存。另修复了把 12 个学习目标误显示为 12 个新词的问题，现由核心提供去重的新词数。最终包检查发现依赖原先带入没有 FSRS 库的 32 位 ABI，已限制为两个完整的 64 位 ABI 并重新构建、检查。
+
+### Responses 扩展与覆盖升级
+
+在同一独立模拟器用 `adb install -r` 从原测试版升级至 `versionCode = 2`、`versionName = 0.4.0-test.2`，安装成功且未清除数据。通过实际预设页面输入合成配置 `Responses-local-test`、`https://example.invalid/v1`、`test-responses-model`，从 Chat Completions 切换到 Responses 后，自定义地址保留；保存成功，设置列表显示正确的协议名称。
+
+执行真正的 `am force-stop` 并冷启动，再打开预设，协议、地址、模型均保留。升级前 PID `4633`、升级后重启 PID `5410`；脚本比对前后的 3 个词条身份/版本、4 条作答身份/版本/序号及会话字段一致。Room 副本确认保存协议为 `openai_responses`，用量记录仍为零。测试配置没有凭证，也未点击连接测试。
+
+证据位于 `backend/build/reports/app-ui/`：`responses-upgrade-before.json`、`responses-upgrade-after.json`、`responses-protocol-options.png`、`responses-saved.png`、`responses-preset-list.png`、`responses-reopened-preset.png` 及相应 UI 树。安装后第一次 UI 树抓取遇到启动尚未完成的 `null root node`；检查新进程和 AndroidRuntime 后再次抓取成功，没有应用崩溃。此为模拟器及本地配置证据，原生 HTTP 的合成服务测试单独记录在上文。
+
+新版可安装 APK 的 SHA-256 为 `22b84740b362afd11daab20ad5e08bb795f4c3d630541ac586d03a038ed6ad6b`，使用与前版一致的 debug 签名，签名校验通过。分发入口为 [v0.4.0-test.2 Release](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/tag/v0.4.0-test.2)，附件同时提供示例内容包及 `SHA256SUMS.txt`。
 
 早期 [Claude 前端验证](../frontend/validation-2026-11-03.md)记录的是模拟后端与模拟包格式，保留其历史含义，不用于证明本次真实存储或模型调用。
 

@@ -2,6 +2,7 @@ package app.wordprism.codex
 
 import app.wordprism.sdk.*
 import dev.wordprism.contract.Command
+import dev.wordprism.contract.ApiProtocols
 import dev.wordprism.contract.Contract
 import dev.wordprism.contract.Query
 import dev.wordprism.contract.Request
@@ -158,6 +159,35 @@ class CoreIntegrationTest {
             val op = ok(h.sdk.intake.submit(IntakeRequest("linear"), ClientRequestId("intake")))
             h.core.tasks.run(CId(op.value)); assertTrue(h.provider.requests.isEmpty())
             assertEquals(ErrorCode.QuotaExhausted, h.sdk.operations.observe(op).filterNotNull().first().error!!.code)
+        }
+    }
+    @Test fun responsesPresetLabelsBindingsAndQueuedTasksSurviveSQLiteReopen() = runBlocking {
+        Harness().use { h ->
+            val adapters = h.sdk.presets.observeAdapters().first()
+            assertEquals(setOf(ApiProtocols.OPENAI_CHAT_COMPLETIONS, ApiProtocols.OPENAI_RESPONSES), adapters.map { it.id }.toSet())
+            val chat = h.configure()
+            val draft = PresetDraft(name = "Native Responses", adapterId = ApiProtocols.OPENAI_RESPONSES, baseUrl = "https://example.invalid/v1", model = "synthetic-responses",
+                maxOutputTokens = 4096, timeoutSeconds = 45, credential = UUID.randomUUID().toString())
+            val saved = ok(h.sdk.presets.savePreset(draft, ClientRequestId("responses-preset")))
+            assertEquals(adapters.single { it.id == ApiProtocols.OPENAI_RESPONSES }.label, saved.adapterLabel)
+            assertEquals(saved, ok(h.sdk.presets.savePreset(draft, ClientRequestId("responses-preset"))))
+            ok(h.sdk.presets.bindFeature(FeatureId.WordIntake, saved.id))
+            val op = ok(h.sdk.intake.submit(IntakeRequest("linear"), ClientRequestId("native-intake")))
+            h.core.tasks.run(CId(op.value), online = false)
+            assertTrue(h.provider.requests.isEmpty())
+            h.restart()
+            val restored = h.sdk.presets.observePresets().first().single { it.id == saved.id }
+            assertEquals(saved.adapterId, restored.adapterId); assertEquals(saved.adapterLabel, restored.adapterLabel)
+            assertEquals(saved.baseUrl, restored.baseUrl); assertEquals(listOf(FeatureId.WordIntake), restored.boundFeatures)
+            assertEquals(chat, h.sdk.presets.observeCallPolicy().first().defaultPresetId)
+            assertEquals(CStatus.WAITING_NETWORK, h.store.read().operations.getValue(CId(op.value)).status)
+            h.provider.response = { ProviderResponse(Contract.json.parseToJsonElement("""{"words":[{"spelling":"linear","meaning":"线性的"}],"reason":"Synthetic Responses task"}"""), 5, 9) }
+            h.core.tasks.run(CId(op.value))
+            assertEquals(ApiProtocols.OPENAI_RESPONSES, h.provider.requests.single().preset.protocol)
+            assertEquals(ApiProtocols.OPENAI_RESPONSES, h.store.read().usage.values.single().preset.protocol)
+            assertEquals(OperationStatus.Succeeded, h.sdk.operations.observe(op).filterNotNull().first().status)
+            assertEquals(op, ok(h.sdk.intake.submit(IntakeRequest("linear"), ClientRequestId("native-intake"))))
+            h.core.tasks.run(CId(op.value)); assertEquals(1, h.provider.requests.size)
         }
     }
     @Test fun fullBackupThroughDocumentStreamsRestoresFeedbackAndRetriesCommitAfterTokenRemoval() = runBlocking {

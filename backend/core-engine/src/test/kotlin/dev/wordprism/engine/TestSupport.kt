@@ -52,8 +52,8 @@ class Harness {
     suspend fun command(command: Command, key: String = UUID.randomUUID().toString()): View {
         val reply = core.execute(Request(key, command)); assertNull(reply.fault, reply.fault.toString()); return reply.value!!
     }
-    suspend fun configure(auto: Boolean = true) {
-        val preset = ApiPreset(Id("test-preset"), name = "Test provider", baseUrl = "https://example.invalid/v1", model = "test-model")
+    suspend fun configure(auto: Boolean = true, protocol: String = ApiProtocols.OPENAI_CHAT_COMPLETIONS) {
+        val preset = ApiPreset(Id("test-preset"), name = "Test provider", baseUrl = "https://example.invalid/v1", model = "test-model", protocol = protocol)
         command(Command.SavePreset(preset)); core.setCredential(preset.id, UUID.randomUUID().toString().toCharArray())
         Feature.entries.forEach { command(Command.BindPreset(Binding(it, preset.id))) }
         val settings = store.read().settings; command(Command.SetSettings(settings.copy(automaticAnalysis = auto), settings.version))
