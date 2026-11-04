@@ -20,16 +20,23 @@ data class ProviderResponse(val content: JsonElement, val inputTokens: Long? = n
 class ProviderException(val fault: Fault, val inputTokens: Long? = null, val outputTokens: Long? = null) : IOException(fault.message)
 interface LlmProvider {
     suspend fun generate(request: ProviderRequest, secret: CharArray): ProviderResponse
+    suspend fun listModels(request: ModelCatalogRequest, secret: CharArray): List<ApiModel>
     fun cancel(operationId: Id)
 }
 
-internal fun validatePreset(preset: ApiPreset, allowLocalHttp: Boolean = false) {
-    val url = preset.baseUrl.toHttpUrlOrNull() ?: fail(ErrorCode.VALIDATION, "API 地址无效")
+internal fun validateConnection(baseUrl: String, protocol: String, timeoutSeconds: Int, allowLocalHttp: Boolean = false): HttpUrl {
+    val url = baseUrl.toHttpUrlOrNull() ?: fail(ErrorCode.VALIDATION, "API 地址无效")
     requireBusiness(url.isHttps || allowLocalHttp && url.host in setOf("localhost", "127.0.0.1", "::1"), "API 必须使用 HTTPS")
     requireBusiness(url.toUri().rawUserInfo == null && url.query == null && url.fragment == null, "地址不能包含凭证、查询或片段")
-    requireBusiness(ApiProtocols.supported.any { it.id == preset.protocol }, "暂不支持此协议", ErrorCode.UNSUPPORTED_VERSION)
+    requireBusiness(ApiProtocols.supported.any { it.id == protocol }, "暂不支持此协议", ErrorCode.UNSUPPORTED_VERSION)
+    requireBusiness(timeoutSeconds in 5..180, "超时范围为 5–180 秒")
+    return url
+}
+
+internal fun validatePreset(preset: ApiPreset, allowLocalHttp: Boolean = false) {
+    validateConnection(preset.baseUrl, preset.protocol, preset.timeoutSeconds, allowLocalHttp)
     requireBusiness(preset.name.isNotBlank() && preset.name.length <= 120 && preset.model.isNotBlank() && preset.model.length <= 200, "预设名称或模型无效")
-    requireBusiness(preset.timeoutSeconds in 5..180 && preset.maxOutputTokens in 64..16384 && (preset.temperature?.let { it.isFinite() && it in 0f..2f } != false), "预设参数超出支持范围")
+    requireBusiness(preset.maxOutputTokens in 64..16384 && (preset.temperature?.let { it.isFinite() && it in 0f..2f } != false), "预设参数超出支持范围")
 }
 
 class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : LlmProvider {
@@ -48,25 +55,49 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
             val http = okhttp3.Request.Builder().url(preset.baseUrl.trimEnd('/') + path)
                 .header("Authorization", "Bearer " + String(secret)).post(body.toRequestBody("application/json".toMediaType())).build()
             secret.fill('\u0000')
-            val call = client.newBuilder().callTimeout(preset.timeoutSeconds.toLong(), TimeUnit.SECONDS).build().newCall(http)
-            calls[request.operationId] = call
-            try {
-                return suspendCancellableCoroutine { continuation ->
-                    continuation.invokeOnCancellation { call.cancel() }
-                    call.enqueue(object : Callback {
-                        override fun onFailure(call: Call, e: IOException) {
-                            val fault = if (e is InterruptedIOException) Fault(ErrorCode.PROVIDER_TIMEOUT, "请求超时；服务商是否完成未知，请明确选择重试")
-                                else Fault(ErrorCode.OUTCOME_UNKNOWN, "连接中断；服务商是否完成未知，请明确选择重试")
-                            if (continuation.isActive) continuation.resumeWithException(ProviderException(fault))
-                        }
-                        override fun onResponse(call: Call, response: Response) {
-                            val result = runCatching { response.use { parse(it, preset.protocol) } }
-                            if (continuation.isActive) result.fold({ continuation.resume(it) }, { continuation.resumeWithException(it) })
-                        }
-                    })
-                }
-            } finally { calls.remove(request.operationId, call) }
+            return exchange(http, preset.timeoutSeconds, request.operationId) { parse(it, preset.protocol) }
         } finally { secret.fill('\u0000') }
+    }
+
+    override suspend fun listModels(request: ModelCatalogRequest, secret: CharArray): List<ApiModel> = try {
+        val root = validateConnection(request.baseUrl, request.protocol, request.timeoutSeconds, allowLocalHttp)
+        val http = okhttp3.Request.Builder().url(root.toString().trimEnd('/') + "/models")
+            .header("Authorization", "Bearer " + String(secret)).header("Accept", "application/json").get().build()
+        secret.fill('\u0000')
+        exchange(http, request.timeoutSeconds, metadata = true, parse = ::parseModels)
+    } finally { secret.fill('\u0000') }
+
+    private suspend fun <T> exchange(http: okhttp3.Request, timeoutSeconds: Int, operationId: Id? = null,
+        metadata: Boolean = false, parse: (Response) -> T): T {
+        val call = client.newBuilder().callTimeout(timeoutSeconds.toLong(), TimeUnit.SECONDS).build().newCall(http)
+        operationId?.let { calls[it] = call }
+        fun failure(e: IOException): ProviderException {
+            if (e is ProviderException) return e
+            val fault = if (metadata) {
+                if (e is InterruptedIOException) Fault(ErrorCode.PROVIDER_TIMEOUT, "拉取模型超时，请重试", true)
+                else Fault(ErrorCode.PROVIDER_UNAVAILABLE, "无法拉取模型，请检查网络和服务地址后重试", true)
+            } else {
+                if (e is InterruptedIOException) Fault(ErrorCode.PROVIDER_TIMEOUT, "请求超时；服务商是否完成未知，请明确选择重试")
+                else Fault(ErrorCode.OUTCOME_UNKNOWN, "连接中断；服务商是否完成未知，请明确选择重试")
+            }
+            return ProviderException(fault)
+        }
+        try {
+            return suspendCancellableCoroutine { continuation ->
+                continuation.invokeOnCancellation { call.cancel() }
+                call.enqueue(object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        if (continuation.isActive) continuation.resumeWithException(failure(e))
+                    }
+                    override fun onResponse(call: Call, response: Response) {
+                        val result = runCatching { response.use(parse) }
+                        if (continuation.isActive) result.fold({ continuation.resume(it) }, {
+                            continuation.resumeWithException(if (it is IOException) failure(it) else it)
+                        })
+                    }
+                })
+            }
+        } finally { operationId?.let { calls.remove(it, call) } }
     }
 
     private fun encode(request: ProviderRequest): JsonObject = buildJsonObject {
@@ -92,27 +123,50 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
         }
     }
 
-    private fun parse(response: Response, protocol: String): ProviderResponse {
+    private fun readJson(response: Response): JsonObject? {
         val body = response.body ?: throw ProviderException(Fault(ErrorCode.INVALID_RESPONSE, "响应没有内容"))
         if (body.contentLength() > 2 * 1024 * 1024) throw ProviderException(Fault(ErrorCode.LIMIT_EXCEEDED, "响应超过 2 MiB"))
         val source = body.source(); val bytes = source.readAtMost(2 * 1024 * 1024 + 1)
         if (bytes.size > 2 * 1024 * 1024) throw ProviderException(Fault(ErrorCode.LIMIT_EXCEEDED, "响应超过 2 MiB"))
-        val raw = runCatching { Contract.json.parseToJsonElement(bytes.toString(Charsets.UTF_8)) as? JsonObject }.getOrNull()
+        return runCatching { Contract.json.parseToJsonElement(bytes.toString(Charsets.UTF_8)) as? JsonObject }.getOrNull()
+    }
+
+    private fun parseModels(response: Response): List<ApiModel> {
+        val raw = readJson(response)
+        val errors = TokenUsage(null, null)
+        if (response.code in setOf(404, 405)) errors.problem(ErrorCode.PROVIDER_UNAVAILABLE, "服务商未提供 /models 列表，请手动填写模型标识")
+        checkStatus(response, errors)
+        val models = raw?.get("data") as? JsonArray ?: errors.problem(ErrorCode.INVALID_RESPONSE, "服务商未返回有效的模型列表")
+        if (models.size > 10000) errors.problem(ErrorCode.LIMIT_EXCEEDED, "模型列表超过 10000 项，请手动填写模型标识")
+        return models.map { element ->
+            val item = element as? JsonObject ?: errors.problem(ErrorCode.INVALID_RESPONSE, "模型列表包含无效项")
+            val id = item.text("id")?.takeIf { it.isNotBlank() && it.length <= 200 && it.none(Char::isISOControl) }
+                ?: errors.problem(ErrorCode.INVALID_RESPONSE, "模型列表包含无效的模型标识")
+            ApiModel(id, item.text("owned_by")?.takeIf { it.isNotBlank() && it.length <= 200 && it.none(Char::isISOControl) })
+        }.distinctBy { it.id }.sortedBy { it.id }
+    }
+
+    private fun parse(response: Response, protocol: String): ProviderResponse {
+        val raw = readJson(response)
         val usage = raw?.get("usage") as? JsonObject
         val native = protocol == ApiProtocols.OPENAI_RESPONSES
         val tokens = TokenUsage(usage?.tokens(if (native) "input_tokens" else "prompt_tokens"),
             usage?.tokens(if (native) "output_tokens" else "completion_tokens"))
+        checkStatus(response, tokens)
+        if (raw == null) tokens.problem(ErrorCode.INVALID_RESPONSE, "服务商未返回有效 JSON 对象")
+        val content = if (native) responsesText(raw, tokens) else chatText(raw, tokens)
+        val parsed = runCatching { Contract.json.parseToJsonElement(content) as? JsonObject }.getOrNull()
+            ?: tokens.problem(ErrorCode.INVALID_RESPONSE, "模型未返回有效 JSON 对象")
+        return ProviderResponse(parsed, tokens.input, tokens.output)
+    }
+
+    private fun checkStatus(response: Response, tokens: TokenUsage) {
         if (!response.isSuccessful) when (response.code) {
             401, 403 -> tokens.problem(ErrorCode.PROVIDER_AUTH, "服务商拒绝认证，请检查凭证")
             429 -> tokens.problem(ErrorCode.PROVIDER_RATE_LIMIT, "服务商限流，可稍后重试", true)
             in 500..599 -> tokens.problem(ErrorCode.PROVIDER_UNAVAILABLE, "服务商暂不可用", true)
             else -> tokens.problem(ErrorCode.PROVIDER_UNAVAILABLE, "服务商返回 HTTP ${response.code}")
         }
-        if (raw == null) tokens.problem(ErrorCode.INVALID_RESPONSE, "服务商未返回有效 JSON 对象")
-        val content = if (native) responsesText(raw, tokens) else chatText(raw, tokens)
-        val parsed = runCatching { Contract.json.parseToJsonElement(content) as? JsonObject }.getOrNull()
-            ?: tokens.problem(ErrorCode.INVALID_RESPONSE, "模型未返回有效 JSON 对象")
-        return ProviderResponse(parsed, tokens.input, tokens.output)
     }
 
     private fun chatText(raw: JsonObject, tokens: TokenUsage): String {

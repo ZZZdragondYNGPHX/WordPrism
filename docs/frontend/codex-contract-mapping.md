@@ -27,6 +27,7 @@
 | `overview` | `Overview`、`ConfusionEvidence` | 用户与 AI 共享事实；观察、预测、表达评价、低样本和投入序列均由核心定义 |
 | `adaptation` | `Settings`、`SetSettings`、`AnalyzeLearning`、`PolicyChanges`、`OperationEffects`、`Capabilities` | 读取实际生效策略及内容变化；手动、自动、锁定和撤销共享业务规则 |
 | `presets` | `Protocols`、`Presets`、`SavePreset`、`DeletePreset`、`BindPreset`、`UnbindPreset`、`CallPolicy`、`SetCallPolicy`、`TestConnection`、`GetUsage` | 协议目录与名称、版本化编辑、默认/独立/备用绑定、调用控制、测试状态及真实用量；不读取完整密钥 |
+| `presets.listModels` | `listModels(ModelCatalogRequest, CharArray?) → View.Models` | 未保存表单或同地址的已保存凭证；门面只映射模型 ID/所有者，页面管理取消、重试与搜索选择，规则和样例见[模型目录](../backend/api-protocols.md#拉取模型) |
 | `dataTransfer` | `GetPackagePreview`、流式预览/导出、`CommitImport`、`RestoreBackup` | 正式 `.wordprism` 容器；预览绑定资料库修订；同目的地导出收据去重，恢复可重试 |
 | `operations` | `Operations`、`GetOperation`、`CancelOperation`、`RetryOperation`、`UndoOperation` | 显示真实终态与动作，不根据页面动画猜测任务结果 |
 | 答案草稿 | `SaveDraft`、`GetDraft` | 持久版本化草稿；AI 添加的纯界面草稿继续使用前端 DataStore |
@@ -58,6 +59,6 @@ Chat Completions 与原生 Responses 通过相同预设页面配置。`observeAd
 
 ## 验证
 
-`sdk-codex` 已执行 15 个 JVM 测试：6 个门面映射测试，以及 9 个使用真实 `CoreEngine + SQLite + Rust JNI` 的集成测试。后者覆盖 SQLite 重开后的作答幂等、理解步骤、原子编辑/撤销、调用额度、正式备份流、统一总览与保留后续学习的撤销、持久拼写选择、关闭自动分析后的迟到结果，以及 Responses 协议标签、独立绑定和离线任务重开。
+`sdk-codex` 已执行 18 个 JVM 测试：8 个门面映射测试，以及 10 个使用真实 `CoreEngine + SQLite + Rust JNI` 的集成测试。后者覆盖 SQLite 重开后的作答幂等、理解步骤、原子编辑/撤销、调用额度、正式备份流、统一总览与保留后续学习的撤销、持久拼写选择、关闭自动分析后的迟到结果，以及 Responses 协议标签、独立绑定、离线任务重开和模型目录选择保存。模型拉取的页面状态另有 6 个单元测试，模型选择器另有 2 个实际 Android Compose 仪器测试；使用合成目录，不代表真实供应商列表。
 
 实际 Android 应用也已在 API 35 x86_64 模拟器完成正式包导入、学习、强停恢复、总览、SAF 导出和完整替换恢复。详细记录与最终 APK 检查见[后端与集成验证](../backend/validation.md)。[Claude 的早期验证](validation-2026-11-03.md)保留为模拟前端阶段记录，不能作为真实 API 或核心验证。

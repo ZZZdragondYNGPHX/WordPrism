@@ -1,0 +1,1 @@
+{"baseUrl":"https://api.openai.com/v1","protocol":"openai_responses","timeoutSeconds":45,"credentialPreset":{"id":"fixture-responses-preset","version":1},"contractVersion":1}

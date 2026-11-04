@@ -49,6 +49,19 @@ data class PresetDraft(
     val credential: String? = null,
 )
 
+/** Connection fields only. presetId/expectedVersion identify an optional saved credential. */
+@Serializable
+data class ModelCatalogDraft(
+    val baseUrl: String,
+    val adapterId: String,
+    val timeoutSeconds: Int,
+    val presetId: PresetId? = null,
+    val expectedVersion: Int? = null,
+)
+
+@Serializable
+data class ApiModel(val id: String, val ownedBy: String? = null)
+
 @Serializable
 data class FeatureBinding(
     val feature: FeatureId,
@@ -83,6 +96,11 @@ interface PresetsApi {
     suspend fun deletePreset(id: PresetId, request: ClientRequestId): SdkResult<Unit>
     /** Real request; may incur provider usage. */
     suspend fun testConnection(id: PresetId, request: ClientRequestId): SdkResult<OperationId>
+    /** Explicit metadata request; no generation, persisted task or automatic retry.
+     * null uses the saved credential only for the same service root; a supplied secret is always erased.
+     * Coroutine cancellation aborts the request. The caller discards results after changing the connection.
+     */
+    suspend fun listModels(draft: ModelCatalogDraft, secret: CharArray? = null): SdkResult<List<ApiModel>>
     fun observeBindings(): Flow<List<FeatureBinding>>
     suspend fun bindFeature(feature: FeatureId, presetId: PresetId?): SdkResult<FeatureBinding>
     fun observeCallPolicy(): Flow<CallPolicy>

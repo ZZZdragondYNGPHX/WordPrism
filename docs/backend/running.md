@@ -75,7 +75,7 @@ sdk.observe().collect { revision -> /* refresh relevant queries */ }
 发布后切到 `android/`，将 `JAVA_HOME` 改为前端使用的 JDK 25，并把 `ANDROID_HOME` 指向包含 platform 37 的 SDK，再执行：
 
 ```powershell
-./gradlew.bat :sdk-codex:test :app:assembleDebug :app:lintDebug :app:assembleRelease
+./gradlew.bat :sdk-codex:test :app:testDebugUnitTest :app:assembleDebug :app:lintDebug :app:assembleRelease
 adb -s emulator-5556 install -r app/build/outputs/apk/debug/app-debug.apk
 adb -s emulator-5556 shell am start -n app.wordprism/.MainActivity
 ```
@@ -83,6 +83,14 @@ adb -s emulator-5556 shell am start -n app.wordprism/.MainActivity
 使用自己的设备时替换 serial。Debug APK 可直接安装；`app/build/outputs/apk/release/app-release-unsigned.apk` 是未签名 release 构建，尚未配置发行签名或上架。
 
 首次运行是空词库。可在“设置 → 导入与导出”选取 `docs/backend/packages/example-content.wordprism`，离线学习三个示例词；该文件应先复制到设备可选的目录。真实 AI 功能在“设置 → API 预设”填写 HTTPS base URL、model 和 API key，按功能或默认绑定，连接测试本身会请求供应商。日终自动分析默认开启，未配置凭证时只保存待配置任务；完整备份恢复后自动调用关闭，须按需要重新开启。
+
+模型标识可手动填写，也可输入服务地址与密钥后点击“拉取模型”，搜索、选择并保存。已有预设可复用本机凭证；服务商没有 `/models` 时仍支持手动填写。功能与契约见[模型目录](api-protocols.md#拉取模型)。
+
+新增的模型选择器 Compose 仪器测试使用合成列表，不查询供应商。可在 `android/` 执行 `:app:assembleDebugAndroidTest`，安装 debug APK 和 `app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk` 后，只对指定设备运行：
+
+```powershell
+adb -s emulator-5556 shell am instrument -w -r -e class app.wordprism.ui.settings.ModelPickerTest app.wordprism.test/androidx.test.runner.AndroidJUnitRunner
+```
 
 读取或启动失败通过 `observeErrors()` 呈现，`retryReads()` 保留原订阅重试。文件、模型响应与统计均不回落到模拟数据。
 

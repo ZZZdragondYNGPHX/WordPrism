@@ -56,4 +56,7 @@ private class OpeningCore(private val context: Context, private val scope: Corou
     override suspend fun exportPackage(purpose: PackagePurpose, output: OutputStream, wordIds: Set<Id>, identity: ExportIdentity?) = call { it.exportPackage(purpose, output, wordIds, identity) }
     override suspend fun setCredential(presetId: Id, secret: CharArray): Reply = try { call { it.setCredential(presetId, secret) } } finally { secret.fill('\u0000') }
     override suspend fun deleteCredential(presetId: Id) = call { it.deleteCredential(presetId) }
+    override suspend fun listModels(request: ModelCatalogRequest, secret: CharArray?): Reply = try {
+        call { it.listModels(request, secret) }
+    } finally { secret?.fill('\u0000') }
 }

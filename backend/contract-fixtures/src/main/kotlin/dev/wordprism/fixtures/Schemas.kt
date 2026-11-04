@@ -12,6 +12,7 @@ internal fun writeSchemas(directory: File) {
     directory.mkdirs()
     val documents = linkedMapOf<String, JsonObject>()
     mapOf("request" to Request.serializer().descriptor, "query" to Query.serializer().descriptor,
+        "model-catalog-request" to ModelCatalogRequest.serializer().descriptor,
         "reply" to Reply.serializer().descriptor, "database" to Database.serializer().descriptor,
         "package-manifest" to PackageManifest.serializer().descriptor).forEach { (name, descriptor) ->
         documents[name] = JsonSchemas.document(descriptor, "WordPrism contract v1: $name")

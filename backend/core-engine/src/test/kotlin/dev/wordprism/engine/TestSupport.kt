@@ -43,6 +43,13 @@ class TestProvider : LlmProvider {
     val requests = java.util.concurrent.CopyOnWriteArrayList<ProviderRequest>()
     var response: suspend (ProviderRequest) -> ProviderResponse = { ProviderResponse(json("""{"patch":{"values":{},"reason":"Keep current settings","evidenceIds":[]},"actions":[]}"""), 30, 20) }
     override suspend fun generate(request: ProviderRequest, secret: CharArray): ProviderResponse { requests += request; secret.fill('\u0000'); return response(request) }
+    val modelRequests = java.util.concurrent.CopyOnWriteArrayList<ModelCatalogRequest>()
+    var modelSecret: CharArray? = null
+    var modelResponse: suspend (ModelCatalogRequest) -> List<ApiModel> = { emptyList() }
+    override suspend fun listModels(request: ModelCatalogRequest, secret: CharArray): List<ApiModel> {
+        modelRequests += request; modelSecret = secret
+        return try { modelResponse(request) } finally { secret.fill('\u0000') }
+    }
     override fun cancel(operationId: Id) = Unit // deliberately emulate a provider that still returns a late response
 }
 fun json(value: String) = Contract.json.parseToJsonElement(value)

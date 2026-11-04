@@ -12,8 +12,8 @@ android {
         applicationId = "app.wordprism"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.4.0-test.2"
+        versionCode = 3
+        versionName = "0.4.0-test.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // Match the packaged memory kernel; transitive libraries also contain unsupported 32-bit ABIs.
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
@@ -58,6 +58,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.runner)
 }
 
 // Distribution notices use the actual release resolution, including backend transitive dependencies.

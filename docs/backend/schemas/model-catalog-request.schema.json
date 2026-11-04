@@ -1,0 +1,58 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "WordPrism contract v1: model-catalog-request",
+    "allOf": [
+        {
+            "$ref": "#/$defs/dev.wordprism.contract.ModelCatalogRequest"
+        }
+    ],
+    "$defs": {
+        "dev.wordprism.contract.ModelCatalogRequest": {
+            "type": "object",
+            "properties": {
+                "baseUrl": {
+                    "type": "string"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "timeoutSeconds": {
+                    "type": "integer"
+                },
+                "credentialPreset": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "contractVersion": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "baseUrl"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Ref": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "id",
+                "version"
+            ],
+            "additionalProperties": false
+        }
+    }
+}

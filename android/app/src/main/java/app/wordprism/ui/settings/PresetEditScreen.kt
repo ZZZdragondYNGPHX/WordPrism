@@ -37,6 +37,7 @@ class PresetViewModel(sdk: WordPrismSdk, private val saved: SavedStateHandle, in
     val errors = _errors.asStateFlow()
     private val _saving = MutableStateFlow(false)
     val saving = _saving.asStateFlow()
+    internal val models = ModelCatalogController(viewModelScope, sdk.presets::listModels)
 
     fun save(draft: PresetDraft, onSaved: () -> Unit) {
         if (_saving.value) return
@@ -82,6 +83,7 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
     val saving by vm.saving.collectAsStateWithLifecycle()
     val test by vm.test.collectAsStateWithLifecycle()
     val savedId by vm.presetId.collectAsStateWithLifecycle()
+    val modelState by vm.models.state.collectAsStateWithLifecycle()
     val c = Wp.colors
 
     var name by rememberSaveable { mutableStateOf("") }
@@ -97,6 +99,13 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
     var initialized by rememberSaveable { mutableStateOf(presetId == null) }
     var confirmDelete by remember { mutableStateOf<PresetDeletionImpact?>(null) }
     var protocolMenu by remember { mutableStateOf(false) }
+    var modelPicker by remember { mutableStateOf(false) }
+    fun resetModels() { vm.models.reset(); modelPicker = false }
+    DisposableEffect(vm) { onDispose { vm.models.reset() } }
+    LaunchedEffect(p?.version, p?.credential) { resetModels() }
+    LaunchedEffect(modelState) {
+        if ((modelState as? ModelCatalogState.Ready)?.models?.isNotEmpty() == true) modelPicker = true
+    }
 
     LaunchedEffect(p) {
         val v = p
@@ -124,18 +133,44 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                 )
                 ExposedDropdownMenu(protocolMenu, { protocolMenu = false }) {
                     adapters.forEach { a -> DropdownMenuItem(text = { Text(a.label) }, onClick = {
+                        resetModels()
                         adapterId = a.id
                         if (baseUrl.isBlank()) baseUrl = a.defaultBaseUrl.orEmpty()
                         protocolMenu = false
                     }) }
                 }
             }
-            Field("服务地址", baseUrl, { baseUrl = it }, fe("baseUrl"), keyboard = KeyboardType.Uri)
+            Field("服务地址", baseUrl, { resetModels(); baseUrl = it }, fe("baseUrl"), keyboard = KeyboardType.Uri)
             Field("模型标识", model, { model = it }, fe("model"), placeholder = "服务商提供的模型名称")
+            val loadingModels = modelState == ModelCatalogState.Loading
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = {
+                    modelPicker = false
+                    vm.models.fetch(ModelCatalogDraft(baseUrl, adapterId, timeout.toIntOrNull() ?: 0,
+                        presetId = savedId?.takeUnless { removeSecret }?.let(::PresetId), expectedVersion = p?.version),
+                        secret.takeIf { it.isNotEmpty() }?.toCharArray())
+                }, enabled = !loadingModels && !saving && initialized && baseUrl.isNotBlank()) {
+                    if (loadingModels) { CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
+                    Text(if (loadingModels) "正在拉取…" else if (modelState is ModelCatalogState.Ready) "重新拉取" else "拉取模型")
+                }
+                if (loadingModels) TextButton(onClick = { modelPicker = false; vm.models.cancel() }) { Text("取消拉取") }
+                (modelState as? ModelCatalogState.Ready)?.models?.takeIf { it.isNotEmpty() }?.let { list ->
+                    TextButton(onClick = { modelPicker = true }) { Text("选择模型（${list.size}）") }
+                }
+            }
+            when (val state = modelState) {
+                is ModelCatalogState.Failed -> ErrorNotice(state.error)
+                else -> Text(when {
+                    state == ModelCatalogState.Cancelled -> "已取消拉取，可重试或手动填写模型。"
+                    state is ModelCatalogState.Ready && state.models.isEmpty() -> "服务商返回了空列表，可手动填写模型标识。"
+                    state is ModelCatalogState.Ready -> "已拉取 ${state.models.size} 个模型，选择后点击保存。"
+                    else -> "使用当前地址与密钥查询，也可手动填写模型。"
+                }, style = MaterialTheme.typography.bodySmall, color = c.muted)
+            }
             val cred = p?.credential
             OutlinedTextField(
-                secret, { secret = it; removeSecret = false }, singleLine = true, label = { Text("API 密钥") },
-                placeholder = { Text(if (cred?.present == true && !removeSecret) "已保存（${cred.maskedHint}），留空则不变" else "粘贴密钥") },
+                secret, { resetModels(); secret = it; removeSecret = false }, singleLine = true, label = { Text("API 密钥") },
+                placeholder = { Text(if (cred?.present == true && !removeSecret) "已保存，留空则不变" else "粘贴密钥") },
                 visualTransformation = if (showSecret) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false, imeAction = ImeAction.Next),
                 trailingIcon = { IconButton(onClick = { showSecret = !showSecret }) { Icon(if (showSecret) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, if (showSecret) "隐藏密钥" else "显示密钥") } },
@@ -143,18 +178,19 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             )
             if (cred?.present == true && secret.isEmpty()) {
-                TextButton(onClick = { removeSecret = !removeSecret }) { Text(if (removeSecret) "保留已保存的密钥" else "删除已保存的密钥") }
+                TextButton(onClick = { resetModels(); removeSecret = !removeSecret }) { Text(if (removeSecret) "保留已保存的密钥" else "删除已保存的密钥") }
             }
             Row {
                 Field("输出上限（tokens）", maxTokens, { maxTokens = it.filter(Char::isDigit) }, fe("maxOutputTokens"), keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
                 Spacer(Modifier.width(12.dp))
-                Field("超时（秒）", timeout, { timeout = it.filter(Char::isDigit) }, fe("timeoutSeconds"), keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
+                Field("超时（秒）", timeout, { resetModels(); timeout = it.filter(Char::isDigit) }, fe("timeoutSeconds"), keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
             }
             err?.takeIf { it.fieldErrors.isEmpty() }?.let { ErrorNotice(it, Modifier.padding(top = 8.dp)) }
 
             Spacer(Modifier.height(16.dp))
             Button(
                 onClick = {
+                    resetModels()
                     vm.save(PresetDraft(
                         id = savedId?.let(::PresetId), expectedVersion = p?.version, name = name, adapterId = adapterId, baseUrl = baseUrl, model = model,
                         maxOutputTokens = maxTokens.toIntOrNull(), timeoutSeconds = timeout.toIntOrNull() ?: 0,
@@ -188,6 +224,10 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                 TextButton(onClick = { scope.launch { confirmDelete = vm.impact() } }, colors = ButtonDefaults.textButtonColors(contentColor = c.negative), modifier = Modifier.padding(top = 12.dp)) { Text("删除预设") }
             }
         }
+    }
+
+    if (modelPicker) (modelState as? ModelCatalogState.Ready)?.models?.let { list ->
+        ModelPickerDialog(list, model, onSelect = { model = it; modelPicker = false }, onDismiss = { modelPicker = false })
     }
 
     confirmDelete?.let { impact ->

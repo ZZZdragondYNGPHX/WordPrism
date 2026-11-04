@@ -43,6 +43,9 @@ fun main(args: Array<String>) {
     samples["migration-preview"] = Reply(8, View.ImportPreview(PackagePreview(Id("fixture-preview"), Id("fixture-package"), PackagePurpose.BACKUP,
         "0".repeat(64), 8, 2, 0, emptyList(), listOf("library:1->2"), emptyList(), true)))
     samples["api-protocols"] = Reply(8, View.Protocols(ApiProtocols.supported))
+    samples["models"] = Reply(8, View.Models(listOf(ApiModel("example-model-a", "synthetic-provider"), ApiModel("example-model-b"))))
+    samples["empty-models"] = Reply(8, View.Models(emptyList()))
+    samples["models-unavailable"] = Reply(8, fault = Fault(ErrorCode.PROVIDER_UNAVAILABLE, "服务商未提供 /models 列表，请手动填写模型标识"))
     val responsesPreset = ApiPreset(Id("fixture-responses-preset"), name = "Responses 示例", baseUrl = "https://api.openai.com/v1",
         model = "your-responses-model", protocol = ApiProtocols.OPENAI_RESPONSES, maxOutputTokens = 4096)
     samples["responses-preset"] = Reply(9, View.Presets(listOf(PresetView(responsesPreset, hasCredential = false)),
@@ -54,7 +57,16 @@ fun main(args: Array<String>) {
     }
     File(output, "submit-intake.request.json").writeText(Contract.json.encodeToString(Request("fixture-intake-key", Command.SubmitIntake("linear / liner"))) + "\n")
     File(output, "save-responses-preset.request.json").writeText(Contract.json.encodeToString(Request("fixture-responses-key", Command.SavePreset(responsesPreset))) + "\n")
+    val catalogRequests = mapOf(
+        "unsaved-models" to ModelCatalogRequest("https://api.openai.com/v1", ApiProtocols.OPENAI_RESPONSES),
+        "saved-models" to ModelCatalogRequest("https://api.openai.com/v1", ApiProtocols.OPENAI_RESPONSES, credentialPreset = Ref(responsesPreset.id, responsesPreset.version)),
+    )
+    catalogRequests.forEach { (name, request) ->
+        val json = Contract.json.encodeToString(request)
+        check(Contract.json.decodeFromString<ModelCatalogRequest>(json) == request)
+        File(output, "$name.catalog-request.json").writeText(json + "\n")
+    }
     writeSchemas(File(output.parentFile, "schemas"))
     if ("--skip-packages" !in args) kotlinx.coroutines.runBlocking { writeReferencePackages(File(output.parentFile, "packages")) }
-    println("Validated ${samples.size} typed response fixtures and two request fixtures in ${output.absolutePath}")
+    println("Validated ${samples.size} typed response fixtures, two command requests and ${catalogRequests.size} model catalog requests in ${output.absolutePath}")
 }

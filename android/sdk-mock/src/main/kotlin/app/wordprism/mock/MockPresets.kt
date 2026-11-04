@@ -14,6 +14,10 @@ internal class MockPresets(private val c: MockCore, private val insights: MockIn
 
     override fun observeAdapters() = flowOf(adapters)
 
+    override suspend fun listModels(draft: ModelCatalogDraft, secret: CharArray?): SdkResult<List<ApiModel>> = try {
+        SdkResult.Err(SdkError(ErrorCode.ProviderBadOutput, "模拟 SDK 不查询服务商模型列表，请使用正式核心或手动填写", false))
+    } finally { secret?.fill('\u0000') }
+
     private fun MPreset.view(d: MockDb) = ApiPreset(
         PresetId(id), name, version, adapterId, adapters.firstOrNull { it.id == adapterId }?.label ?: adapterId, baseUrl, model,
         maxOutputTokens, timeoutSeconds, CredentialState(credentialHint != null, credentialHint), enabled, lastTest,

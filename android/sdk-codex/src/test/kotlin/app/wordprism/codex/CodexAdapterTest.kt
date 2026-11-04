@@ -26,6 +26,12 @@ private class FakeCore : WordPrism {
     var lastSecret: CharArray? = null
     var lastSecretCopy: String? = null
     var readFault: Fault? = null
+    var modelRequest: ModelCatalogRequest? = null
+    var modelReply = Reply(0, View.Models(listOf(dev.wordprism.contract.ApiModel("remote-model", "owner"))))
+    override suspend fun listModels(request: ModelCatalogRequest, secret: CharArray?): Reply {
+        modelRequest = request; lastSecret = secret; lastSecretCopy = secret?.let(::String)
+        return modelReply // Deliberately does not wipe; the frontend facade still must.
+    }
     override suspend fun execute(request: Request): Reply = when (val c = request.command) {
         is Command.SavePreset -> {
             if (c.preset.baseUrl.isBlank()) Reply(revision.value, fault = Fault(CErr.VALIDATION, "服务地址不能为空"))
@@ -54,6 +60,31 @@ private class FakeCore : WordPrism {
 
 class CodexAdapterTest {
     private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+
+    @Test fun catalogMapsAnUnsavedConnectionAndErasesItsSecretWithoutSavingAnything() = runBlocking {
+        val core = FakeCore(); val api = CodexPresets(CodexBridge(core, scope))
+        val raw = java.util.UUID.randomUUID().toString(); val chars = raw.toCharArray()
+        val draft = ModelCatalogDraft(" https://example.invalid/v1 ", ApiProtocols.OPENAI_RESPONSES, 30, PresetId("p"), 3)
+        val result = api.listModels(draft, chars)
+        assertEquals(listOf(app.wordprism.sdk.ApiModel("remote-model", "owner")), (result as SdkResult.Ok).value)
+        assertEquals(ModelCatalogRequest("https://example.invalid/v1", ApiProtocols.OPENAI_RESPONSES, 30, Ref(Id("p"), 3)), core.modelRequest)
+        assertEquals(raw, core.lastSecretCopy); assertTrue(chars.all { it == '\u0000' }); assertTrue(core.presets.isEmpty()); assertTrue(core.ops.isEmpty())
+    }
+
+    @Test fun offlineModelLookupDoesNotContactCoreAndRetryUsesTheSameFacade() = runBlocking {
+        val core = FakeCore(); val online = MutableStateFlow(false)
+        val api = CodexPresets(CodexBridge(core, scope, online))
+        val draft = ModelCatalogDraft("https://example.invalid/v1", ApiProtocols.OPENAI_RESPONSES, 30)
+        val chars = java.util.UUID.randomUUID().toString().toCharArray()
+        val offline = api.listModels(draft, chars) as SdkResult.Err
+        assertEquals(UiErr.Offline, offline.error.code); assertTrue(offline.error.retryable)
+        assertNull(core.modelRequest); assertTrue(chars.all { it == '\u0000' })
+        online.value = true
+        core.modelReply = Reply(0, fault = Fault(CErr.PROVIDER_RATE_LIMIT, "Rate limited", true))
+        val failed = api.listModels(draft) as SdkResult.Err
+        assertEquals(UiErr.ProviderRateLimited, failed.error.code); assertTrue(failed.error.retryable)
+        assertNotNull(core.modelRequest)
+    }
 
     @Test fun optionalStudyAndIntakeReadsDoNotMisreportStorageFailuresAsMissingEntities() = runBlocking {
         val readers: List<(CodexBridge) -> Flow<Any?>> = listOf(

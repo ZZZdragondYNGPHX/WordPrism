@@ -12,14 +12,14 @@
 
 应用要求 Android 8.0 / API 26 以上，打包 `arm64-v8a` 与 `x86_64`。Debug APK 可直接安装，release 当前为未签名构建。首次启动是空词库，可在“设置 → 导入与导出”导入[三个示例词的正式内容包](docs/backend/packages/example-content.wordprism)，离线开始学习。AI 功能需要在 API 预设中填写自己的连接与凭证；连接测试也会调用供应商。
 
-可直接下载 [v0.4.0-test.2 测试版 APK](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/tag/v0.4.0-test.2)，包含原生 Responses 支持，可覆盖安装上一测试版。仓库为私有，需要登录有访问权的 GitHub 账号。
+可直接下载 [v0.4.0-test.3 测试版 APK](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/tag/v0.4.0-test.3)，包含原生 Responses 和模型列表拉取，可覆盖安装上一测试版。仓库为私有，需要登录有访问权的 GitHub 账号。在预设中输入地址与密钥后，点击“拉取模型”，搜索、选择并保存；也可继续手动填写。
 
 ## 已实现
 
 - 稳定词条、义项与组关系；离线混合训练、真实作答历史、FSRS 调度、本机参数拟合与评估。
 - AI 添加与持续归组、拼写和归组选择、额外推荐点击加入；持久任务、重复提交保护、取消与可追溯撤销。
 - 用户与 AI 共用的总览、日终分析去重、手动与关闭控制；遵守用户设置的策略及内容调整，撤销保留之后的作答。
-- Chat Completions 与原生 Responses、多 API 预设、默认及按功能绑定、备用与重试控制、设备凭证、按实际请求记录用量。
+- Chat Completions 与原生 Responses、服务商模型列表拉取与搜索选择、多 API 预设、默认及按功能绑定、备用与重试控制、设备凭证、按实际请求记录用量。
 - 正式 `.wordprism` 内容包与完整备份、预览、版本迁移和原子恢复；恢复后关闭自动调用并重新配置凭证。
 
 ## 实现入口与验证

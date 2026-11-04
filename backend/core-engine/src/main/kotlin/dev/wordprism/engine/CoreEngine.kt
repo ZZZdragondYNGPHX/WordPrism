@@ -16,7 +16,7 @@ import kotlinx.serialization.json.*
 
 class CoreEngine(
     val store: StateStore, internal val credentials: CredentialStore, internal val memory: MemoryKernel,
-    private val clock: Clock = Clock.systemUTC(), provider: LlmProvider = OpenAiCompatibleProvider(),
+    private val clock: Clock = Clock.systemUTC(), private val provider: LlmProvider = OpenAiCompatibleProvider(),
     private val allowLocalHttp: Boolean = false,
 ) : WordPrism {
     val tasks = TaskRunner(this, provider)
@@ -161,11 +161,41 @@ class CoreEngine(
     override suspend fun deleteCredential(presetId: Id): Reply = guarded {
         val reference = store.transaction { it.credentialRefs.remove(presetId) }; reference?.let(credentials::delete); View.Ok(presetId)
     }
+    override suspend fun listModels(request: ModelCatalogRequest, secret: CharArray?): Reply = try {
+        guarded {
+            requireBusiness(request.contractVersion == Contract.VERSION, "契约版本不支持", ErrorCode.UNSUPPORTED_VERSION)
+            val root = validateConnection(request.baseUrl, request.protocol, request.timeoutSeconds, allowLocalHttp)
+            var credentialReference: Id? = null
+            val saved = request.credentialPreset.takeIf { secret == null }
+            val resolved = secret ?: run {
+                val ref = saved ?: fail(ErrorCode.CREDENTIAL_MISSING, "请填写 API 密钥后拉取模型")
+                val db = store.read()
+                val preset = db.presets[ref.id].found("预设"); checkRef(ref, preset.version)
+                val savedRoot = validateConnection(preset.baseUrl, preset.protocol, preset.timeoutSeconds, allowLocalHttp)
+                requireBusiness(root.toString().trimEnd('/') == savedRoot.toString().trimEnd('/'),
+                    "服务地址已改变，请填写用于新地址的 API 密钥后拉取模型", ErrorCode.CREDENTIAL_MISSING)
+                credentialReference = db.credentialRefs[ref.id]
+                credentialReference?.let(credentials::read) ?: fail(ErrorCode.CREDENTIAL_MISSING, "请填写 API 密钥后拉取模型")
+            }
+            try {
+                requireBusiness(resolved.size in 1..4096 && resolved.none { it == '\r' || it == '\n' }, "凭证格式无效")
+                val models = provider.listModels(request, resolved)
+                currentCoroutineContext().ensureActive()
+                if (saved != null) {
+                    val current = store.read()
+                    requireBusiness(current.presets[saved.id]?.version == saved.version && current.credentialRefs[saved.id] == credentialReference,
+                        "预设或凭证已变化，请重新拉取模型", ErrorCode.VERSION_CONFLICT)
+                }
+                View.Models(models)
+            } finally { resolved.fill('\u0000') }
+        }
+    } finally { secret?.fill('\u0000') }
 
     private suspend fun guarded(action: suspend () -> View): Reply = withContext(Dispatchers.IO) {
         try { val value = action(); Reply(store.read().revision, value) }
         catch (e: CancellationException) { throw e }
         catch (e: BusinessException) { Reply(runCatching { store.read().revision }.getOrDefault(0), fault = e.fault) }
+        catch (e: ProviderException) { Reply(runCatching { store.read().revision }.getOrDefault(0), fault = e.fault) }
         catch (_: java.io.IOException) { Reply(0, fault = Fault(ErrorCode.STORAGE, "本机数据读写失败；请保留同一请求身份重试", true)) }
         catch (_: kotlinx.serialization.SerializationException) { Reply(0, fault = Fault(ErrorCode.VALIDATION, "数据不符合当前契约")) }
         catch (_: IllegalArgumentException) { Reply(0, fault = Fault(ErrorCode.VALIDATION, "参数无效")) }
@@ -553,6 +583,9 @@ private fun Database.refresh(view: View): View = when (view) {
 class JsonBridge(private val sdk: WordPrism) {
     suspend fun execute(json: String): String = respond { sdk.execute(Contract.json.decodeFromString(json)) }
     suspend fun query(json: String): String = respond { sdk.query(Contract.json.decodeFromString(json)) }
+    suspend fun listModels(json: String, secret: CharArray? = null): String = try {
+        respond { sdk.listModels(Contract.json.decodeFromString(json), secret) }
+    } finally { secret?.fill('\u0000') }
     private suspend fun respond(action: suspend () -> Reply): String = Contract.json.encodeToString(try { action() }
         catch (_: kotlinx.serialization.SerializationException) { Reply(0, fault = Fault(ErrorCode.UNSUPPORTED_VERSION, "无法识别此契约消息")) })
 }

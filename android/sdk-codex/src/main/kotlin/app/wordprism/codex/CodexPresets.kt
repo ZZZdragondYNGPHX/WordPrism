@@ -4,6 +4,7 @@ import app.wordprism.sdk.*
 import dev.wordprism.contract.Binding
 import dev.wordprism.contract.Command
 import dev.wordprism.contract.Feature
+import dev.wordprism.contract.ModelCatalogRequest
 import dev.wordprism.contract.Query
 import dev.wordprism.contract.ProtocolInfo
 import dev.wordprism.contract.Ref
@@ -67,6 +68,14 @@ class CodexPresets(private val b: CodexBridge) : PresetsApi {
         val p = current(id)?.preset ?: return@safely notFound()
         b.exec(request, Command.TestConnection(Ref(p.id, p.version))) { (it as? View.OperationResult)?.operation?.id?.value?.let(::OperationId) }
     }
+    override suspend fun listModels(draft: ModelCatalogDraft, secret: CharArray?): SdkResult<List<ApiModel>> = try {
+        safely {
+            if (!b.online.value) return@safely SdkResult.Err(SdkError(ErrorCode.Offline, "当前离线，联网后可重新拉取模型", true))
+            val request = ModelCatalogRequest(draft.baseUrl.trim(), draft.adapterId, draft.timeoutSeconds,
+                draft.presetId?.let { Ref(CId(it.value), draft.expectedVersion?.toLong() ?: 0) })
+            b.core.listModels(request, secret).toResult { view -> (view as? View.Models)?.models?.map { ApiModel(it.id, it.ownedBy) } }
+        }
+    } finally { secret?.fill('\u0000') }
     override fun observeBindings(): Flow<List<FeatureBinding>> = b.live {
         val v = b.view(Query.Presets) as View.Presets
         Feature.entries.map { f ->

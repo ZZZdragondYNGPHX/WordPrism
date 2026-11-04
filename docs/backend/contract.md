@@ -2,7 +2,7 @@
 
 契约版本：`1` · 产品：`v0.4` · 实现与联调：2026-11-03。
 
-唯一业务类型权威是 [WordPrism.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/WordPrism.kt)、[Models.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Models.kt)、[Projections.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Projections.kt) 和 [ApiProtocols.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ApiProtocols.kt)。命令、查询、错误、实体、派生事实和协议目录均从这里定义；[JSON schema](schemas/) 与 [样例](fixtures/) 由同源序列化描述生成。
+唯一业务类型权威是 [WordPrism.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/WordPrism.kt)、[Models.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Models.kt)、[Projections.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Projections.kt)、[ApiProtocols.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ApiProtocols.kt) 和 [ModelCatalog.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ModelCatalog.kt)。命令、查询、错误、实体、派生事实、协议和模型目录均从这里定义；[JSON schema](schemas/) 与 [样例](fixtures/) 由同源序列化描述生成。
 
 Claude 的 Compose 前端现通过 `android/sdk-codex` 调用已发布的本地 Maven 构件。`android/sdk-contract` 是界面门面，适配器负责格式、标签和类型映射；存储、判分、归组、调度和统计集中在 `backend/`。具体对应见[前端映射](../frontend/codex-contract-mapping.md)，构建见 [running.md](running.md)。
 
@@ -10,6 +10,7 @@ Claude 的 Compose 前端现通过 `android/sdk-codex` 调用已发布的本地 
 
 - `execute(Request(key, command))`：持久幂等提交。同键同内容返回原动作及当前可观察结果；同键不同内容返回 `IDEMPOTENCY_CONFLICT`。实体编辑带 `Ref(id, version)`，重试须保留原始输入及版本，不能重新读取新版本拼成另一条命令。
 - `query(Query)`：不发起模型请求。`GetLearningDay()` 在需要时创建并持久化当天及计划，其余查询读取已有事实或计算投影。
+- `listModels(ModelCatalogRequest, CharArray?)`：用户明确发起的网络元数据读取，返回 `View.Models`；可取消、不创建持久任务。凭证、重试、迟到结果及样例见[拉取模型](api-protocols.md#拉取模型)。
 - `observe(): Flow<Long>`：通知已持久化修订，收到后重查所需视图。停止订阅不取消业务任务。
 - `Reply` 恰有 `value` 或 `fault`。`Fault.code` 与 `retryable` 用于流程判断，中文 `message` 可直接展示；不得从文案推断状态。存储错误为 `STORAGE`；提交结果不确定时保留同一请求身份重试。
 - 所有绝对时间为 UTC 毫秒；学习日保存 IANA 时区与起止时刻，跨日会话的用时按实际日期分段。稳定 ID 不随标题、拼写或内容修改而变。
@@ -27,7 +28,7 @@ JSON 使用 `type` 判别、枚举原名和字符串 ID。进程内 Kotlin 客�
 | 计划与学习日 | `GetLearningDay`、`SetTimer`、`FinishSession`、`FinishLearningDay`；预算状态、独立目标数、去重的新词数、已完成目标、自动分析身份 |
 | 总览与证据 | `Overview`、`Snapshot`、`Evidence`、`ConfusionEvidence`；观察与预测、延迟回忆、新语境、表达评价、低样本、按日投入、负担与用量 |
 | 自动调整 | `Capabilities`、`AnalyzeLearning`、`ApplyPolicy`、`FitMemory`、`EvaluateParameters`、`PolicyChanges`、`OperationEffects`；实际策略与内容变更、依据、可撤销性 |
-| API | `Protocols`、`Presets`、`SavePreset`、`DeletePreset`、`BindPreset`、`UnbindPreset`、`CallPolicy`、`SetCallPolicy`、`TestConnection`、`GetUsage`；版本、默认/独立/备用绑定及真实调用记录 |
+| API | `Protocols`、`Presets`、`SavePreset`、`DeletePreset`、`BindPreset`、`UnbindPreset`、`CallPolicy`、`SetCallPolicy`、`TestConnection`、`GetUsage`、独立 `listModels`；版本、默认/独立/备用绑定、模型目录及真实调用记录 |
 | 文件与任务 | 流式 `previewPackage` / `exportPackage`；`CommitImport`、`RestoreBackup`、`GetPackagePreview`；任务查询、取消、重试和撤销 |
 
 具体签名、默认值与完整操作集合以类型源为准。派生状态不由前端自行猜测：例如计划的 `newCount` 是新学习**目标**数量，`DaySummary.plannedNewWords` 才是去重的新词数量；接触基本义后可显示“学习中”，但不会凭空产生 FSRS 复习或独立回忆证据。

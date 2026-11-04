@@ -1911,6 +1911,9 @@
                             "$ref": "#/$defs/library_overview-variant"
                         },
                         {
+                            "$ref": "#/$defs/models-variant"
+                        },
+                        {
                             "$ref": "#/$defs/ok-variant"
                         },
                         {
@@ -3888,6 +3891,47 @@
                 "group",
                 "members",
                 "study"
+            ],
+            "additionalProperties": false
+        },
+        "models-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "models"
+                },
+                "models": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.ApiModel"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "models"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.ApiModel": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "ownedBy": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "id"
             ],
             "additionalProperties": false
         },

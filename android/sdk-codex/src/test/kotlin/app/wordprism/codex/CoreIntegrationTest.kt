@@ -50,6 +50,9 @@ class CoreIntegrationTest {
         val requests = mutableListOf<ProviderRequest>()
         var response: suspend (ProviderRequest) -> ProviderResponse = { ProviderResponse(Contract.json.parseToJsonElement("""{"patch":{"values":{"newTargetLimit":2},"reason":"合成测试：减少新学"},"actions":[]}"""), 7, 9) }
         override suspend fun generate(request: ProviderRequest, secret: CharArray): ProviderResponse { requests += request; secret.fill('\u0000'); return response(request) }
+        override suspend fun listModels(request: dev.wordprism.contract.ModelCatalogRequest, secret: CharArray): List<dev.wordprism.contract.ApiModel> = try {
+            listOf(dev.wordprism.contract.ApiModel("catalog-model", "synthetic-provider"))
+        } finally { secret.fill('\u0000') }
         override fun cancel(operationId: CId) = Unit // tests late provider delivery intentionally
     }
     private class Harness : AutoCloseable {
@@ -96,6 +99,26 @@ class CoreIntegrationTest {
     }
     companion object {
         private fun <T> ok(result: SdkResult<T>): T { if (result is SdkResult.Err) fail(result.error.toString()); return (result as SdkResult.Ok).value }
+    }
+
+    @Test fun modelDiscoveryAndSelectionSurviveReopenWithoutPersistingCatalogRequests() = runBlocking {
+        Harness().use { h ->
+            assertNull(h.core.recover().fault) // Match AndroidWordPrism.open before inspecting a new empty store.
+            val secret = UUID.randomUUID().toString()
+            val connection = ModelCatalogDraft("https://example.invalid/v1", ApiProtocols.OPENAI_RESPONSES, 30)
+            val before = h.store.read()
+            val models = ok(h.sdk.presets.listModels(connection, secret.toCharArray()))
+            assertEquals(listOf(ApiModel("catalog-model", "synthetic-provider")), models)
+            assertEquals(before, h.store.read())
+            val selected = ok(h.sdk.presets.savePreset(PresetDraft(name = "Catalog choice", adapterId = connection.adapterId, baseUrl = connection.baseUrl,
+                model = models.single().id, maxOutputTokens = 1024, timeoutSeconds = 30, credential = secret), ClientRequestId("catalog-save")))
+            h.restart()
+            val reopened = h.sdk.presets.observePresets().first().single()
+            assertEquals(selected.id, reopened.id); assertEquals("catalog-model", reopened.model); assertTrue(reopened.credential.present)
+            val saved = h.store.read()
+            assertEquals(models, ok(h.sdk.presets.listModels(connection.copy(presetId = reopened.id, expectedVersion = reopened.version))))
+            assertEquals(saved, h.store.read()); assertTrue(saved.usage.isEmpty()); assertTrue(saved.jobs.isEmpty())
+        }
     }
 
     @Test fun studySubmissionAndFeedbackSurviveSQLiteReopenAndRemainIdempotentAfterAdvance() = runBlocking {

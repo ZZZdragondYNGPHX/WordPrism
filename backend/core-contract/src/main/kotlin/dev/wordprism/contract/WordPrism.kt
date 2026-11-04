@@ -136,6 +136,7 @@ import kotlinx.serialization.Serializable
     @Serializable @SerialName("presets") data class Presets(val presets: List<PresetView>, val bindings: List<Binding>) : View
     @Serializable @SerialName("call_policy") data class CallPolicy(val policy: dev.wordprism.contract.CallPolicy) : View
     @Serializable @SerialName("protocols") data class Protocols(val protocols: List<ProtocolInfo>) : View
+    @Serializable @SerialName("models") data class Models(val models: List<ApiModel>) : View
     @Serializable @SerialName("call_preview") data class Preview(val preview: CallPreview) : View
     @Serializable @SerialName("usage") data class Usages(val usage: List<Usage>) : View
     @Serializable @SerialName("draft") data class DraftResult(val draft: Draft?) : View
@@ -156,4 +157,9 @@ interface WordPrism {
     /** Secrets bypass serializable commands, snapshots and backups. Implementations erase the input. */
     suspend fun setCredential(presetId: Id, secret: CharArray): Reply
     suspend fun deleteCredential(presetId: Id): Reply
+    /** Explicit, cancellable network metadata read. No durable task, usage or automatic retry.
+     * An explicit secret overrides credentialPreset and is erased on every exit; null uses the saved credential.
+     * Cancelling the coroutine aborts the request. The caller must discard results after editing the connection.
+     */
+    suspend fun listModels(request: ModelCatalogRequest, secret: CharArray? = null): Reply
 }

@@ -10,7 +10,9 @@ for schema in schemas.values():
     Draft202012Validator.check_schema(schema)
 messages = 0
 for path in (root / 'fixtures').glob('*.json'):
-    schema = schemas['request.schema.json' if path.name.endswith('.request.json') else 'reply.schema.json']
+    name = ('model-catalog-request' if path.name.endswith('.catalog-request.json')
+            else 'request' if path.name.endswith('.request.json') else 'reply')
+    schema = schemas[f'{name}.schema.json']
     Draft202012Validator(schema).validate(json.loads(path.read_text(encoding='utf-8')))
     messages += 1
 modules = 0
