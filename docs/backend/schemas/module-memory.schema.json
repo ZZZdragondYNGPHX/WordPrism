@@ -1,0 +1,334 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "WordPrism memory module v2",
+    "allOf": [
+        {
+            "$ref": "#/$defs/dev.wordprism.engine.Database"
+        }
+    ],
+    "$defs": {
+        "dev.wordprism.engine.Database": {
+            "type": "object",
+            "properties": {
+                "settings": {
+                    "$ref": "#/$defs/dev.wordprism.contract.UserSettings"
+                },
+                "policy": {
+                    "$ref": "#/$defs/dev.wordprism.contract.TrainingPolicy"
+                },
+                "schedules": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Schedule"
+                    }
+                },
+                "policyVersions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.TrainingPolicy"
+                    }
+                },
+                "evaluations": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Evaluation"
+                    }
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.UserSettings": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "integer"
+                },
+                "zoneId": {
+                    "type": "string"
+                },
+                "budgetMinutes": {
+                    "type": "integer"
+                },
+                "automaticAnalysis": {
+                    "type": "boolean"
+                },
+                "automaticGeneration": {
+                    "type": "boolean"
+                },
+                "automationEpoch": {
+                    "type": "integer"
+                },
+                "lockedCapabilities": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "automaticRequestsPerDay": {
+                    "type": "integer"
+                },
+                "defaultPresetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "fallbackPresetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "dailyRequestLimit": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "maxRetries": {
+                    "type": "integer"
+                },
+                "preGenerationMaxPerDay": {
+                    "type": "integer"
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.TrainingPolicy": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "integer"
+                },
+                "newTargetLimit": {
+                    "type": "integer"
+                },
+                "reviewTargetLimit": {
+                    "type": "integer"
+                },
+                "sessionTargetLimit": {
+                    "type": "integer"
+                },
+                "plannedMinutes": {
+                    "type": "integer"
+                },
+                "retention": {
+                    "type": "number"
+                },
+                "maxIntervalDays": {
+                    "type": "integer"
+                },
+                "weights": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "mix": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "focusTargets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "suspendedTargets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "hintPolicy": {
+                    "type": "string"
+                },
+                "passageWords": {
+                    "type": "integer"
+                },
+                "backgroundDifficulty": {
+                    "type": "string"
+                },
+                "reuseAfterDays": {
+                    "type": "integer"
+                },
+                "preGenerateLimit": {
+                    "type": "integer"
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Schedule": {
+            "type": "object",
+            "properties": {
+                "targetId": {
+                    "type": "string"
+                },
+                "memory": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.MemoryState"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "dueAtMs": {
+                    "type": "integer"
+                },
+                "lastReviewAtMs": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "reviews": {
+                    "type": "integer"
+                },
+                "algorithm": {
+                    "type": "string"
+                },
+                "policyVersion": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "targetId",
+                "dueAtMs"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.MemoryState": {
+            "type": "object",
+            "properties": {
+                "stability": {
+                    "type": "number"
+                },
+                "difficulty": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "stability",
+                "difficulty"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Evaluation": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "throughSequence": {
+                    "type": "integer"
+                },
+                "policyVersion": {
+                    "type": "integer"
+                },
+                "weights": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "trainItems": {
+                    "type": "integer"
+                },
+                "validationItems": {
+                    "type": "integer"
+                },
+                "cutoffMs": {
+                    "type": "integer"
+                },
+                "baselineLogLoss": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "candidateLogLoss": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "baselineRmse": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "candidateRmse": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "accepted": {
+                    "type": "boolean"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "algorithm": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "throughSequence",
+                "policyVersion",
+                "weights",
+                "trainItems",
+                "validationItems",
+                "cutoffMs",
+                "baselineLogLoss",
+                "candidateLogLoss",
+                "baselineRmse",
+                "candidateRmse",
+                "accepted",
+                "note"
+            ],
+            "additionalProperties": false
+        }
+    }
+}

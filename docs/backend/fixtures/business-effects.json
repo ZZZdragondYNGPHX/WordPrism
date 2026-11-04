@@ -1,0 +1,1 @@
+{"revision":6,"value":{"type":"operation_effects","effects":[{"operationId":"fixture-operation","capabilityId":"update_word","entityId":"fixture-word","label":"linear · 笔记","field":"notes","before":"","after":"强调与 liner 的区别","affectsSchedule":false}]},"fault":null}

@@ -1,0 +1,572 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "WordPrism library module v2",
+    "allOf": [
+        {
+            "$ref": "#/$defs/dev.wordprism.engine.Database"
+        }
+    ],
+    "$defs": {
+        "dev.wordprism.engine.Database": {
+            "type": "object",
+            "properties": {
+                "words": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Word"
+                    }
+                },
+                "senses": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Sense"
+                    }
+                },
+                "groups": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Group"
+                    }
+                },
+                "memberships": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Membership"
+                    }
+                },
+                "targets": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.LearningTarget"
+                    }
+                },
+                "activities": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Activity"
+                    }
+                },
+                "activityVersions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Activity"
+                    }
+                },
+                "drafts": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Draft"
+                    }
+                },
+                "recommendations": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Recommendation"
+                    }
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Word": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "spelling": {
+                    "type": "string"
+                },
+                "normalized": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "archived": {
+                    "type": "boolean"
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                }
+            },
+            "required": [
+                "id",
+                "spelling",
+                "normalized"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Provenance": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string"
+                },
+                "operationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "presetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "presetVersion": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "model": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "atMs": {
+                    "type": "integer"
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Sense": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "wordId": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "partOfSpeech": {
+                    "type": "string"
+                },
+                "meaning": {
+                    "type": "string"
+                },
+                "acceptedForms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "examples": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                }
+            },
+            "required": [
+                "id",
+                "wordId",
+                "meaning"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Group": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "relation": {
+                    "type": "string",
+                    "enum": [
+                        "LOOK_ALIKE",
+                        "SYNONYM",
+                        "WORD_FAMILY",
+                        "SOUND_ALIKE",
+                        "PERSONAL"
+                    ]
+                },
+                "purpose": {
+                    "type": "string"
+                },
+                "archived": {
+                    "type": "boolean"
+                },
+                "titleEdited": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "id",
+                "title",
+                "relation",
+                "purpose"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Membership": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "groupId": {
+                    "type": "string"
+                },
+                "senseId": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "active": {
+                    "type": "boolean"
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                },
+                "position": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "id",
+                "groupId",
+                "senseId",
+                "reason"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.LearningTarget": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "senseId": {
+                    "type": "string"
+                },
+                "ability": {
+                    "type": "string",
+                    "enum": [
+                        "RECOGNITION",
+                        "RECALL",
+                        "SPELLING",
+                        "READING",
+                        "EXPRESSION"
+                    ]
+                },
+                "groupId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "suspended": {
+                    "type": "boolean"
+                },
+                "priority": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "id",
+                "senseId",
+                "ability"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Activity": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "targetId": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "CHOICE",
+                        "RECALL",
+                        "SPELLING",
+                        "PASSAGE",
+                        "WRITING",
+                        "REWRITE",
+                        "FAMILIARITY",
+                        "CONTRAST"
+                    ]
+                },
+                "prompt": {
+                    "type": "string"
+                },
+                "choices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Choice"
+                    }
+                },
+                "acceptedAnswers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "explanation": {
+                    "type": "string"
+                },
+                "contextKey": {
+                    "type": "string"
+                },
+                "disputed": {
+                    "type": "boolean"
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                },
+                "senseVersion": {
+                    "type": "integer"
+                },
+                "passage": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "question": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "sourceSentence": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "cue": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "targetWords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "id",
+                "targetId",
+                "kind",
+                "prompt",
+                "contextKey"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Choice": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "senseId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "text"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Draft": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "atMs": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "key",
+                "text",
+                "version",
+                "atMs"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Recommendation": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "spelling": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "groupId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "content": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.WordSeed"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "acceptedOperationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                },
+                "inLibrary": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "id",
+                "spelling",
+                "reason",
+                "source"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.WordSeed": {
+            "type": "object",
+            "properties": {
+                "spelling": {
+                    "type": "string"
+                },
+                "meaning": {
+                    "type": "string"
+                },
+                "partOfSpeech": {
+                    "type": "string"
+                },
+                "acceptedForms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "examples": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "spelling",
+                "meaning"
+            ],
+            "additionalProperties": false
+        }
+    }
+}

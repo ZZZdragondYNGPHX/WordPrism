@@ -1,0 +1,197 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "WordPrism api module v2",
+    "allOf": [
+        {
+            "$ref": "#/$defs/dev.wordprism.engine.Database"
+        }
+    ],
+    "$defs": {
+        "dev.wordprism.engine.Database": {
+            "type": "object",
+            "properties": {
+                "presets": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.ApiPreset"
+                    }
+                },
+                "presetVersions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.ApiPreset"
+                    }
+                },
+                "bindings": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Binding"
+                    }
+                },
+                "usage": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Usage"
+                    }
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.ApiPreset": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "baseUrl": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "timeoutSeconds": {
+                    "type": "integer"
+                },
+                "maxOutputTokens": {
+                    "type": "integer"
+                },
+                "jsonMode": {
+                    "type": "boolean"
+                },
+                "temperature": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "name",
+                "baseUrl",
+                "model"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Binding": {
+            "type": "object",
+            "properties": {
+                "feature": {
+                    "type": "string",
+                    "enum": [
+                        "WORD_INTAKE",
+                        "WORD_RECOMMENDATION",
+                        "EXPLANATION",
+                        "PRACTICE_GENERATION",
+                        "WRITING_FEEDBACK",
+                        "LEARNING_ANALYSIS"
+                    ]
+                },
+                "presetId": {
+                    "type": "string"
+                },
+                "userLocked": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "feature",
+                "presetId"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Usage": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "operationId": {
+                    "type": "string"
+                },
+                "attempt": {
+                    "type": "integer"
+                },
+                "feature": {
+                    "type": "string",
+                    "enum": [
+                        "WORD_INTAKE",
+                        "WORD_RECOMMENDATION",
+                        "EXPLANATION",
+                        "PRACTICE_GENERATION",
+                        "WRITING_FEEDBACK",
+                        "LEARNING_ANALYSIS"
+                    ]
+                },
+                "preset": {
+                    "$ref": "#/$defs/dev.wordprism.contract.ApiPreset"
+                },
+                "startedAtMs": {
+                    "type": "integer"
+                },
+                "endedAtMs": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "inputTokens": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "outputTokens": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "outcome": {
+                    "type": "string"
+                },
+                "automatic": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "id",
+                "operationId",
+                "attempt",
+                "feature",
+                "preset",
+                "startedAtMs"
+            ],
+            "additionalProperties": false
+        }
+    }
+}

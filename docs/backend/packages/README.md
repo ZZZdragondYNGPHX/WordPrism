@@ -1,0 +1,20 @@
+# 正式专属格式参考包
+
+这里的两个文件都是公开、合成的开发示例，由真实 `CoreEngine + SQLite + Rust FSRS` 导出并导回验证。没有用户私有数据、API 凭证或真实模型输出。
+
+| 文件 | 用途与内容 |
+| --- | --- |
+| [example-content.wordprism](example-content.wordprism) | 追加导入 `linear / liner / linen` 三词一组；释义、例句和稳定实体，无个人学习历史 |
+| [example-backup.wordprism](example-backup.wordprism) | 同一示例库的完整恢复包，另有两次**合成作答**；会替换当前资料，恢复后自动调用关闭 |
+
+通过 Android “设置 → 导入与导出 → 选择数据包”读取；文件提供方只需能提供输入流。后端会预览用途、模块、版本、重复与冲突，再提交。旧的 `wordprism-mock 0.1` 演示文件不是正式格式。
+
+## 容器与生成
+
+扩展名为 `.wordprism`，内容为 ZIP，包含 `manifest.json` 与 `modules/<name>.json`。当前容器格式为 `wordprism` / `formatVersion: 1`，已知模块 schema 为 `2`。清单记录包 ID、资料库 ID、用途 `CONTENT` 或 `BACKUP`、创建时间、生产者版本、模块路径/版本/SHA-256/依赖与是否必需。
+
+完整备份包含 `library`、`learning`、`memory`、`analysis`、`api`、`operations` 六个模块；内容包使用 `library`。字段与模块版本定义分别以 [schema](../schemas/) 和 [PackageFormat](../../../backend/core-engine/src/main/kotlin/dev/wordprism/engine/Packages.kt) 为准，不手工维护第二套 schema。未知可选内容可保留，不会自动执行。
+
+批量创建内容时，推荐使用 `SaveWords` 分批写入一个资料库，再调用 `exportPackage(PackagePurpose.CONTENT, output)`，由核心生成稳定实体、引用与清单摘要。每次 `SaveWords` 支持最多 200 词；当前总量和文件大小限制见[运行说明](../running.md#运行边界)。专属格式不接受裸 CSV、第三方记忆软件包或任意 ZIP。
+
+参考生成器在 [ReferencePackages.kt](../../../backend/contract-fixtures/src/main/kotlin/dev/wordprism/fixtures/ReferencePackages.kt)。从 `backend/` 运行 `./gradlew.bat :contract-fixtures:run` 会重建样例、schema 和这两个包，生成新的示例 ID。只更新接口样例时加 `-PskipReferencePackages`，以保留已有示例身份。不要将重新生成的同拼写、不同 ID 包当作对旧包的无冲突更新。

@@ -1,0 +1,654 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "WordPrism contract v1: query",
+    "allOf": [
+        {
+            "oneOf": [
+                {
+                    "$ref": "#/$defs/call_policy-variant"
+                },
+                {
+                    "$ref": "#/$defs/capabilities-variant"
+                },
+                {
+                    "$ref": "#/$defs/confusion_evidence-variant"
+                },
+                {
+                    "$ref": "#/$defs/evidence-variant"
+                },
+                {
+                    "$ref": "#/$defs/export_scope-variant"
+                },
+                {
+                    "$ref": "#/$defs/activity-variant"
+                },
+                {
+                    "$ref": "#/$defs/draft-variant"
+                },
+                {
+                    "$ref": "#/$defs/evaluation-variant"
+                },
+                {
+                    "$ref": "#/$defs/feedback-variant"
+                },
+                {
+                    "$ref": "#/$defs/group-variant"
+                },
+                {
+                    "$ref": "#/$defs/learning_day-variant"
+                },
+                {
+                    "$ref": "#/$defs/operation-variant"
+                },
+                {
+                    "$ref": "#/$defs/package_preview-variant"
+                },
+                {
+                    "$ref": "#/$defs/presentation-variant"
+                },
+                {
+                    "$ref": "#/$defs/session-variant"
+                },
+                {
+                    "$ref": "#/$defs/usage-variant"
+                },
+                {
+                    "$ref": "#/$defs/word-variant"
+                },
+                {
+                    "$ref": "#/$defs/library-variant"
+                },
+                {
+                    "$ref": "#/$defs/library_overview-variant"
+                },
+                {
+                    "$ref": "#/$defs/operation_effects-variant"
+                },
+                {
+                    "$ref": "#/$defs/operations-variant"
+                },
+                {
+                    "$ref": "#/$defs/overview-variant"
+                },
+                {
+                    "$ref": "#/$defs/policy_changes-variant"
+                },
+                {
+                    "$ref": "#/$defs/presets-variant"
+                },
+                {
+                    "$ref": "#/$defs/call_preview-variant"
+                },
+                {
+                    "$ref": "#/$defs/protocols-variant"
+                },
+                {
+                    "$ref": "#/$defs/recommendations-variant"
+                },
+                {
+                    "$ref": "#/$defs/settings-variant"
+                },
+                {
+                    "$ref": "#/$defs/snapshot-variant"
+                }
+            ]
+        }
+    ],
+    "$defs": {
+        "call_policy-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "call_policy"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "capabilities-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "capabilities"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "confusion_evidence-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "confusion_evidence"
+                },
+                "expected": {
+                    "type": "string"
+                },
+                "selected": {
+                    "type": "string"
+                },
+                "limit": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "type",
+                "expected",
+                "selected"
+            ],
+            "additionalProperties": false
+        },
+        "evidence-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "evidence"
+                },
+                "afterSequence": {
+                    "type": "integer"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "targetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "export_scope-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "export_scope"
+                },
+                "purpose": {
+                    "type": "string",
+                    "enum": [
+                        "CONTENT",
+                        "BACKUP"
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "purpose"
+            ],
+            "additionalProperties": false
+        },
+        "activity-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "activity"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "id"
+            ],
+            "additionalProperties": false
+        },
+        "draft-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "draft"
+                },
+                "key": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "key"
+            ],
+            "additionalProperties": false
+        },
+        "evaluation-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "evaluation"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "id"
+            ],
+            "additionalProperties": false
+        },
+        "feedback-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "feedback"
+                },
+                "answerId": {
+                    "type": "string"
+                },
+                "answerVersion": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "answerId"
+            ],
+            "additionalProperties": false
+        },
+        "group-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "group"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "id"
+            ],
+            "additionalProperties": false
+        },
+        "learning_day-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "learning_day"
+                },
+                "id": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "operation-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "operation"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "id"
+            ],
+            "additionalProperties": false
+        },
+        "package_preview-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "package_preview"
+                },
+                "token": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "token"
+            ],
+            "additionalProperties": false
+        },
+        "presentation-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "presentation"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "id"
+            ],
+            "additionalProperties": false
+        },
+        "session-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "session"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "id"
+            ],
+            "additionalProperties": false
+        },
+        "usage-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "usage"
+                },
+                "fromMs": {
+                    "type": "integer"
+                },
+                "feature": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "enum": [
+                                "WORD_INTAKE",
+                                "WORD_RECOMMENDATION",
+                                "EXPLANATION",
+                                "PRACTICE_GENERATION",
+                                "WRITING_FEEDBACK",
+                                "LEARNING_ANALYSIS"
+                            ]
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "presetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "word-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "word"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "id"
+            ],
+            "additionalProperties": false
+        },
+        "library-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "library"
+                },
+                "search": {
+                    "type": "string"
+                },
+                "afterId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "limit": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "library_overview-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "library_overview"
+                },
+                "search": {
+                    "type": "string"
+                },
+                "relation": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "enum": [
+                                "LOOK_ALIKE",
+                                "SYNONYM",
+                                "WORD_FAMILY",
+                                "SOUND_ALIKE",
+                                "PERSONAL"
+                            ]
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "ungroupedOnly": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "operation_effects-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "operation_effects"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "id"
+            ],
+            "additionalProperties": false
+        },
+        "operations-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "operations"
+                },
+                "limit": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "overview-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "overview"
+                },
+                "fromMs": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "policy_changes-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "policy_changes"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "presets-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "presets"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "call_preview-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "call_preview"
+                },
+                "feature": {
+                    "type": "string",
+                    "enum": [
+                        "WORD_INTAKE",
+                        "WORD_RECOMMENDATION",
+                        "EXPLANATION",
+                        "PRACTICE_GENERATION",
+                        "WRITING_FEEDBACK",
+                        "LEARNING_ANALYSIS"
+                    ]
+                },
+                "recommendationIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "feature"
+            ],
+            "additionalProperties": false
+        },
+        "protocols-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "protocols"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "recommendations-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "recommendations"
+                },
+                "groupId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "settings-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "settings"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "snapshot-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "snapshot"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "id"
+            ],
+            "additionalProperties": false
+        }
+    }
+}

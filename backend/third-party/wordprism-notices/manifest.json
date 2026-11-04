@@ -1,0 +1,3053 @@
+[
+  {
+    "component": "autocfg-1.5.1",
+    "ecosystem": "cargo",
+    "declaredLicense": "Apache-2.0 OR MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/autocfg/1.5.1/download",
+    "notices": [
+      "rust/autocfg-1.5.1/LICENSE-APACHE",
+      "rust/autocfg-1.5.1/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "bytes-1.12.1",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/bytes/1.12.1/download",
+    "notices": [
+      "rust/bytes-1.12.1/LICENSE"
+    ]
+  },
+  {
+    "component": "cesu8-1.1.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "Apache-2.0/MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/cesu8/1.1.0/download",
+    "notices": [
+      "rust/cesu8-1.1.0/COPYRIGHT-RUST.txt"
+    ]
+  },
+  {
+    "component": "cfg-if-1.0.5",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/cfg-if/1.0.5/download",
+    "notices": [
+      "rust/cfg-if-1.0.5/LICENSE-APACHE",
+      "rust/cfg-if-1.0.5/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "chacha20-0.10.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/chacha20/0.10.2/download",
+    "notices": [
+      "rust/chacha20-0.10.2/LICENSE-APACHE",
+      "rust/chacha20-0.10.2/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "combine-4.6.9",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/combine/4.6.9/download",
+    "notices": [
+      "rust/combine-4.6.9/LICENSE"
+    ]
+  },
+  {
+    "component": "cpufeatures-0.3.1",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/cpufeatures/0.3.1/download",
+    "notices": [
+      "rust/cpufeatures-0.3.1/LICENSE-APACHE",
+      "rust/cpufeatures-0.3.1/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "crossbeam-deque-0.8.8",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/crossbeam-deque/0.8.8/download",
+    "notices": [
+      "rust/crossbeam-deque-0.8.8/LICENSE-APACHE",
+      "rust/crossbeam-deque-0.8.8/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "crossbeam-epoch-0.9.21",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/crossbeam-epoch/0.9.21/download",
+    "notices": [
+      "rust/crossbeam-epoch-0.9.21/LICENSE-APACHE",
+      "rust/crossbeam-epoch-0.9.21/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "crossbeam-utils-0.8.23",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/crossbeam-utils/0.8.23/download",
+    "notices": [
+      "rust/crossbeam-utils-0.8.23/LICENSE-APACHE",
+      "rust/crossbeam-utils-0.8.23/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "either-1.19.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/either/1.19.0/download",
+    "notices": [
+      "rust/either-1.19.0/LICENSE-APACHE",
+      "rust/either-1.19.0/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "equivalent-1.0.3",
+    "ecosystem": "cargo",
+    "declaredLicense": "Apache-2.0 OR MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/equivalent/1.0.3/download",
+    "notices": [
+      "rust/equivalent-1.0.3/LICENSE-APACHE",
+      "rust/equivalent-1.0.3/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "fsrs-6.6.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "BSD-3-Clause",
+    "selectedLicense": "BSD-3-Clause",
+    "source": "https://crates.io/api/v1/crates/fsrs/6.6.2/download",
+    "notices": [
+      "rust/fsrs-6.6.2/LICENSE"
+    ]
+  },
+  {
+    "component": "getrandom-0.4.3",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/getrandom/0.4.3/download",
+    "notices": [
+      "rust/getrandom-0.4.3/LICENSE-APACHE",
+      "rust/getrandom-0.4.3/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "hashbrown-0.17.1",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/hashbrown/0.17.1/download",
+    "notices": [
+      "rust/hashbrown-0.17.1/LICENSE-APACHE",
+      "rust/hashbrown-0.17.1/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "heck-0.5.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/heck/0.5.0/download",
+    "notices": [
+      "rust/heck-0.5.0/LICENSE-APACHE",
+      "rust/heck-0.5.0/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "indexmap-2.14.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "Apache-2.0 OR MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/indexmap/2.14.2/download",
+    "notices": [
+      "rust/indexmap-2.14.2/LICENSE-APACHE",
+      "rust/indexmap-2.14.2/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "itertools-0.15.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/itertools/0.15.0/download",
+    "notices": [
+      "rust/itertools-0.15.0/LICENSE-APACHE",
+      "rust/itertools-0.15.0/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "itoa-1.0.18",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/itoa/1.0.18/download",
+    "notices": [
+      "rust/itoa-1.0.18/LICENSE-APACHE",
+      "rust/itoa-1.0.18/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "jni-0.21.1",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT/Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/jni/0.21.1/download",
+    "notices": [
+      "rust/jni-0.21.1/LICENSE-APACHE",
+      "rust/jni-0.21.1/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "jni-sys-0.3.1",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/jni-sys/0.3.1/download",
+    "notices": [
+      "rust/jni-sys-0.3.1/LICENSE-APACHE",
+      "rust/jni-sys-0.3.1/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "jni-sys-0.4.1",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/jni-sys/0.4.1/download",
+    "notices": [
+      "rust/jni-sys-0.4.1/LICENSE-APACHE",
+      "rust/jni-sys-0.4.1/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "jni-sys-macros-0.4.1",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/jni-sys-macros/0.4.1/download",
+    "notices": [
+      "rust/jni-sys-macros-0.4.1/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "libc-0.2.191",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/libc/0.2.191/download",
+    "notices": [
+      "rust/libc-0.2.191/LICENSE-APACHE",
+      "rust/libc-0.2.191/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "log-0.4.35",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/log/0.4.35/download",
+    "notices": [
+      "rust/log-0.4.35/LICENSE-APACHE",
+      "rust/log-0.4.35/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "matrixmultiply-0.3.11",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT/Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/matrixmultiply/0.3.11/download",
+    "notices": [
+      "rust/matrixmultiply-0.3.11/LICENSE-APACHE",
+      "rust/matrixmultiply-0.3.11/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "memchr-2.8.3",
+    "ecosystem": "cargo",
+    "declaredLicense": "Unlicense OR MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/memchr/2.8.3/download",
+    "notices": [
+      "rust/memchr-2.8.3/COPYING",
+      "rust/memchr-2.8.3/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "ndarray-0.17.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/ndarray/0.17.2/download",
+    "notices": [
+      "rust/ndarray-0.17.2/LICENSE-APACHE",
+      "rust/ndarray-0.17.2/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "num-complex-0.4.6",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/num-complex/0.4.6/download",
+    "notices": [
+      "rust/num-complex-0.4.6/LICENSE-APACHE",
+      "rust/num-complex-0.4.6/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "num-integer-0.1.47",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/num-integer/0.1.47/download",
+    "notices": [
+      "rust/num-integer-0.1.47/LICENSE-APACHE",
+      "rust/num-integer-0.1.47/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "num-traits-0.2.19",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/num-traits/0.2.19/download",
+    "notices": [
+      "rust/num-traits-0.2.19/LICENSE-APACHE",
+      "rust/num-traits-0.2.19/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "portable-atomic-1.15.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "Apache-2.0 OR MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/portable-atomic/1.15.0/download",
+    "notices": [
+      "rust/portable-atomic-1.15.0/LICENSE-APACHE",
+      "rust/portable-atomic-1.15.0/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "portable-atomic-util-0.2.8",
+    "ecosystem": "cargo",
+    "declaredLicense": "Apache-2.0 OR MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/portable-atomic-util/0.2.8/download",
+    "notices": [
+      "rust/portable-atomic-util-0.2.8/LICENSE-APACHE",
+      "rust/portable-atomic-util-0.2.8/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "priority-queue-2.7.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "LGPL-3.0-or-later OR MPL-2.0",
+    "selectedLicense": "MPL-2.0",
+    "source": "https://crates.io/api/v1/crates/priority-queue/2.7.0/download",
+    "notices": [
+      "rust/priority-queue-2.7.0/MPL-2.0.txt"
+    ],
+    "sourceArchive": "rust/priority-queue-2.7.0/priority-queue-2.7.0.crate",
+    "sourceSha256": "93980406f12d9f8140ed5abe7155acb10bb1e69ea55c88960b9c2f117445ef96"
+  },
+  {
+    "component": "proc-macro2-1.0.107",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/proc-macro2/1.0.107/download",
+    "notices": [
+      "rust/proc-macro2-1.0.107/LICENSE-APACHE",
+      "rust/proc-macro2-1.0.107/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "quote-1.0.47",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/quote/1.0.47/download",
+    "notices": [
+      "rust/quote-1.0.47/LICENSE-APACHE",
+      "rust/quote-1.0.47/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "r-efi-6.0.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0 OR LGPL-2.1-or-later",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/r-efi/6.0.0/download",
+    "notices": [
+      "rust/r-efi-6.0.0/AUTHORS"
+    ]
+  },
+  {
+    "component": "rand-0.10.3",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/rand/0.10.3/download",
+    "notices": [
+      "rust/rand-0.10.3/COPYRIGHT",
+      "rust/rand-0.10.3/LICENSE-APACHE",
+      "rust/rand-0.10.3/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "rand_core-0.10.1",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/rand_core/0.10.1/download",
+    "notices": [
+      "rust/rand_core-0.10.1/COPYRIGHT",
+      "rust/rand_core-0.10.1/LICENSE-APACHE",
+      "rust/rand_core-0.10.1/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "rawpointer-0.2.1",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT/Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/rawpointer/0.2.1/download",
+    "notices": [
+      "rust/rawpointer-0.2.1/LICENSE-APACHE",
+      "rust/rawpointer-0.2.1/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "rayon-1.12.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/rayon/1.12.0/download",
+    "notices": [
+      "rust/rayon-1.12.0/LICENSE-APACHE",
+      "rust/rayon-1.12.0/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "rayon-core-1.13.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/rayon-core/1.13.0/download",
+    "notices": [
+      "rust/rayon-core-1.13.0/LICENSE-APACHE",
+      "rust/rayon-core-1.13.0/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "same-file-1.0.6",
+    "ecosystem": "cargo",
+    "declaredLicense": "Unlicense/MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/same-file/1.0.6/download",
+    "notices": [
+      "rust/same-file-1.0.6/COPYING",
+      "rust/same-file-1.0.6/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "serde-1.0.229",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/serde/1.0.229/download",
+    "notices": [
+      "rust/serde-1.0.229/LICENSE-APACHE",
+      "rust/serde-1.0.229/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "serde_core-1.0.229",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/serde_core/1.0.229/download",
+    "notices": [
+      "rust/serde_core-1.0.229/LICENSE-APACHE",
+      "rust/serde_core-1.0.229/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "serde_derive-1.0.229",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/serde_derive/1.0.229/download",
+    "notices": [
+      "rust/serde_derive-1.0.229/LICENSE-APACHE",
+      "rust/serde_derive-1.0.229/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "serde_json-1.0.154",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/serde_json/1.0.154/download",
+    "notices": [
+      "rust/serde_json-1.0.154/LICENSE-APACHE",
+      "rust/serde_json-1.0.154/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "snafu-0.9.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/snafu/0.9.2/download",
+    "notices": [
+      "rust/snafu-0.9.2/LICENSE-APACHE",
+      "rust/snafu-0.9.2/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "snafu-derive-0.9.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/snafu-derive/0.9.2/download",
+    "notices": [
+      "rust/snafu-derive-0.9.2/LICENSE-APACHE",
+      "rust/snafu-derive-0.9.2/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "strum-0.28.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/strum/0.28.0/download",
+    "notices": [
+      "rust/strum-0.28.0/LICENSE"
+    ]
+  },
+  {
+    "component": "strum_macros-0.28.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/strum_macros/0.28.0/download",
+    "notices": [
+      "rust/strum_macros-0.28.0/LICENSE"
+    ]
+  },
+  {
+    "component": "syn-2.0.119",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/syn/2.0.119/download",
+    "notices": [
+      "rust/syn-2.0.119/LICENSE-APACHE",
+      "rust/syn-2.0.119/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "syn-3.0.9",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/syn/3.0.9/download",
+    "notices": [
+      "rust/syn-3.0.9/LICENSE-APACHE",
+      "rust/syn-3.0.9/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "thiserror-1.0.69",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/thiserror/1.0.69/download",
+    "notices": [
+      "rust/thiserror-1.0.69/LICENSE-APACHE",
+      "rust/thiserror-1.0.69/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "thiserror-impl-1.0.69",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/thiserror-impl/1.0.69/download",
+    "notices": [
+      "rust/thiserror-impl-1.0.69/LICENSE-APACHE",
+      "rust/thiserror-impl-1.0.69/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "unicode-ident-1.0.27",
+    "ecosystem": "cargo",
+    "declaredLicense": "(MIT OR Apache-2.0) AND Unicode-3.0",
+    "selectedLicense": "MIT AND Unicode-3.0",
+    "source": "https://crates.io/api/v1/crates/unicode-ident/1.0.27/download",
+    "notices": [
+      "rust/unicode-ident-1.0.27/LICENSE-APACHE",
+      "rust/unicode-ident-1.0.27/LICENSE-MIT",
+      "rust/unicode-ident-1.0.27/LICENSE-UNICODE"
+    ]
+  },
+  {
+    "component": "walkdir-2.5.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "Unlicense/MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/walkdir/2.5.0/download",
+    "notices": [
+      "rust/walkdir-2.5.0/COPYING",
+      "rust/walkdir-2.5.0/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "winapi-util-0.1.11",
+    "ecosystem": "cargo",
+    "declaredLicense": "Unlicense OR MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/winapi-util/0.1.11/download",
+    "notices": [
+      "rust/winapi-util-0.1.11/COPYING",
+      "rust/winapi-util-0.1.11/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "windows-link-0.2.1",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/windows-link/0.2.1/download",
+    "notices": [
+      "rust/windows-link-0.2.1/license-apache-2.0",
+      "rust/windows-link-0.2.1/license-mit"
+    ]
+  },
+  {
+    "component": "windows-sys-0.45.0",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/windows-sys/0.45.0/download",
+    "notices": [
+      "rust/windows-sys-0.45.0/license-apache-2.0",
+      "rust/windows-sys-0.45.0/license-mit"
+    ]
+  },
+  {
+    "component": "windows-sys-0.61.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/windows-sys/0.61.2/download",
+    "notices": [
+      "rust/windows-sys-0.61.2/license-apache-2.0",
+      "rust/windows-sys-0.61.2/license-mit"
+    ]
+  },
+  {
+    "component": "windows-targets-0.42.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/windows-targets/0.42.2/download",
+    "notices": [
+      "rust/windows-targets-0.42.2/license-apache-2.0",
+      "rust/windows-targets-0.42.2/license-mit"
+    ]
+  },
+  {
+    "component": "windows_aarch64_gnullvm-0.42.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/windows_aarch64_gnullvm/0.42.2/download",
+    "notices": [
+      "rust/windows_aarch64_gnullvm-0.42.2/license-apache-2.0",
+      "rust/windows_aarch64_gnullvm-0.42.2/license-mit"
+    ]
+  },
+  {
+    "component": "windows_aarch64_msvc-0.42.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/windows_aarch64_msvc/0.42.2/download",
+    "notices": [
+      "rust/windows_aarch64_msvc-0.42.2/license-apache-2.0",
+      "rust/windows_aarch64_msvc-0.42.2/license-mit"
+    ]
+  },
+  {
+    "component": "windows_i686_gnu-0.42.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/windows_i686_gnu/0.42.2/download",
+    "notices": [
+      "rust/windows_i686_gnu-0.42.2/license-apache-2.0",
+      "rust/windows_i686_gnu-0.42.2/license-mit"
+    ]
+  },
+  {
+    "component": "windows_i686_msvc-0.42.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/windows_i686_msvc/0.42.2/download",
+    "notices": [
+      "rust/windows_i686_msvc-0.42.2/license-apache-2.0",
+      "rust/windows_i686_msvc-0.42.2/license-mit"
+    ]
+  },
+  {
+    "component": "windows_x86_64_gnu-0.42.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/windows_x86_64_gnu/0.42.2/download",
+    "notices": [
+      "rust/windows_x86_64_gnu-0.42.2/license-apache-2.0",
+      "rust/windows_x86_64_gnu-0.42.2/license-mit"
+    ]
+  },
+  {
+    "component": "windows_x86_64_gnullvm-0.42.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/windows_x86_64_gnullvm/0.42.2/download",
+    "notices": [
+      "rust/windows_x86_64_gnullvm-0.42.2/license-apache-2.0",
+      "rust/windows_x86_64_gnullvm-0.42.2/license-mit"
+    ]
+  },
+  {
+    "component": "windows_x86_64_msvc-0.42.2",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT OR Apache-2.0",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/windows_x86_64_msvc/0.42.2/download",
+    "notices": [
+      "rust/windows_x86_64_msvc-0.42.2/license-apache-2.0",
+      "rust/windows_x86_64_msvc-0.42.2/license-mit"
+    ]
+  },
+  {
+    "component": "zmij-1.0.23",
+    "ecosystem": "cargo",
+    "declaredLicense": "MIT",
+    "selectedLicense": "MIT",
+    "source": "https://crates.io/api/v1/crates/zmij/1.0.23/download",
+    "notices": [
+      "rust/zmij-1.0.23/LICENSE-MIT"
+    ]
+  },
+  {
+    "component": "androidx.activity:activity:1.13.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/activity/activity/1.13.0/",
+    "notices": [
+      "maven/androidx.activity-activity-1.13.0/META-INF_androidx_activity_activity_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.activity:activity-compose:1.13.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/activity/activity-compose/1.13.0/",
+    "notices": [
+      "maven/androidx.activity-activity-compose-1.13.0/META-INF_androidx_activity_activity-compose_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.activity:activity-ktx:1.13.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/activity/activity-ktx/1.13.0/",
+    "notices": [
+      "maven/androidx.activity-activity-ktx-1.13.0/META-INF_androidx_activity_activity-ktx_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.annotation:annotation:1.10.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/annotation/annotation/1.10.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.annotation:annotation:1.9.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/annotation/annotation/1.9.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.annotation:annotation-experimental:1.5.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/annotation/annotation-experimental/1.5.0/",
+    "notices": [
+      "maven/androidx.annotation-annotation-experimental-1.5.0/META-INF_androidx_annotation_annotation-experimental_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.annotation:annotation-jvm:1.10.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/annotation/annotation-jvm/1.10.0/",
+    "notices": [
+      "maven/androidx.annotation-annotation-jvm-1.10.0/META-INF_androidx_annotation_annotation_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.annotation:annotation-jvm:1.9.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/annotation/annotation-jvm/1.9.1/",
+    "notices": [
+      "maven/androidx.annotation-annotation-jvm-1.9.1/META-INF_androidx_annotation_annotation_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.arch.core:core-common:2.2.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/arch/core/core-common/2.2.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.arch.core:core-runtime:2.2.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/arch/core/core-runtime/2.2.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.autofill:autofill:1.0.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/autofill/autofill/1.0.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.collection:collection:1.5.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/collection/collection/1.5.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.collection:collection:1.6.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/collection/collection/1.6.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.collection:collection-jvm:1.5.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/collection/collection-jvm/1.5.0/",
+    "notices": [
+      "maven/androidx.collection-collection-jvm-1.5.0/META-INF_androidx_collection_collection_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.collection:collection-jvm:1.6.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/collection/collection-jvm/1.6.0/",
+    "notices": [
+      "maven/androidx.collection-collection-jvm-1.6.0/META-INF_androidx_collection_collection_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.collection:collection-ktx:1.6.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/collection/collection-ktx/1.6.0/",
+    "notices": [
+      "maven/androidx.collection-collection-ktx-1.6.0/META-INF_androidx_collection_collection-ktx_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose:compose-bom:2026.09.00",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/2026.09.00/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.animation:animation:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/animation/animation/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.animation:animation-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/animation/animation-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.animation-animation-android-1.12.1/META-INF_androidx_compose_animation_animation_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.animation:animation-core:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/animation/animation-core/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.animation:animation-core-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/animation/animation-core-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.animation-animation-core-android-1.12.1/META-INF_androidx_compose_animation_animation-core_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.foundation:foundation:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/foundation/foundation/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.foundation:foundation-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/foundation/foundation-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.foundation-foundation-android-1.12.1/META-INF_androidx_compose_foundation_foundation_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.foundation:foundation-layout:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/foundation/foundation-layout/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.foundation:foundation-layout-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/foundation/foundation-layout-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.foundation-foundation-layout-android-1.12.1/META-INF_androidx_compose_foundation_foundation-layout_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.material:material-icons-core:1.7.8",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/material/material-icons-core/1.7.8/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.material:material-icons-core-android:1.7.8",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/material/material-icons-core-android/1.7.8/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.material:material-icons-extended:1.7.8",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/material/material-icons-extended/1.7.8/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.material:material-icons-extended-android:1.7.8",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/material/material-icons-extended-android/1.7.8/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.material:material-ripple:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/material/material-ripple/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.material:material-ripple-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/material/material-ripple-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.material-material-ripple-android-1.12.1/META-INF_androidx_compose_material_material-ripple_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.material3:material3:1.4.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/material3/material3/1.4.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.material3:material3-android:1.4.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/material3/material3-android/1.4.0/",
+    "notices": [
+      "maven/androidx.compose.material3-material3-android-1.4.0/META-INF_androidx_compose_material3_material3_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.runtime:runtime:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.runtime:runtime-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.runtime-runtime-android-1.12.1/META-INF_androidx_compose_runtime_runtime_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.runtime:runtime-annotation:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-annotation/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.runtime:runtime-annotation-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-annotation-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.runtime-runtime-annotation-android-1.12.1/META-INF_androidx_compose_runtime_runtime-annotation_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.runtime:runtime-retain:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-retain/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.runtime:runtime-retain-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-retain-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.runtime-runtime-retain-android-1.12.1/META-INF_androidx_compose_runtime_runtime-retain_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.runtime:runtime-saveable:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-saveable/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.runtime:runtime-saveable-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/runtime/runtime-saveable-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.runtime-runtime-saveable-android-1.12.1/META-INF_androidx_compose_runtime_runtime-saveable_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.ui:ui:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.ui:ui-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.ui-ui-android-1.12.1/META-INF_androidx_compose_ui_ui_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.ui:ui-geometry:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-geometry/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.ui:ui-geometry-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-geometry-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.ui-ui-geometry-android-1.12.1/META-INF_androidx_compose_ui_ui-geometry_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.ui:ui-graphics:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-graphics/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.ui:ui-graphics-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-graphics-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.ui-ui-graphics-android-1.12.1/META-INF_androidx_compose_ui_ui-graphics_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.ui:ui-text:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-text/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.ui:ui-text-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-text-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.ui-ui-text-android-1.12.1/META-INF_androidx_compose_ui_ui-text_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.ui:ui-tooling-preview:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-tooling-preview/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.ui:ui-tooling-preview-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-tooling-preview-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.ui-ui-tooling-preview-android-1.12.1/META-INF_androidx_compose_ui_ui-tooling-preview_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.ui:ui-unit:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-unit/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.ui:ui-unit-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-unit-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.ui-ui-unit-android-1.12.1/META-INF_androidx_compose_ui_ui-unit_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.compose.ui:ui-util:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-util/1.12.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.compose.ui:ui-util-android:1.12.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/compose/ui/ui-util-android/1.12.1/",
+    "notices": [
+      "maven/androidx.compose.ui-ui-util-android-1.12.1/META-INF_androidx_compose_ui_ui-util_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.concurrent:concurrent-futures:1.1.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/concurrent/concurrent-futures/1.1.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.concurrent:concurrent-futures-ktx:1.1.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/concurrent/concurrent-futures-ktx/1.1.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.core:core:1.12.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/core/core/1.12.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.core:core:1.19.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/core/core/1.19.1/",
+    "notices": [
+      "maven/androidx.core-core-1.19.1/META-INF_androidx_core_core_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.core:core-ktx:1.19.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/core/core-ktx/1.19.1/",
+    "notices": [
+      "maven/androidx.core-core-ktx-1.19.1/META-INF_androidx_core_core-ktx_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.core:core-viewtree:1.0.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/core/core-viewtree/1.0.0/",
+    "notices": [
+      "maven/androidx.core-core-viewtree-1.0.0/META-INF_androidx_core_core-viewtree_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.customview:customview-poolingcontainer:1.0.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/customview/customview-poolingcontainer/1.0.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.datastore:datastore:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore/1.3.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.datastore:datastore-android:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-android/1.3.0/",
+    "notices": [
+      "maven/androidx.datastore-datastore-android-1.3.0/META-INF_androidx_datastore_datastore_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.datastore:datastore-core:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core/1.3.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.datastore:datastore-core-android:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core-android/1.3.0/",
+    "notices": [
+      "maven/androidx.datastore-datastore-core-android-1.3.0/META-INF_androidx_datastore_datastore-core_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.datastore:datastore-core-okio:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core-okio/1.3.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.datastore:datastore-core-okio-jvm:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-core-okio-jvm/1.3.0/",
+    "notices": [
+      "maven/androidx.datastore-datastore-core-okio-jvm-1.3.0/META-INF_androidx_datastore_datastore-core-okio_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.datastore:datastore-preferences:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-preferences/1.3.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.datastore:datastore-preferences-android:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-preferences-android/1.3.0/",
+    "notices": [
+      "maven/androidx.datastore-datastore-preferences-android-1.3.0/META-INF_androidx_datastore_datastore-preferences_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.datastore:datastore-preferences-core:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-preferences-core/1.3.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.datastore:datastore-preferences-core-android:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-preferences-core-android/1.3.0/",
+    "notices": [
+      "maven/androidx.datastore-datastore-preferences-core-android-1.3.0/META-INF_androidx_datastore_datastore-preferences-core_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.datastore:datastore-preferences-external-protobuf:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "BSD-3-Clause",
+        "url": "https://opensource.org/licenses/BSD-3-Clause"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-preferences-external-protobuf/1.3.0/",
+    "notices": [
+      "maven/androidx.datastore-datastore-preferences-external-protobuf-1.3.0/META-INF_androidx_datastore_datastore-preferences-external-protobuf_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.datastore:datastore-preferences-proto:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/datastore/datastore-preferences-proto/1.3.0/",
+    "notices": [
+      "maven/androidx.datastore-datastore-preferences-proto-1.3.0/META-INF_androidx_datastore_datastore-preferences-proto_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.emoji2:emoji2:1.4.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/emoji2/emoji2/1.4.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.graphics:graphics-path:1.0.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/graphics/graphics-path/1.0.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.interpolator:interpolator:1.0.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/interpolator/interpolator/1.0.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-common:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-common/2.11.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-common:2.6.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-common/2.6.2/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-common-java8:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-common-java8/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-common-java8-2.11.0/META-INF_androidx_lifecycle_lifecycle-common-java8_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-common-jvm:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-common-jvm/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-common-jvm-2.11.0/META-INF_androidx_lifecycle_lifecycle-common_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-livedata:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-livedata/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-livedata-2.11.0/META-INF_androidx_lifecycle_lifecycle-livedata_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-livedata:2.6.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-livedata/2.6.2/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-livedata-core:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-livedata-core/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-livedata-core-2.11.0/META-INF_androidx_lifecycle_lifecycle-livedata-core_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-livedata-core:2.6.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-livedata-core/2.6.2/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-livedata-core-ktx:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-livedata-core-ktx/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-livedata-core-ktx-2.11.0/META-INF_androidx_lifecycle_lifecycle-livedata-core-ktx_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-process:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-process/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-process-2.11.0/META-INF_androidx_lifecycle_lifecycle-process_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-runtime:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-runtime/2.11.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-runtime:2.6.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-runtime/2.6.2/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-runtime-android:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-runtime-android/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-runtime-android-2.11.0/META-INF_androidx_lifecycle_lifecycle-runtime_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-runtime-compose:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-runtime-compose/2.11.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-runtime-compose-android:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-runtime-compose-android/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-runtime-compose-android-2.11.0/META-INF_androidx_lifecycle_lifecycle-runtime-compose_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-runtime-ktx:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-runtime-ktx/2.11.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-runtime-ktx-android:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-runtime-ktx-android/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-runtime-ktx-android-2.11.0/META-INF_androidx_lifecycle_lifecycle-runtime-ktx_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-service:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-service/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-service-2.11.0/META-INF_androidx_lifecycle_lifecycle-service_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-service:2.6.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-service/2.6.2/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-viewmodel:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-viewmodel/2.11.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-viewmodel-android:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-viewmodel-android/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-viewmodel-android-2.11.0/META-INF_androidx_lifecycle_lifecycle-viewmodel_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-viewmodel-compose/2.11.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-viewmodel-compose-android:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-viewmodel-compose-android/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-viewmodel-compose-android-2.11.0/META-INF_androidx_lifecycle_lifecycle-viewmodel-compose_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-viewmodel-ktx/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-viewmodel-ktx-2.11.0/META-INF_androidx_lifecycle_lifecycle-viewmodel-ktx_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-viewmodel-savedstate/2.11.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.lifecycle:lifecycle-viewmodel-savedstate-android:2.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/lifecycle/lifecycle-viewmodel-savedstate-android/2.11.0/",
+    "notices": [
+      "maven/androidx.lifecycle-lifecycle-viewmodel-savedstate-android-2.11.0/META-INF_androidx_lifecycle_lifecycle-viewmodel-savedstate_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.navigation:navigation-common:2.10.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/navigation/navigation-common/2.10.2/",
+    "notices": []
+  },
+  {
+    "component": "androidx.navigation:navigation-common-android:2.10.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/navigation/navigation-common-android/2.10.2/",
+    "notices": [
+      "maven/androidx.navigation-navigation-common-android-2.10.2/META-INF_androidx_navigation_navigation-common_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.navigation:navigation-compose:2.10.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/navigation/navigation-compose/2.10.2/",
+    "notices": []
+  },
+  {
+    "component": "androidx.navigation:navigation-compose-android:2.10.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/navigation/navigation-compose-android/2.10.2/",
+    "notices": [
+      "maven/androidx.navigation-navigation-compose-android-2.10.2/META-INF_androidx_navigation_navigation-compose_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.navigation:navigation-runtime:2.10.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/navigation/navigation-runtime/2.10.2/",
+    "notices": []
+  },
+  {
+    "component": "androidx.navigation:navigation-runtime-android:2.10.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/navigation/navigation-runtime-android/2.10.2/",
+    "notices": [
+      "maven/androidx.navigation-navigation-runtime-android-2.10.2/META-INF_androidx_navigation_navigation-runtime_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.navigationevent:navigationevent:1.1.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/navigationevent/navigationevent/1.1.2/",
+    "notices": []
+  },
+  {
+    "component": "androidx.navigationevent:navigationevent-android:1.1.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/navigationevent/navigationevent-android/1.1.2/",
+    "notices": [
+      "maven/androidx.navigationevent-navigationevent-android-1.1.2/META-INF_androidx_navigationevent_navigationevent_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.navigationevent:navigationevent-compose:1.1.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/navigationevent/navigationevent-compose/1.1.2/",
+    "notices": []
+  },
+  {
+    "component": "androidx.navigationevent:navigationevent-compose-android:1.1.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/navigationevent/navigationevent-compose-android/1.1.2/",
+    "notices": [
+      "maven/androidx.navigationevent-navigationevent-compose-android-1.1.2/META-INF_androidx_navigationevent_navigationevent-compose_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.profileinstaller:profileinstaller:1.3.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/profileinstaller/profileinstaller/1.3.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.profileinstaller:profileinstaller:1.4.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/profileinstaller/profileinstaller/1.4.0/",
+    "notices": [
+      "maven/androidx.profileinstaller-profileinstaller-1.4.0/META-INF_androidx_profileinstaller_profileinstaller_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.room:room-common:2.8.4",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/room/room-common/2.8.4/",
+    "notices": []
+  },
+  {
+    "component": "androidx.room:room-common-jvm:2.8.4",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/room/room-common-jvm/2.8.4/",
+    "notices": [
+      "maven/androidx.room-room-common-jvm-2.8.4/META-INF_androidx_room_room-common_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.room:room-ktx:2.8.4",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/room/room-ktx/2.8.4/",
+    "notices": [
+      "maven/androidx.room-room-ktx-2.8.4/META-INF_androidx_room_room-ktx_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.room:room-runtime:2.8.4",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/room/room-runtime/2.8.4/",
+    "notices": []
+  },
+  {
+    "component": "androidx.room:room-runtime-android:2.8.4",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/room/room-runtime-android/2.8.4/",
+    "notices": [
+      "maven/androidx.room-room-runtime-android-2.8.4/META-INF_androidx_room_room-runtime_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.savedstate:savedstate:1.5.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/savedstate/savedstate/1.5.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.savedstate:savedstate-android:1.5.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/savedstate/savedstate-android/1.5.0/",
+    "notices": [
+      "maven/androidx.savedstate-savedstate-android-1.5.0/META-INF_androidx_savedstate_savedstate_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.savedstate:savedstate-compose:1.5.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/savedstate/savedstate-compose/1.5.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.savedstate:savedstate-compose-android:1.5.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/savedstate/savedstate-compose-android/1.5.0/",
+    "notices": [
+      "maven/androidx.savedstate-savedstate-compose-android-1.5.0/META-INF_androidx_savedstate_savedstate-compose_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.savedstate:savedstate-ktx:1.5.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/savedstate/savedstate-ktx/1.5.0/",
+    "notices": [
+      "maven/androidx.savedstate-savedstate-ktx-1.5.0/META-INF_androidx_savedstate_savedstate-ktx_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.sqlite:sqlite:2.6.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/sqlite/sqlite/2.6.2/",
+    "notices": []
+  },
+  {
+    "component": "androidx.sqlite:sqlite-android:2.6.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/sqlite/sqlite-android/2.6.2/",
+    "notices": [
+      "maven/androidx.sqlite-sqlite-android-2.6.2/META-INF_androidx_sqlite_sqlite_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.sqlite:sqlite-framework:2.6.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/sqlite/sqlite-framework/2.6.2/",
+    "notices": []
+  },
+  {
+    "component": "androidx.sqlite:sqlite-framework-android:2.6.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/sqlite/sqlite-framework-android/2.6.2/",
+    "notices": [
+      "maven/androidx.sqlite-sqlite-framework-android-2.6.2/META-INF_androidx_sqlite_sqlite-framework_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.startup:startup-runtime:1.1.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/startup/startup-runtime/1.1.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.tracing:tracing:1.2.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/tracing/tracing/1.2.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.tracing:tracing:2.0.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/tracing/tracing/2.0.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.tracing:tracing-android:2.0.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/tracing/tracing-android/2.0.1/",
+    "notices": [
+      "maven/androidx.tracing-tracing-android-2.0.1/META-INF_androidx_tracing_tracing_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.tracing:tracing-ktx:1.2.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/tracing/tracing-ktx/1.2.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.tracing:tracing-ktx:2.0.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/tracing/tracing-ktx/2.0.1/",
+    "notices": [
+      "maven/androidx.tracing-tracing-ktx-2.0.1/META-INF_androidx_tracing_tracing-ktx_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.versionedparcelable:versionedparcelable:1.1.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/versionedparcelable/versionedparcelable/1.1.1/",
+    "notices": []
+  },
+  {
+    "component": "androidx.window:window:1.5.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/window/window/1.5.0/",
+    "notices": [
+      "maven/androidx.window-window-1.5.0/META-INF_androidx_window_window_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.window:window-core:1.5.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/window/window-core/1.5.0/",
+    "notices": []
+  },
+  {
+    "component": "androidx.window:window-core-android:1.5.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/window/window-core-android/1.5.0/",
+    "notices": [
+      "maven/androidx.window-window-core-android-1.5.0/META-INF_androidx_window_window-core_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.work:work-runtime:2.10.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/work/work-runtime/2.10.1/",
+    "notices": [
+      "maven/androidx.work-work-runtime-2.10.1/META-INF_androidx_work_work-runtime_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "androidx.work:work-runtime-ktx:2.10.1",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://dl.google.com/dl/android/maven2/androidx/work/work-runtime-ktx/2.10.1/",
+    "notices": [
+      "maven/androidx.work-work-runtime-ktx-2.10.1/META-INF_androidx_work_work-runtime-ktx_LICENSE.txt"
+    ]
+  },
+  {
+    "component": "com.google.guava:listenablefuture:1.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/com/google/guava/listenablefuture/1.0/",
+    "notices": []
+  },
+  {
+    "component": "com.squareup.okhttp3:okhttp:4.12.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/com/squareup/okhttp3/okhttp/4.12.0/",
+    "notices": [
+      "maven/com.squareup.okhttp3-okhttp-4.12.0/okhttp3_internal_publicsuffix_NOTICE"
+    ]
+  },
+  {
+    "component": "com.squareup.okio:okio:3.17.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/3.17.0/",
+    "notices": []
+  },
+  {
+    "component": "com.squareup.okio:okio:3.6.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio/3.6.0/",
+    "notices": []
+  },
+  {
+    "component": "com.squareup.okio:okio-jvm:3.17.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio-jvm/3.17.0/",
+    "notices": []
+  },
+  {
+    "component": "com.squareup.okio:okio-jvm:3.6.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/com/squareup/okio/okio-jvm/3.6.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains:annotations:23.0.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache Software License, Version 2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/annotations/23.0.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlin:kotlin-stdlib:2.2.21",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.2.21/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlin:kotlin-stdlib:2.4.21",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/2.4.21/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlin:kotlin-stdlib-common:2.2.21",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-common/2.2.21/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlin:kotlin-stdlib-common:2.4.21",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-common/2.4.21/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.21",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk7/1.8.21/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.10",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk7/1.9.10/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.21",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.8.21/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.10",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.9.10/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:atomicfu:0.28.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/atomicfu/0.28.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:atomicfu-jvm:0.28.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/atomicfu-jvm/0.28.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-android/1.10.2/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-android/1.11.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.10.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.10.2/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.11.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/1.10.2/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core/1.11.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.10.2",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.10.2/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.11.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.11.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.12.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-bom/1.12.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.9.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-bom/1.9.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-serialization-core:1.12.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-core/1.12.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-core/1.9.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.12.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.12.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.9.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.9.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json/1.12.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json/1.9.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.12.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.12.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.9.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.9.0/",
+    "notices": []
+  },
+  {
+    "component": "org.jspecify:jspecify:1.0.0",
+    "ecosystem": "maven",
+    "licenses": [
+      {
+        "name": "The Apache License, Version 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ],
+    "source": "https://repo.maven.apache.org/maven2/org/jspecify/jspecify/1.0.0/",
+    "notices": []
+  },
+  {
+    "component": "Atkinson Hyperlegible Next 2.001",
+    "ecosystem": "font",
+    "selectedLicense": "OFL-1.1",
+    "source": "https://github.com/googlefonts/atkinson-hyperlegible-next",
+    "fontSha256": "5a455d1cfa099b601ab70751bb9673e8fe1854dc4500c80e1a220d0d75e31745",
+    "notices": [
+      "fonts/AtkinsonHyperlegible-OFL.txt"
+    ]
+  },
+  {
+    "component": "Atkinson Hyperlegible Mono 2.001",
+    "ecosystem": "font",
+    "selectedLicense": "OFL-1.1",
+    "source": "https://github.com/googlefonts/atkinson-hyperlegible-next-mono",
+    "fontSha256": "5ce8b1698d1ded7dff2178c1a3ad159470085a58ea239e8b2cb88f4fb4a6f646",
+    "notices": [
+      "fonts/AtkinsonHyperlegibleMono-OFL.txt"
+    ]
+  }
+]

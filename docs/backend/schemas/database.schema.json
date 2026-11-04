@@ -1,0 +1,5592 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "WordPrism contract v1: database",
+    "allOf": [
+        {
+            "$ref": "#/$defs/dev.wordprism.engine.Database"
+        }
+    ],
+    "$defs": {
+        "dev.wordprism.engine.Database": {
+            "type": "object",
+            "properties": {
+                "schemaVersion": {
+                    "type": "integer"
+                },
+                "libraryId": {
+                    "type": "string"
+                },
+                "revision": {
+                    "type": "integer"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "settings": {
+                    "$ref": "#/$defs/dev.wordprism.contract.UserSettings"
+                },
+                "policy": {
+                    "$ref": "#/$defs/dev.wordprism.contract.TrainingPolicy"
+                },
+                "lastAnalyzedSequence": {
+                    "type": "integer"
+                },
+                "lastAutoExecutionAtMs": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "lastAutoExecutionDate": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "words": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Word"
+                    }
+                },
+                "senses": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Sense"
+                    }
+                },
+                "groups": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Group"
+                    }
+                },
+                "memberships": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Membership"
+                    }
+                },
+                "targets": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.LearningTarget"
+                    }
+                },
+                "schedules": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Schedule"
+                    }
+                },
+                "activities": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Activity"
+                    }
+                },
+                "activityVersions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Activity"
+                    }
+                },
+                "answers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Answer"
+                    }
+                },
+                "answerVersions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Answer"
+                    }
+                },
+                "presentations": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "exposures": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Exposure"
+                    }
+                },
+                "feedback": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Feedback"
+                    }
+                },
+                "difficultyMarks": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.DifficultyMark"
+                    }
+                },
+                "sessions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Session"
+                    }
+                },
+                "timeSpans": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.engine.TimeSpan"
+                    }
+                },
+                "days": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.LearningDay"
+                    }
+                },
+                "plans": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.LearningPlan"
+                    }
+                },
+                "drafts": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Draft"
+                    }
+                },
+                "policyVersions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.TrainingPolicy"
+                    }
+                },
+                "changes": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.PolicyChange"
+                    }
+                },
+                "snapshots": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.LearningSnapshot"
+                    }
+                },
+                "evaluations": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Evaluation"
+                    }
+                },
+                "presets": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.ApiPreset"
+                    }
+                },
+                "credentialRefs": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "presetVersions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.ApiPreset"
+                    }
+                },
+                "bindings": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Binding"
+                    }
+                },
+                "usage": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Usage"
+                    }
+                },
+                "recommendations": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Recommendation"
+                    }
+                },
+                "operations": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Operation"
+                    }
+                },
+                "jobs": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.engine.JobData"
+                    }
+                },
+                "requests": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.engine.SavedRequest"
+                    }
+                },
+                "undos": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/$defs/dev.wordprism.engine.UndoEntry"
+                        }
+                    }
+                },
+                "previews": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.engine.StoredPreview"
+                    }
+                },
+                "importedPackages": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "archivedModules": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.engine.ArchivedModule"
+                    }
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.UserSettings": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "integer"
+                },
+                "zoneId": {
+                    "type": "string"
+                },
+                "budgetMinutes": {
+                    "type": "integer"
+                },
+                "automaticAnalysis": {
+                    "type": "boolean"
+                },
+                "automaticGeneration": {
+                    "type": "boolean"
+                },
+                "automationEpoch": {
+                    "type": "integer"
+                },
+                "lockedCapabilities": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "automaticRequestsPerDay": {
+                    "type": "integer"
+                },
+                "defaultPresetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "fallbackPresetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "dailyRequestLimit": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "maxRetries": {
+                    "type": "integer"
+                },
+                "preGenerationMaxPerDay": {
+                    "type": "integer"
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.TrainingPolicy": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "integer"
+                },
+                "newTargetLimit": {
+                    "type": "integer"
+                },
+                "reviewTargetLimit": {
+                    "type": "integer"
+                },
+                "sessionTargetLimit": {
+                    "type": "integer"
+                },
+                "plannedMinutes": {
+                    "type": "integer"
+                },
+                "retention": {
+                    "type": "number"
+                },
+                "maxIntervalDays": {
+                    "type": "integer"
+                },
+                "weights": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "mix": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "focusTargets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "suspendedTargets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "hintPolicy": {
+                    "type": "string"
+                },
+                "passageWords": {
+                    "type": "integer"
+                },
+                "backgroundDifficulty": {
+                    "type": "string"
+                },
+                "reuseAfterDays": {
+                    "type": "integer"
+                },
+                "preGenerateLimit": {
+                    "type": "integer"
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Word": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "spelling": {
+                    "type": "string"
+                },
+                "normalized": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "archived": {
+                    "type": "boolean"
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                }
+            },
+            "required": [
+                "id",
+                "spelling",
+                "normalized"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Provenance": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string"
+                },
+                "operationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "presetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "presetVersion": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "model": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "atMs": {
+                    "type": "integer"
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Sense": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "wordId": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "partOfSpeech": {
+                    "type": "string"
+                },
+                "meaning": {
+                    "type": "string"
+                },
+                "acceptedForms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "examples": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                }
+            },
+            "required": [
+                "id",
+                "wordId",
+                "meaning"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Group": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "relation": {
+                    "type": "string",
+                    "enum": [
+                        "LOOK_ALIKE",
+                        "SYNONYM",
+                        "WORD_FAMILY",
+                        "SOUND_ALIKE",
+                        "PERSONAL"
+                    ]
+                },
+                "purpose": {
+                    "type": "string"
+                },
+                "archived": {
+                    "type": "boolean"
+                },
+                "titleEdited": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "id",
+                "title",
+                "relation",
+                "purpose"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Membership": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "groupId": {
+                    "type": "string"
+                },
+                "senseId": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "active": {
+                    "type": "boolean"
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                },
+                "position": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "id",
+                "groupId",
+                "senseId",
+                "reason"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.LearningTarget": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "senseId": {
+                    "type": "string"
+                },
+                "ability": {
+                    "type": "string",
+                    "enum": [
+                        "RECOGNITION",
+                        "RECALL",
+                        "SPELLING",
+                        "READING",
+                        "EXPRESSION"
+                    ]
+                },
+                "groupId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "suspended": {
+                    "type": "boolean"
+                },
+                "priority": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "id",
+                "senseId",
+                "ability"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Schedule": {
+            "type": "object",
+            "properties": {
+                "targetId": {
+                    "type": "string"
+                },
+                "memory": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.MemoryState"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "dueAtMs": {
+                    "type": "integer"
+                },
+                "lastReviewAtMs": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "reviews": {
+                    "type": "integer"
+                },
+                "algorithm": {
+                    "type": "string"
+                },
+                "policyVersion": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "targetId",
+                "dueAtMs"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.MemoryState": {
+            "type": "object",
+            "properties": {
+                "stability": {
+                    "type": "number"
+                },
+                "difficulty": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "stability",
+                "difficulty"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Activity": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "targetId": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "CHOICE",
+                        "RECALL",
+                        "SPELLING",
+                        "PASSAGE",
+                        "WRITING",
+                        "REWRITE",
+                        "FAMILIARITY",
+                        "CONTRAST"
+                    ]
+                },
+                "prompt": {
+                    "type": "string"
+                },
+                "choices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Choice"
+                    }
+                },
+                "acceptedAnswers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "explanation": {
+                    "type": "string"
+                },
+                "contextKey": {
+                    "type": "string"
+                },
+                "disputed": {
+                    "type": "boolean"
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                },
+                "senseVersion": {
+                    "type": "integer"
+                },
+                "passage": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "question": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "sourceSentence": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "cue": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "targetWords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "id",
+                "targetId",
+                "kind",
+                "prompt",
+                "contextKey"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Choice": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "senseId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "text"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Answer": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "activityId": {
+                    "type": "string"
+                },
+                "activityVersion": {
+                    "type": "integer"
+                },
+                "targetId": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "input": {
+                    "$ref": "#/$defs/dev.wordprism.contract.AnswerInput"
+                },
+                "atMs": {
+                    "type": "integer"
+                },
+                "verdict": {
+                    "type": "string",
+                    "enum": [
+                        "CORRECT",
+                        "INCORRECT",
+                        "UNGRADED",
+                        "DISPUTED",
+                        "SKIPPED"
+                    ]
+                },
+                "gradeSource": {
+                    "type": "string",
+                    "enum": [
+                        "OBJECTIVE",
+                        "USER",
+                        "AI",
+                        "UNGRADED"
+                    ]
+                },
+                "rating": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "enum": [
+                                "AGAIN",
+                                "HARD",
+                                "GOOD",
+                                "EASY"
+                            ]
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "affectsSchedule": {
+                    "type": "boolean"
+                },
+                "policyVersion": {
+                    "type": "integer"
+                },
+                "delayed": {
+                    "type": "boolean"
+                },
+                "newContext": {
+                    "type": "boolean"
+                },
+                "confusedWith": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "valid": {
+                    "type": "boolean"
+                },
+                "dayId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "sequence",
+                "sessionId",
+                "activityId",
+                "activityVersion",
+                "targetId",
+                "input",
+                "atMs",
+                "verdict",
+                "gradeSource",
+                "affectsSchedule",
+                "policyVersion",
+                "delayed",
+                "newContext"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.AnswerInput": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string"
+                },
+                "hintUsed": {
+                    "type": "boolean"
+                },
+                "answerRevealed": {
+                    "type": "boolean"
+                },
+                "difficult": {
+                    "type": "boolean"
+                },
+                "skipped": {
+                    "type": "boolean"
+                },
+                "selectedChoiceId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "familiar": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "requestFeedback": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "text"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Exposure": {
+            "type": "object",
+            "properties": {
+                "hintUsed": {
+                    "type": "boolean"
+                },
+                "answerRevealed": {
+                    "type": "boolean"
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Feedback": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "answerId": {
+                    "type": "string"
+                },
+                "answerVersion": {
+                    "type": "integer"
+                },
+                "explanation": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": [
+                        "OBJECTIVE",
+                        "USER",
+                        "AI",
+                        "UNGRADED"
+                    ]
+                },
+                "targetUsage": {
+                    "type": "string"
+                },
+                "quotedAnswer": {
+                    "type": "string"
+                },
+                "provenance": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                }
+            },
+            "required": [
+                "id",
+                "answerId",
+                "answerVersion",
+                "explanation",
+                "source"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.DifficultyMark": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "answerId": {
+                    "type": "string"
+                },
+                "answerVersion": {
+                    "type": "integer"
+                },
+                "difficult": {
+                    "type": "boolean"
+                },
+                "atMs": {
+                    "type": "integer"
+                },
+                "revision": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "id",
+                "answerId",
+                "answerVersion",
+                "difficult",
+                "atMs",
+                "revision"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Session": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "dayId": {
+                    "type": "string"
+                },
+                "planId": {
+                    "type": "string"
+                },
+                "policyVersion": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "ACTIVE",
+                        "PAUSED",
+                        "FINISHED"
+                    ]
+                },
+                "targetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "completedTargets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "currentActivityId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "currentPresentationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "timerMode": {
+                    "type": "string",
+                    "enum": [
+                        "STUDY",
+                        "WAITING",
+                        "BACKGROUND",
+                        "PAUSED"
+                    ]
+                },
+                "timerAtMs": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "studyMs": {
+                    "type": "integer"
+                },
+                "waitingMs": {
+                    "type": "integer"
+                },
+                "backgroundMs": {
+                    "type": "integer"
+                },
+                "extraBudgetDayId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "lastAnswerId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "awaitingAdvance": {
+                    "type": "boolean"
+                },
+                "revisingAnswerId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "includeIntroductions": {
+                    "type": "boolean"
+                },
+                "exposedSenseIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "lastPresentationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "dayId",
+                "planId",
+                "policyVersion",
+                "targetIds"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.engine.TimeSpan": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "dayId": {
+                    "type": "string"
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "STUDY",
+                        "WAITING",
+                        "BACKGROUND",
+                        "PAUSED"
+                    ]
+                },
+                "fromMs": {
+                    "type": "integer"
+                },
+                "toMs": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "id",
+                "sessionId",
+                "dayId",
+                "mode",
+                "fromMs",
+                "toMs"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.LearningDay": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "zoneId": {
+                    "type": "string"
+                },
+                "opensAtMs": {
+                    "type": "integer"
+                },
+                "closesAtMs": {
+                    "type": "integer"
+                },
+                "planId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "endedAtMs": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "endReason": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "enum": [
+                                "USER_FINISHED",
+                                "PLAN_COMPLETED",
+                                "BUDGET_REACHED"
+                            ]
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "endSequence": {
+                    "type": "integer"
+                },
+                "automaticOperationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "date",
+                "zoneId",
+                "opensAtMs",
+                "closesAtMs"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.LearningPlan": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "dayId": {
+                    "type": "string"
+                },
+                "policyVersion": {
+                    "type": "integer"
+                },
+                "targetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "newCount": {
+                    "type": "integer"
+                },
+                "reviewCount": {
+                    "type": "integer"
+                },
+                "deferredCount": {
+                    "type": "integer"
+                },
+                "estimatedMs": {
+                    "type": "integer"
+                },
+                "estimateSource": {
+                    "type": "string"
+                },
+                "budgetMs": {
+                    "type": "integer"
+                },
+                "createdAtMs": {
+                    "type": "integer"
+                },
+                "newWordCount": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "dayId",
+                "policyVersion",
+                "targetIds",
+                "newCount",
+                "reviewCount",
+                "deferredCount",
+                "estimatedMs",
+                "estimateSource",
+                "budgetMs",
+                "createdAtMs"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Draft": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "atMs": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "key",
+                "text",
+                "version",
+                "atMs"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.PolicyChange": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "operationId": {
+                    "type": "string"
+                },
+                "snapshotId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "actor": {
+                    "type": "string",
+                    "enum": [
+                        "USER",
+                        "AI",
+                        "SYSTEM"
+                    ]
+                },
+                "before": {
+                    "$ref": "#/$defs/dev.wordprism.contract.TrainingPolicy"
+                },
+                "after": {
+                    "$ref": "#/$defs/dev.wordprism.contract.TrainingPolicy"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "evidenceIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "atMs": {
+                    "type": "integer"
+                },
+                "effective": {
+                    "type": "string"
+                },
+                "undoneBy": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "evaluationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "operationId",
+                "snapshotId",
+                "actor",
+                "before",
+                "after",
+                "reason",
+                "evidenceIds",
+                "atMs"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.LearningSnapshot": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "schemaVersion": {
+                    "type": "integer"
+                },
+                "metricVersion": {
+                    "type": "integer"
+                },
+                "asOfMs": {
+                    "type": "integer"
+                },
+                "fromMs": {
+                    "type": "integer"
+                },
+                "zoneId": {
+                    "type": "string"
+                },
+                "throughSequence": {
+                    "type": "integer"
+                },
+                "policyVersion": {
+                    "type": "integer"
+                },
+                "words": {
+                    "type": "integer"
+                },
+                "senses": {
+                    "type": "integer"
+                },
+                "groups": {
+                    "type": "integer"
+                },
+                "answers": {
+                    "type": "integer"
+                },
+                "distinctTargets": {
+                    "type": "integer"
+                },
+                "activeDays": {
+                    "type": "integer"
+                },
+                "studyMs": {
+                    "type": "integer"
+                },
+                "waitingMs": {
+                    "type": "integer"
+                },
+                "backgroundMs": {
+                    "type": "integer"
+                },
+                "dueTargets": {
+                    "type": "integer"
+                },
+                "byAbility": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Metric"
+                    }
+                },
+                "delayedRecall": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Metric"
+                },
+                "newContext": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Metric"
+                },
+                "confusions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Confusion"
+                    }
+                },
+                "apiRequests": {
+                    "type": "integer"
+                },
+                "knownInputTokens": {
+                    "type": "integer"
+                },
+                "knownOutputTokens": {
+                    "type": "integer"
+                },
+                "unknownUsageRequests": {
+                    "type": "integer"
+                },
+                "hintedAnswers": {
+                    "type": "integer"
+                },
+                "skippedAnswers": {
+                    "type": "integer"
+                },
+                "disputedAnswers": {
+                    "type": "integer"
+                },
+                "aiFeedbackCount": {
+                    "type": "integer"
+                },
+                "gradeSources": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "timeSource": {
+                    "type": "string"
+                },
+                "details": {
+                    "$ref": "#/$defs/dev.wordprism.contract.SnapshotDetails"
+                }
+            },
+            "required": [
+                "id",
+                "asOfMs",
+                "fromMs",
+                "zoneId",
+                "throughSequence",
+                "policyVersion",
+                "words",
+                "senses",
+                "groups",
+                "answers",
+                "distinctTargets",
+                "activeDays",
+                "studyMs",
+                "waitingMs",
+                "backgroundMs",
+                "dueTargets",
+                "byAbility",
+                "delayedRecall",
+                "newContext",
+                "confusions",
+                "apiRequests",
+                "knownInputTokens",
+                "knownOutputTokens",
+                "unknownUsageRequests"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Metric": {
+            "type": "object",
+            "properties": {
+                "successes": {
+                    "type": "integer"
+                },
+                "opportunities": {
+                    "type": "integer"
+                },
+                "observed": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "successes",
+                "opportunities"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Confusion": {
+            "type": "object",
+            "properties": {
+                "targetId": {
+                    "type": "string"
+                },
+                "selectedSenseId": {
+                    "type": "string"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "opportunities": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "targetId",
+                "selectedSenseId",
+                "count",
+                "opportunities"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.SnapshotDetails": {
+            "type": "object",
+            "properties": {
+                "addedWords": {
+                    "type": "integer"
+                },
+                "acceptedRecommendations": {
+                    "type": "integer"
+                },
+                "undoneOperations": {
+                    "type": "integer"
+                },
+                "ungroupedWords": {
+                    "type": "integer"
+                },
+                "newTargets": {
+                    "type": "integer"
+                },
+                "interruptedSessions": {
+                    "type": "integer"
+                },
+                "budgetMinutes": {
+                    "type": "integer"
+                },
+                "daily": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.DayEffort"
+                    }
+                },
+                "forecast": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.LoadForecast"
+                    }
+                },
+                "overdueTargets": {
+                    "type": "integer"
+                },
+                "confusions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.ConfusionDetail"
+                    }
+                },
+                "usage": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.UsageTotal"
+                    }
+                },
+                "aiUsage": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Metric"
+                    }
+                },
+                "lowSampleThreshold": {
+                    "type": "integer"
+                },
+                "expressionUsage": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Metric"
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.DayEffort": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "studyMs": {
+                    "type": "integer"
+                },
+                "plannedMs": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "date",
+                "studyMs",
+                "plannedMs"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.LoadForecast": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "targets": {
+                    "type": "integer"
+                },
+                "estimatedMs": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "date",
+                "targets",
+                "estimatedMs"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.ConfusionDetail": {
+            "type": "object",
+            "properties": {
+                "targetId": {
+                    "type": "string"
+                },
+                "selectedSenseId": {
+                    "type": "string"
+                },
+                "expected": {
+                    "type": "string"
+                },
+                "selected": {
+                    "type": "string"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "opportunities": {
+                    "type": "integer"
+                },
+                "groupId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "lowSample": {
+                    "type": "boolean"
+                },
+                "trend": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "targetId",
+                "selectedSenseId",
+                "expected",
+                "selected",
+                "count",
+                "opportunities",
+                "groupId",
+                "lowSample"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.UsageTotal": {
+            "type": "object",
+            "properties": {
+                "feature": {
+                    "type": "string",
+                    "enum": [
+                        "WORD_INTAKE",
+                        "WORD_RECOMMENDATION",
+                        "EXPLANATION",
+                        "PRACTICE_GENERATION",
+                        "WRITING_FEEDBACK",
+                        "LEARNING_ANALYSIS"
+                    ]
+                },
+                "presetId": {
+                    "type": "string"
+                },
+                "presetName": {
+                    "type": "string"
+                },
+                "requests": {
+                    "type": "integer"
+                },
+                "knownInputTokens": {
+                    "type": "integer"
+                },
+                "knownOutputTokens": {
+                    "type": "integer"
+                },
+                "unknownRequests": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "feature",
+                "presetId",
+                "presetName",
+                "requests",
+                "knownInputTokens",
+                "knownOutputTokens",
+                "unknownRequests"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Evaluation": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "throughSequence": {
+                    "type": "integer"
+                },
+                "policyVersion": {
+                    "type": "integer"
+                },
+                "weights": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "trainItems": {
+                    "type": "integer"
+                },
+                "validationItems": {
+                    "type": "integer"
+                },
+                "cutoffMs": {
+                    "type": "integer"
+                },
+                "baselineLogLoss": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "candidateLogLoss": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "baselineRmse": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "candidateRmse": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "accepted": {
+                    "type": "boolean"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "algorithm": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "throughSequence",
+                "policyVersion",
+                "weights",
+                "trainItems",
+                "validationItems",
+                "cutoffMs",
+                "baselineLogLoss",
+                "candidateLogLoss",
+                "baselineRmse",
+                "candidateRmse",
+                "accepted",
+                "note"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.ApiPreset": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "baseUrl": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "timeoutSeconds": {
+                    "type": "integer"
+                },
+                "maxOutputTokens": {
+                    "type": "integer"
+                },
+                "jsonMode": {
+                    "type": "boolean"
+                },
+                "temperature": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "id",
+                "name",
+                "baseUrl",
+                "model"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Binding": {
+            "type": "object",
+            "properties": {
+                "feature": {
+                    "type": "string",
+                    "enum": [
+                        "WORD_INTAKE",
+                        "WORD_RECOMMENDATION",
+                        "EXPLANATION",
+                        "PRACTICE_GENERATION",
+                        "WRITING_FEEDBACK",
+                        "LEARNING_ANALYSIS"
+                    ]
+                },
+                "presetId": {
+                    "type": "string"
+                },
+                "userLocked": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "feature",
+                "presetId"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Usage": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "operationId": {
+                    "type": "string"
+                },
+                "attempt": {
+                    "type": "integer"
+                },
+                "feature": {
+                    "type": "string",
+                    "enum": [
+                        "WORD_INTAKE",
+                        "WORD_RECOMMENDATION",
+                        "EXPLANATION",
+                        "PRACTICE_GENERATION",
+                        "WRITING_FEEDBACK",
+                        "LEARNING_ANALYSIS"
+                    ]
+                },
+                "preset": {
+                    "$ref": "#/$defs/dev.wordprism.contract.ApiPreset"
+                },
+                "startedAtMs": {
+                    "type": "integer"
+                },
+                "endedAtMs": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "inputTokens": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "outputTokens": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "outcome": {
+                    "type": "string"
+                },
+                "automatic": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "id",
+                "operationId",
+                "attempt",
+                "feature",
+                "preset",
+                "startedAtMs"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Recommendation": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "spelling": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "groupId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "content": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.WordSeed"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "acceptedOperationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                },
+                "inLibrary": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "id",
+                "spelling",
+                "reason",
+                "source"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.WordSeed": {
+            "type": "object",
+            "properties": {
+                "spelling": {
+                    "type": "string"
+                },
+                "meaning": {
+                    "type": "string"
+                },
+                "partOfSpeech": {
+                    "type": "string"
+                },
+                "acceptedForms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "examples": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "spelling",
+                "meaning"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Operation": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "QUEUED",
+                        "WAITING_NETWORK",
+                        "NEEDS_CONFIGURATION",
+                        "RUNNING",
+                        "NEEDS_INPUT",
+                        "SUCCEEDED",
+                        "FAILED",
+                        "CANCELLED",
+                        "SUPERSEDED",
+                        "RESTORED_PENDING"
+                    ]
+                },
+                "createdAtMs": {
+                    "type": "integer"
+                },
+                "updatedAtMs": {
+                    "type": "integer"
+                },
+                "feature": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "enum": [
+                                "WORD_INTAKE",
+                                "WORD_RECOMMENDATION",
+                                "EXPLANATION",
+                                "PRACTICE_GENERATION",
+                                "WRITING_FEEDBACK",
+                                "LEARNING_ANALYSIS"
+                            ]
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "automatic": {
+                    "type": "boolean"
+                },
+                "triggerDayId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "executionDayId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "preset": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.ApiPreset"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "attempt": {
+                    "type": "integer"
+                },
+                "snapshotId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "throughSequence": {
+                    "type": "integer"
+                },
+                "policyVersion": {
+                    "type": "integer"
+                },
+                "automationEpoch": {
+                    "type": "integer"
+                },
+                "fault": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Fault"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "resultIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "choices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.IntakeChoice"
+                    }
+                },
+                "mergedInto": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "undoable": {
+                    "type": "boolean"
+                },
+                "undoneBy": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "retryable": {
+                    "type": "boolean"
+                },
+                "actor": {
+                    "type": "string",
+                    "enum": [
+                        "USER",
+                        "AI",
+                        "SYSTEM"
+                    ]
+                },
+                "parentOperationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "input": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "effects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.IntakeEffect"
+                    }
+                },
+                "spellingChoices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.SpellingChoice"
+                    }
+                }
+            },
+            "required": [
+                "id",
+                "kind",
+                "status",
+                "createdAtMs",
+                "updatedAtMs"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Fault": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "enum": [
+                        "VALIDATION",
+                        "NOT_FOUND",
+                        "VERSION_CONFLICT",
+                        "IDEMPOTENCY_CONFLICT",
+                        "PRESET_MISSING",
+                        "CREDENTIAL_MISSING",
+                        "OFFLINE",
+                        "BUDGET_EXCEEDED",
+                        "DISABLED",
+                        "CANCELLED",
+                        "PROVIDER_TIMEOUT",
+                        "PROVIDER_RATE_LIMIT",
+                        "PROVIDER_AUTH",
+                        "PROVIDER_UNAVAILABLE",
+                        "INVALID_RESPONSE",
+                        "TRUNCATED_RESPONSE",
+                        "OUTCOME_UNKNOWN",
+                        "UNSUPPORTED_VERSION",
+                        "INVALID_PACKAGE",
+                        "LIMIT_EXCEEDED",
+                        "UNKNOWN_CAPABILITY",
+                        "INSUFFICIENT_DATA",
+                        "UNSUPPORTED_ALGORITHM",
+                        "STORAGE"
+                    ]
+                },
+                "message": {
+                    "type": "string"
+                },
+                "retryable": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "code",
+                "message"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.IntakeChoice": {
+            "type": "object",
+            "properties": {
+                "groupId": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "groupId",
+                "reason"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.IntakeEffect": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "groupId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "wordId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "kind",
+                "label",
+                "reason"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.SpellingChoice": {
+            "type": "object",
+            "properties": {
+                "original": {
+                    "type": "string"
+                },
+                "suggested": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "original",
+                "suggested",
+                "reason"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.engine.JobData": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "oneOf": [
+                        {
+                            "$ref": "#/$defs/accept_recommendations-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/analyze_learning-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/apply_policy-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/begin_answer_revision-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/bind_preset-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/cancel_operation-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/change_membership-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/commit_import-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/delete_preset-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/dispute_activity-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/edit_memberships-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/edit_word-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/evaluate_parameters-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/evaluate_response-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/explain_sense-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/finish_learning_day-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/finish_session-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/fit_memory-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/generate_activity-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/mark_difficulty-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/next_activity-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/rename_group-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/request_hint-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/request_recommendations-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/resolve_intake-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/resolve_spelling-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/restore_backup-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/retry_operation-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/revise_answer-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/save_draft-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/save_preset-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/save_words-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/set_call_policy-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/set_settings-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/set_timer-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/start_session-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/submit_answer-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/submit_intake-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/test_connection-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/unbind_preset-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/undo_operation-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/update_sense-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/update_word-variant"
+                        }
+                    ]
+                },
+                "expectedEntities": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "response": {
+                    "anyOf": [
+                        {},
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "lease": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "fitToken": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "notBeforeMs": {
+                    "type": "integer"
+                },
+                "retryCycleStartAttempt": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "command"
+            ],
+            "additionalProperties": false
+        },
+        "accept_recommendations-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "accept_recommendations"
+                },
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "allowApi": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type",
+                "ids",
+                "allowApi"
+            ],
+            "additionalProperties": false
+        },
+        "analyze_learning-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "analyze_learning"
+                },
+                "force": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "apply_policy-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "apply_policy"
+                },
+                "patch": {
+                    "$ref": "#/$defs/dev.wordprism.contract.PolicyPatch"
+                },
+                "expectedVersion": {
+                    "type": "integer"
+                },
+                "evaluationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "patch",
+                "expectedVersion"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.PolicyPatch": {
+            "type": "object",
+            "properties": {
+                "values": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "evidenceIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "values",
+                "reason"
+            ],
+            "additionalProperties": false
+        },
+        "begin_answer_revision-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "begin_answer_revision"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "answer": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                }
+            },
+            "required": [
+                "type",
+                "sessionId",
+                "answer"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Ref": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "id",
+                "version"
+            ],
+            "additionalProperties": false
+        },
+        "bind_preset-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "bind_preset"
+                },
+                "binding": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Binding"
+                }
+            },
+            "required": [
+                "type",
+                "binding"
+            ],
+            "additionalProperties": false
+        },
+        "cancel_operation-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "cancel_operation"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "id"
+            ],
+            "additionalProperties": false
+        },
+        "change_membership-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "change_membership"
+                },
+                "group": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                },
+                "senseId": {
+                    "type": "string"
+                },
+                "active": {
+                    "type": "boolean"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "group",
+                "senseId",
+                "active",
+                "reason"
+            ],
+            "additionalProperties": false
+        },
+        "commit_import-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "commit_import"
+                },
+                "token": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "token"
+            ],
+            "additionalProperties": false
+        },
+        "delete_preset-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "delete_preset"
+                },
+                "preset": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                }
+            },
+            "required": [
+                "type",
+                "preset"
+            ],
+            "additionalProperties": false
+        },
+        "dispute_activity-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "dispute_activity"
+                },
+                "activity": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "activity",
+                "reason"
+            ],
+            "additionalProperties": false
+        },
+        "edit_memberships-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "edit_memberships"
+                },
+                "group": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                },
+                "addWords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "removeWords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "reason": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "group",
+                "addWords",
+                "removeWords",
+                "reason"
+            ],
+            "additionalProperties": false
+        },
+        "edit_word-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "edit_word"
+                },
+                "word": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                },
+                "notes": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "sense": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "meaning": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "word",
+                "notes"
+            ],
+            "additionalProperties": false
+        },
+        "evaluate_parameters-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "evaluate_parameters"
+                },
+                "weights": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "weights"
+            ],
+            "additionalProperties": false
+        },
+        "evaluate_response-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "evaluate_response"
+                },
+                "answer": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                }
+            },
+            "required": [
+                "type",
+                "answer"
+            ],
+            "additionalProperties": false
+        },
+        "explain_sense-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "explain_sense"
+                },
+                "sense": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                }
+            },
+            "required": [
+                "type",
+                "sense"
+            ],
+            "additionalProperties": false
+        },
+        "finish_learning_day-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "finish_learning_day"
+                },
+                "dayId": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "dayId"
+            ],
+            "additionalProperties": false
+        },
+        "finish_session-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "finish_session"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "pause": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type",
+                "sessionId"
+            ],
+            "additionalProperties": false
+        },
+        "fit_memory-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "fit_memory"
+                },
+                "applyIfBetter": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "generate_activity-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "generate_activity"
+                },
+                "targetId": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "CHOICE",
+                        "RECALL",
+                        "SPELLING",
+                        "PASSAGE",
+                        "WRITING",
+                        "REWRITE",
+                        "FAMILIARITY",
+                        "CONTRAST"
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "targetId",
+                "kind"
+            ],
+            "additionalProperties": false
+        },
+        "mark_difficulty-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "mark_difficulty"
+                },
+                "answer": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                },
+                "difficult": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type",
+                "answer",
+                "difficult"
+            ],
+            "additionalProperties": false
+        },
+        "next_activity-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "next_activity"
+                },
+                "sessionId": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "sessionId"
+            ],
+            "additionalProperties": false
+        },
+        "rename_group-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "rename_group"
+                },
+                "group": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                },
+                "title": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "group",
+                "title"
+            ],
+            "additionalProperties": false
+        },
+        "request_hint-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "request_hint"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "presentationId": {
+                    "type": "string"
+                },
+                "revealAnswer": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type",
+                "sessionId",
+                "presentationId"
+            ],
+            "additionalProperties": false
+        },
+        "request_recommendations-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "request_recommendations"
+                },
+                "group": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                }
+            },
+            "required": [
+                "type",
+                "group"
+            ],
+            "additionalProperties": false
+        },
+        "resolve_intake-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "resolve_intake"
+                },
+                "operationId": {
+                    "type": "string"
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                    }
+                },
+                "disposition": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "operationId"
+            ],
+            "additionalProperties": false
+        },
+        "resolve_spelling-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "resolve_spelling"
+                },
+                "operationId": {
+                    "type": "string"
+                },
+                "original": {
+                    "type": "string"
+                },
+                "useSuggested": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type",
+                "operationId",
+                "original",
+                "useSuggested"
+            ],
+            "additionalProperties": false
+        },
+        "restore_backup-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "restore_backup"
+                },
+                "token": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "token"
+            ],
+            "additionalProperties": false
+        },
+        "retry_operation-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "retry_operation"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "id"
+            ],
+            "additionalProperties": false
+        },
+        "revise_answer-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "revise_answer"
+                },
+                "answer": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                },
+                "text": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "answer",
+                "text"
+            ],
+            "additionalProperties": false
+        },
+        "save_draft-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "save_draft"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "expectedVersion": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "type",
+                "key",
+                "text"
+            ],
+            "additionalProperties": false
+        },
+        "save_preset-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "save_preset"
+                },
+                "preset": {
+                    "$ref": "#/$defs/dev.wordprism.contract.ApiPreset"
+                },
+                "expectedVersion": {
+                    "type": "integer"
+                },
+                "preserveAdvancedSettings": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type",
+                "preset"
+            ],
+            "additionalProperties": false
+        },
+        "save_words-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "save_words"
+                },
+                "words": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.WordSeed"
+                    }
+                },
+                "group": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.GroupSeed"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "existingGroup": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "words"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.GroupSeed": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                },
+                "relation": {
+                    "type": "string",
+                    "enum": [
+                        "LOOK_ALIKE",
+                        "SYNONYM",
+                        "WORD_FAMILY",
+                        "SOUND_ALIKE",
+                        "PERSONAL"
+                    ]
+                },
+                "purpose": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "title",
+                "relation",
+                "purpose"
+            ],
+            "additionalProperties": false
+        },
+        "set_call_policy-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "set_call_policy"
+                },
+                "policy": {
+                    "$ref": "#/$defs/dev.wordprism.contract.CallPolicy"
+                }
+            },
+            "required": [
+                "type",
+                "policy"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.CallPolicy": {
+            "type": "object",
+            "properties": {
+                "defaultPresetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "fallbackPresetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "dailyRequestLimit": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "maxRetries": {
+                    "type": "integer"
+                },
+                "automaticGeneration": {
+                    "type": "boolean"
+                },
+                "preGenerationMaxPerDay": {
+                    "type": "integer"
+                },
+                "settingsVersion": {
+                    "type": "integer"
+                },
+                "policyVersion": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "defaultPresetId",
+                "fallbackPresetId",
+                "dailyRequestLimit",
+                "maxRetries",
+                "automaticGeneration",
+                "preGenerationMaxPerDay",
+                "settingsVersion",
+                "policyVersion"
+            ],
+            "additionalProperties": false
+        },
+        "set_settings-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "set_settings"
+                },
+                "settings": {
+                    "$ref": "#/$defs/dev.wordprism.contract.UserSettings"
+                },
+                "expectedVersion": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "type",
+                "settings",
+                "expectedVersion"
+            ],
+            "additionalProperties": false
+        },
+        "set_timer-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "set_timer"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "STUDY",
+                        "WAITING",
+                        "BACKGROUND",
+                        "PAUSED"
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "sessionId",
+                "mode"
+            ],
+            "additionalProperties": false
+        },
+        "start_session-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "start_session"
+                },
+                "continuePastBudget": {
+                    "type": "boolean"
+                },
+                "includeIntroductions": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "submit_answer-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "submit_answer"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "presentationId": {
+                    "type": "string"
+                },
+                "activity": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                },
+                "answer": {
+                    "$ref": "#/$defs/dev.wordprism.contract.AnswerInput"
+                }
+            },
+            "required": [
+                "type",
+                "sessionId",
+                "presentationId",
+                "activity",
+                "answer"
+            ],
+            "additionalProperties": false
+        },
+        "submit_intake-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "submit_intake"
+                },
+                "input": {
+                    "type": "string"
+                },
+                "group": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "input"
+            ],
+            "additionalProperties": false
+        },
+        "test_connection-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "test_connection"
+                },
+                "preset": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                }
+            },
+            "required": [
+                "type",
+                "preset"
+            ],
+            "additionalProperties": false
+        },
+        "unbind_preset-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "unbind_preset"
+                },
+                "feature": {
+                    "type": "string",
+                    "enum": [
+                        "WORD_INTAKE",
+                        "WORD_RECOMMENDATION",
+                        "EXPLANATION",
+                        "PRACTICE_GENERATION",
+                        "WRITING_FEEDBACK",
+                        "LEARNING_ANALYSIS"
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "feature"
+            ],
+            "additionalProperties": false
+        },
+        "undo_operation-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "undo_operation"
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "id"
+            ],
+            "additionalProperties": false
+        },
+        "update_sense-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "update_sense"
+                },
+                "sense": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                },
+                "meaning": {
+                    "type": "string"
+                },
+                "acceptedForms": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "examples": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "sense",
+                "meaning",
+                "acceptedForms",
+                "examples"
+            ],
+            "additionalProperties": false
+        },
+        "update_word-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "update_word"
+                },
+                "word": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "archived": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type",
+                "word",
+                "notes",
+                "tags"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.engine.SavedRequest": {
+            "type": "object",
+            "properties": {
+                "fingerprint": {
+                    "type": "string"
+                },
+                "view": {
+                    "oneOf": [
+                        {
+                            "$ref": "#/$defs/activity-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/answer-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/call_policy-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/capabilities-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/day-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/draft-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/evaluation-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/evidence-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/export_scope-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/exported-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/feedback-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/hint-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/package_preview-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/library-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/library_overview-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/ok-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/operation_effects-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/operation-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/operations-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/policy_changes-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/presentation-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/presets-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/call_preview-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/protocols-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/recommendations-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/session-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/settings-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/snapshot-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/usage-variant"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "fingerprint",
+                "view"
+            ],
+            "additionalProperties": false
+        },
+        "activity-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "activity"
+                },
+                "activity": {
+                    "$ref": "#/$defs/dev.wordprism.contract.ActivityCard"
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                }
+            },
+            "required": [
+                "type",
+                "activity",
+                "source"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.ActivityCard": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "targetId": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "CHOICE",
+                        "RECALL",
+                        "SPELLING",
+                        "PASSAGE",
+                        "WRITING",
+                        "REWRITE",
+                        "FAMILIARITY",
+                        "CONTRAST"
+                    ]
+                },
+                "prompt": {
+                    "type": "string"
+                },
+                "choices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Choice"
+                    }
+                },
+                "contextKey": {
+                    "type": "string"
+                },
+                "hintAllowed": {
+                    "type": "boolean"
+                },
+                "groupId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "targetWords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cue": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "passage": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "question": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "sourceSentence": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                }
+            },
+            "required": [
+                "id",
+                "version",
+                "targetId",
+                "kind",
+                "prompt",
+                "choices",
+                "contextKey"
+            ],
+            "additionalProperties": false
+        },
+        "answer-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "answer"
+                },
+                "answer": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Answer"
+                },
+                "feedback": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Feedback"
+                    }
+                },
+                "schedule": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Schedule"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "acceptedAnswers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "correctChoiceId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "canMarkDifficult": {
+                    "type": "boolean"
+                },
+                "markedDifficult": {
+                    "type": "boolean"
+                },
+                "canRevise": {
+                    "type": "boolean"
+                },
+                "pendingOperationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "answer",
+                "feedback",
+                "schedule"
+            ],
+            "additionalProperties": false
+        },
+        "call_policy-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "call_policy"
+                },
+                "policy": {
+                    "$ref": "#/$defs/dev.wordprism.contract.CallPolicy"
+                }
+            },
+            "required": [
+                "type",
+                "policy"
+            ],
+            "additionalProperties": false
+        },
+        "capabilities-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "capabilities"
+                },
+                "capabilities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Capability"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "capabilities"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Capability": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "valueType": {
+                    "type": "string"
+                },
+                "current": {},
+                "constraint": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "affectsSchedule": {
+                    "type": "boolean"
+                },
+                "undoMode": {
+                    "type": "string"
+                },
+                "userLocked": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "id",
+                "description",
+                "valueType",
+                "current",
+                "constraint"
+            ],
+            "additionalProperties": false
+        },
+        "day-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "day"
+                },
+                "day": {
+                    "$ref": "#/$defs/dev.wordprism.contract.LearningDay"
+                },
+                "plan": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.LearningPlan"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "studyMs": {
+                    "type": "integer"
+                },
+                "automatic": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Operation"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "summary": {
+                    "$ref": "#/$defs/dev.wordprism.contract.DaySummary"
+                }
+            },
+            "required": [
+                "type",
+                "day",
+                "plan",
+                "studyMs",
+                "automatic"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.DaySummary": {
+            "type": "object",
+            "properties": {
+                "budgetMinutes": {
+                    "type": "integer"
+                },
+                "waitingMs": {
+                    "type": "integer"
+                },
+                "budgetState": {
+                    "type": "string",
+                    "enum": [
+                        "WITHIN",
+                        "NEAR",
+                        "REACHED"
+                    ]
+                },
+                "completedTargets": {
+                    "type": "integer"
+                },
+                "openSessionId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "canEnd": {
+                    "type": "boolean"
+                },
+                "automaticEnabled": {
+                    "type": "boolean"
+                },
+                "analysisState": {
+                    "type": "string"
+                },
+                "policy": {
+                    "$ref": "#/$defs/dev.wordprism.contract.TrainingPolicy"
+                },
+                "focusGroups": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "state": {
+                    "type": "string"
+                },
+                "plannedNewWords": {
+                    "type": "integer"
+                }
+            },
+            "required": [],
+            "additionalProperties": false
+        },
+        "draft-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "draft"
+                },
+                "draft": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Draft"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "draft"
+            ],
+            "additionalProperties": false
+        },
+        "evaluation-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "evaluation"
+                },
+                "evaluation": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Evaluation"
+                }
+            },
+            "required": [
+                "type",
+                "evaluation"
+            ],
+            "additionalProperties": false
+        },
+        "evidence-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "evidence"
+                },
+                "answers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Answer"
+                    }
+                },
+                "activities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Activity"
+                    }
+                },
+                "nextSequence": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "answers",
+                "activities",
+                "nextSequence"
+            ],
+            "additionalProperties": false
+        },
+        "export_scope-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "export_scope"
+                },
+                "purpose": {
+                    "type": "string",
+                    "enum": [
+                        "CONTENT",
+                        "BACKUP"
+                    ]
+                },
+                "included": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "excluded": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "suggestedFileName": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "purpose",
+                "included",
+                "excluded",
+                "suggestedFileName"
+            ],
+            "additionalProperties": false
+        },
+        "exported-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "exported"
+                },
+                "packageId": {
+                    "type": "string"
+                },
+                "bytes": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "type",
+                "packageId",
+                "bytes"
+            ],
+            "additionalProperties": false
+        },
+        "feedback-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "feedback"
+                },
+                "answer": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Answer"
+                },
+                "feedback": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Feedback"
+                    }
+                },
+                "details": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/answer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "answer",
+                "feedback"
+            ],
+            "additionalProperties": false
+        },
+        "answer": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Answer"
+                },
+                "feedback": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Feedback"
+                    }
+                },
+                "schedule": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Schedule"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "acceptedAnswers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "correctChoiceId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "canMarkDifficult": {
+                    "type": "boolean"
+                },
+                "markedDifficult": {
+                    "type": "boolean"
+                },
+                "canRevise": {
+                    "type": "boolean"
+                },
+                "pendingOperationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "answer",
+                "feedback",
+                "schedule"
+            ],
+            "additionalProperties": false
+        },
+        "hint-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "hint"
+                },
+                "text": {
+                    "type": "string"
+                },
+                "exposure": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Exposure"
+                }
+            },
+            "required": [
+                "type",
+                "text",
+                "exposure"
+            ],
+            "additionalProperties": false
+        },
+        "package_preview-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "package_preview"
+                },
+                "preview": {
+                    "$ref": "#/$defs/dev.wordprism.contract.PackagePreview"
+                }
+            },
+            "required": [
+                "type",
+                "preview"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.PackagePreview": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "packageId": {
+                    "type": "string"
+                },
+                "purpose": {
+                    "type": "string",
+                    "enum": [
+                        "CONTENT",
+                        "BACKUP"
+                    ]
+                },
+                "sha256": {
+                    "type": "string"
+                },
+                "basedOnRevision": {
+                    "type": "integer"
+                },
+                "added": {
+                    "type": "integer"
+                },
+                "duplicate": {
+                    "type": "integer"
+                },
+                "conflicts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "migrations": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "archivedModules": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "requiresCredentials": {
+                    "type": "boolean"
+                },
+                "formatVersion": {
+                    "type": "integer"
+                },
+                "producerVersion": {
+                    "type": "string"
+                },
+                "createdAtMs": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "modules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.PackageModuleInfo"
+                    }
+                }
+            },
+            "required": [
+                "token",
+                "packageId",
+                "purpose",
+                "sha256",
+                "basedOnRevision",
+                "added",
+                "duplicate",
+                "conflicts",
+                "migrations",
+                "archivedModules",
+                "requiresCredentials"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.PackageModuleInfo": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                },
+                "state": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name",
+                "version",
+                "state"
+            ],
+            "additionalProperties": false
+        },
+        "library-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "library"
+                },
+                "words": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Word"
+                    }
+                },
+                "senses": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Sense"
+                    }
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Group"
+                    }
+                },
+                "memberships": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Membership"
+                    }
+                },
+                "targets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.LearningTarget"
+                    }
+                },
+                "schedules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Schedule"
+                    }
+                },
+                "nextId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "wordStudy": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.StudySummary"
+                    }
+                },
+                "groupStudy": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.StudySummary"
+                    }
+                },
+                "alignments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.WordAlignment"
+                    }
+                },
+                "hasDisputedContent": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type",
+                "words",
+                "senses",
+                "groups",
+                "memberships",
+                "targets",
+                "schedules"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.StudySummary": {
+            "type": "object",
+            "properties": {
+                "state": {
+                    "type": "string",
+                    "enum": [
+                        "NOT_STARTED",
+                        "LEARNING",
+                        "DUE",
+                        "STABLE",
+                        "PAUSED"
+                    ]
+                },
+                "dueCount": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "state"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.WordAlignment": {
+            "type": "object",
+            "properties": {
+                "wordId": {
+                    "type": "string"
+                },
+                "aligned": {
+                    "type": "string"
+                },
+                "different": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.CharacterRange"
+                    }
+                }
+            },
+            "required": [
+                "wordId",
+                "aligned",
+                "different"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.CharacterRange": {
+            "type": "object",
+            "properties": {
+                "start": {
+                    "type": "integer"
+                },
+                "endExclusive": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "start",
+                "endExclusive"
+            ],
+            "additionalProperties": false
+        },
+        "library_overview-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "library_overview"
+                },
+                "library": {
+                    "$ref": "#/$defs/dev.wordprism.contract.LibraryOverview"
+                }
+            },
+            "required": [
+                "type",
+                "library"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.LibraryOverview": {
+            "type": "object",
+            "properties": {
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.GroupOverview"
+                    }
+                },
+                "ungroupedWords": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Word"
+                    }
+                },
+                "senses": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Sense"
+                    }
+                },
+                "wordStudy": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/$defs/dev.wordprism.contract.StudySummary"
+                    }
+                },
+                "totalWords": {
+                    "type": "integer"
+                },
+                "totalGroups": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "groups",
+                "ungroupedWords",
+                "senses",
+                "wordStudy",
+                "totalWords",
+                "totalGroups"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.GroupOverview": {
+            "type": "object",
+            "properties": {
+                "group": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Group"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Word"
+                    }
+                },
+                "study": {
+                    "$ref": "#/$defs/dev.wordprism.contract.StudySummary"
+                }
+            },
+            "required": [
+                "group",
+                "members",
+                "study"
+            ],
+            "additionalProperties": false
+        },
+        "ok-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "ok"
+                },
+                "id": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
+        "operation_effects-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "operation_effects"
+                },
+                "effects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.BusinessEffect"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "effects"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.BusinessEffect": {
+            "type": "object",
+            "properties": {
+                "operationId": {
+                    "type": "string"
+                },
+                "capabilityId": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "field": {
+                    "type": "string"
+                },
+                "before": {
+                    "anyOf": [
+                        {},
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "after": {},
+                "affectsSchedule": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "operationId",
+                "capabilityId",
+                "entityId",
+                "label",
+                "field",
+                "before",
+                "after"
+            ],
+            "additionalProperties": false
+        },
+        "operation-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "operation"
+                },
+                "operation": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Operation"
+                }
+            },
+            "required": [
+                "type",
+                "operation"
+            ],
+            "additionalProperties": false
+        },
+        "operations-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "operations"
+                },
+                "operations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Operation"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "operations"
+            ],
+            "additionalProperties": false
+        },
+        "policy_changes-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "policy_changes"
+                },
+                "changes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.PolicyChange"
+                    }
+                },
+                "undoableIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "changes"
+            ],
+            "additionalProperties": false
+        },
+        "presentation-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "presentation"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "activity": {
+                    "$ref": "#/$defs/dev.wordprism.contract.ActivityCard"
+                },
+                "answer": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/answer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "id",
+                "sessionId",
+                "activity"
+            ],
+            "additionalProperties": false
+        },
+        "presets-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "presets"
+                },
+                "presets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.PresetView"
+                    }
+                },
+                "bindings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Binding"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "presets",
+                "bindings"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.PresetView": {
+            "type": "object",
+            "properties": {
+                "preset": {
+                    "$ref": "#/$defs/dev.wordprism.contract.ApiPreset"
+                },
+                "hasCredential": {
+                    "type": "boolean"
+                },
+                "lastTest": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.ConnectionTest"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "preset",
+                "hasCredential"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.ConnectionTest": {
+            "type": "object",
+            "properties": {
+                "ok": {
+                    "type": "boolean"
+                },
+                "atMs": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "latencyMs": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "ok",
+                "atMs",
+                "message",
+                "latencyMs"
+            ],
+            "additionalProperties": false
+        },
+        "call_preview-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "call_preview"
+                },
+                "preview": {
+                    "$ref": "#/$defs/dev.wordprism.contract.CallPreview"
+                }
+            },
+            "required": [
+                "type",
+                "preview"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.CallPreview": {
+            "type": "object",
+            "properties": {
+                "feature": {
+                    "type": "string",
+                    "enum": [
+                        "WORD_INTAKE",
+                        "WORD_RECOMMENDATION",
+                        "EXPLANATION",
+                        "PRACTICE_GENERATION",
+                        "WRITING_FEEDBACK",
+                        "LEARNING_ANALYSIS"
+                    ]
+                },
+                "requiresApi": {
+                    "type": "boolean"
+                },
+                "preset": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.ApiPreset"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "fault": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Fault"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "feature",
+                "requiresApi",
+                "preset"
+            ],
+            "additionalProperties": false
+        },
+        "protocols-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "protocols"
+                },
+                "protocols": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.ProtocolInfo"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "protocols"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.ProtocolInfo": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "defaultBaseUrl": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "notes": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "label",
+                "defaultBaseUrl",
+                "notes"
+            ],
+            "additionalProperties": false
+        },
+        "recommendations-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "recommendations"
+                },
+                "recommendations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Recommendation"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "recommendations"
+            ],
+            "additionalProperties": false
+        },
+        "session-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "session"
+                },
+                "session": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Session"
+                },
+                "activity": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.ActivityCard"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "feedback": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/answer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "budgetState": {
+                    "type": "string",
+                    "enum": [
+                        "WITHIN",
+                        "NEAR",
+                        "REACHED"
+                    ]
+                },
+                "budgetPromptPending": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "type",
+                "session",
+                "activity"
+            ],
+            "additionalProperties": false
+        },
+        "settings-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "settings"
+                },
+                "settings": {
+                    "$ref": "#/$defs/dev.wordprism.contract.UserSettings"
+                },
+                "policy": {
+                    "$ref": "#/$defs/dev.wordprism.contract.TrainingPolicy"
+                },
+                "bindings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Binding"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "settings",
+                "policy",
+                "bindings"
+            ],
+            "additionalProperties": false
+        },
+        "snapshot-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "snapshot"
+                },
+                "snapshot": {
+                    "$ref": "#/$defs/dev.wordprism.contract.LearningSnapshot"
+                }
+            },
+            "required": [
+                "type",
+                "snapshot"
+            ],
+            "additionalProperties": false
+        },
+        "usage-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "usage"
+                },
+                "usage": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Usage"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "usage"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.engine.UndoEntry": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "before": {
+                    "anyOf": [
+                        {},
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "after": {}
+            },
+            "required": [
+                "bucket",
+                "key",
+                "before",
+                "after"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.engine.StoredPreview": {
+            "type": "object",
+            "properties": {
+                "preview": {
+                    "$ref": "#/$defs/dev.wordprism.contract.PackagePreview"
+                },
+                "manifest": {
+                    "$ref": "#/$defs/dev.wordprism.engine.PackageManifest"
+                },
+                "modules": {
+                    "type": "object",
+                    "additionalProperties": {}
+                }
+            },
+            "required": [
+                "preview",
+                "manifest",
+                "modules"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.engine.PackageManifest": {
+            "type": "object",
+            "properties": {
+                "format": {
+                    "type": "string"
+                },
+                "formatVersion": {
+                    "type": "integer"
+                },
+                "packageId": {
+                    "type": "string"
+                },
+                "createdAtMs": {
+                    "type": "integer"
+                },
+                "libraryId": {
+                    "type": "string"
+                },
+                "purpose": {
+                    "type": "string",
+                    "enum": [
+                        "CONTENT",
+                        "BACKUP"
+                    ]
+                },
+                "producerVersion": {
+                    "type": "string"
+                },
+                "modules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.engine.ModuleManifest"
+                    }
+                },
+                "requiredCapabilities": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "packageId",
+                "createdAtMs",
+                "libraryId",
+                "purpose",
+                "modules"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.engine.ModuleManifest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "schemaVersion": {
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "sha256": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "dependencies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "name",
+                "schemaVersion",
+                "path",
+                "sha256"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.engine.ArchivedModule": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "integer"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "dependencies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "data": {}
+            },
+            "required": [
+                "version",
+                "required",
+                "dependencies",
+                "data"
+            ],
+            "additionalProperties": false
+        }
+    }
+}

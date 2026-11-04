@@ -1,0 +1,2 @@
+-keep class dev.wordprism.memory.NativeMemoryKernel { *; }
+-keepclasseswithmembers class * { native <methods>; }

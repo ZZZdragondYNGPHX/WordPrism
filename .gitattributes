@@ -1,0 +1,7 @@
+# Preserve upstream notice/source bytes, including their original whitespace.
+/backend/third-party/** -text -whitespace
+/docs/frontend/licenses/** -text -whitespace
+
+# Keep Unix launchers usable after checkout on every host.
+/android/gradlew text eol=lf
+/backend/gradlew text eol=lf

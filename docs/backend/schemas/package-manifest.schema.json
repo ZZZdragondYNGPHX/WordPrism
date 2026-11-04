@@ -1,0 +1,94 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "WordPrism contract v1: package-manifest",
+    "allOf": [
+        {
+            "$ref": "#/$defs/dev.wordprism.engine.PackageManifest"
+        }
+    ],
+    "$defs": {
+        "dev.wordprism.engine.PackageManifest": {
+            "type": "object",
+            "properties": {
+                "format": {
+                    "type": "string"
+                },
+                "formatVersion": {
+                    "type": "integer"
+                },
+                "packageId": {
+                    "type": "string"
+                },
+                "createdAtMs": {
+                    "type": "integer"
+                },
+                "libraryId": {
+                    "type": "string"
+                },
+                "purpose": {
+                    "type": "string",
+                    "enum": [
+                        "CONTENT",
+                        "BACKUP"
+                    ]
+                },
+                "producerVersion": {
+                    "type": "string"
+                },
+                "modules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.engine.ModuleManifest"
+                    }
+                },
+                "requiredCapabilities": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "packageId",
+                "createdAtMs",
+                "libraryId",
+                "purpose",
+                "modules"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.engine.ModuleManifest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "schemaVersion": {
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "sha256": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "dependencies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "name",
+                "schemaVersion",
+                "path",
+                "sha256"
+            ],
+            "additionalProperties": false
+        }
+    }
+}
