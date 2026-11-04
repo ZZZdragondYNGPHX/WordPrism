@@ -17,13 +17,13 @@ class ModelCatalogProviderTest {
     @Test fun `both protocols GET models without a model or inference and normalize provider IDs`() = runBlocking {
         MockWebServer().use { server ->
             val provider = OpenAiCompatibleProvider(true)
-            for (protocol in ApiProtocols.supported) {
+            for (protocol in ApiProtocols.supported) for (suffix in listOf("", "responses/", "chat/completions", "models")) {
                 server.enqueue(MockResponse().setBody("""{"object":"list","data":[
                     {"id":"z-model","owned_by":"provider","created":123,"shutdown_date":null},
                     {"id":"a-model","unknown":true},{"id":"z-model","owned_by":"duplicate"}]}
                 """))
                 val chars = secret(); val sentSecret = String(chars)
-                val models = provider.listModels(request(server).copy(protocol = protocol.id), chars)
+                val models = provider.listModels(request(server).copy(protocol = protocol.id, baseUrl = server.url("/gateway/v1/$suffix").toString()), chars)
                 assertEquals(listOf(ApiModel("a-model"), ApiModel("z-model", "provider")), models)
                 assertTrue(chars.all { it == '\u0000' })
                 val sent = server.takeRequest()
@@ -31,7 +31,7 @@ class ModelCatalogProviderTest {
                 assertEquals("Bearer $sentSecret", sent.getHeader("Authorization")); assertEquals(0L, sent.bodySize)
                 assertEquals("application/json", sent.getHeader("Accept"))
             }
-            assertEquals(2, server.requestCount)
+            assertEquals(8, server.requestCount)
         }
     }
 

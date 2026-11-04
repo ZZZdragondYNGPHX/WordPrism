@@ -42,7 +42,8 @@ import kotlinx.serialization.json.JsonElement
 @Serializable data class UsageTotal(val feature: Feature, val presetId: Id, val presetName: String, val requests: Int,
     val knownInputTokens: Long, val knownOutputTokens: Long, val unknownRequests: Int)
 @Serializable data class ConnectionTest(val ok: Boolean, val atMs: Long, val message: String, val latencyMs: Long?)
-@Serializable data class ProtocolInfo(val id: String, val label: String, val defaultBaseUrl: String?, val notes: String)
+@Serializable data class ProtocolInfo(val id: String, val label: String, val defaultBaseUrl: String?, val notes: String,
+    val reasoningEfforts: List<ReasoningEffort> = emptyList())
 @Serializable data class CallPolicy(
     val defaultPresetId: Id?, val fallbackPresetId: Id?, val dailyRequestLimit: Int?, val maxRetries: Int,
     val automaticGeneration: Boolean, val preGenerationMaxPerDay: Int,

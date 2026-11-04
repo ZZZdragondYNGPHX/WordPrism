@@ -6,7 +6,12 @@ import kotlinx.serialization.Serializable
 @JvmInline @Serializable value class PresetId(val value: String)
 
 @Serializable
-data class ProtocolAdapter(val id: String, val label: String, val defaultBaseUrl: String?, val notes: String?)
+data class ProtocolAdapter(val id: String, val label: String, val defaultBaseUrl: String?, val notes: String?,
+    val reasoningEfforts: List<ReasoningEffortOption> = emptyList())
+
+/** IDs are supplied by the core protocol catalog; the facade only adds display labels. */
+@Serializable
+data class ReasoningEffortOption(val id: String, val label: String)
 
 @Serializable
 data class ApiPreset(
@@ -24,6 +29,7 @@ data class ApiPreset(
     val enabled: Boolean,
     val lastTest: ConnectionTestResult?,
     val boundFeatures: List<FeatureId>,
+    val reasoningEffort: String? = null,
 )
 
 @Serializable
@@ -47,6 +53,8 @@ data class PresetDraft(
     val maxOutputTokens: Int?,
     val timeoutSeconds: Int,
     val credential: String? = null,
+    /** null means provider default, not an explicit request to disable reasoning. */
+    val reasoningEffort: String? = null,
 )
 
 /** Connection fields only. presetId/expectedVersion identify an optional saved credential. */

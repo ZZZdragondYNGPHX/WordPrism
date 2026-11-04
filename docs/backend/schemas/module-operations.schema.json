@@ -293,6 +293,25 @@
                             "type": "null"
                         }
                     ]
+                },
+                "reasoningEffort": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "enum": [
+                                "NONE",
+                                "MINIMAL",
+                                "LOW",
+                                "MEDIUM",
+                                "HIGH",
+                                "XHIGH",
+                                "MAX"
+                            ]
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -4378,6 +4397,21 @@
                 },
                 "notes": {
                     "type": "string"
+                },
+                "reasoningEfforts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "NONE",
+                            "MINIMAL",
+                            "LOW",
+                            "MEDIUM",
+                            "HIGH",
+                            "XHIGH",
+                            "MAX"
+                        ]
+                    }
                 }
             },
             "required": [

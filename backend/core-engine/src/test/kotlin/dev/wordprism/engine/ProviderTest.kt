@@ -54,13 +54,14 @@ class ProviderTest {
             assertEquals("Bearer $secretText", actual.getHeader("Authorization")); assertEquals("POST", actual.method)
             val body = json(actual.body.readUtf8()).jsonObject
             assertEquals(setOf("model", "stream", "temperature", "max_output_tokens", "store", "instructions", "input", "text"), body.keys)
-            assertEquals(JsonPrimitive(request.system), body["instructions"]); assertEquals(JsonPrimitive(request.data.toString()), body["input"])
+            assertEquals(JsonPrimitive(request.system), body["instructions"])
+            assertEquals(JsonPrimitive("Return a JSON object for the following task data:\n${request.data}"), body["input"])
             assertEquals(json("768"), body["max_output_tokens"]); assertEquals(json("0.2"), body["temperature"])
             assertEquals(json("false"), body["stream"]); assertEquals(json("false"), body["store"])
             assertEquals(json("""{"format":{"type":"json_object"}}"""), body["text"]); assertEquals(1, server.requestCount)
         }
     }
-    @Test fun `optional JSON mode and temperature are omitted for both protocols`() = runBlocking {
+    @Test fun `unconfigured optional fields are omitted for both protocols`() = runBlocking {
         MockWebServer().use { server ->
             for ((protocol, response) in listOf(ApiProtocols.OPENAI_CHAT_COMPLETIONS to chatSuccess, ApiProtocols.OPENAI_RESPONSES to responsesSuccess)) {
                 server.enqueue(MockResponse().setBody(response.toString()))
@@ -68,6 +69,81 @@ class ProviderTest {
                 OpenAiCompatibleProvider(true).generate(request, UUID.randomUUID().toString().toCharArray())
                 val body = json(server.takeRequest().body.readUtf8()).jsonObject
                 assertFalse(body.containsKey("temperature")); assertFalse(body.containsKey("response_format")); assertFalse(body.containsKey("text"))
+                assertFalse(body.containsKey("reasoning_effort")); assertFalse(body.containsKey("reasoning")); assertFalse(body.containsKey("max_completion_tokens"))
+                if (protocol == ApiProtocols.OPENAI_RESPONSES) assertEquals(JsonPrimitive(request.data.toString()), body["input"])
+            }
+        }
+    }
+    @Test fun `all explicit reasoning efforts use the selected protocol and completion budget`() = runBlocking {
+        MockWebServer().use { server ->
+            val provider = OpenAiCompatibleProvider(true)
+            val values = listOf(ReasoningEffort.NONE to "none", ReasoningEffort.MINIMAL to "minimal", ReasoningEffort.LOW to "low",
+                ReasoningEffort.MEDIUM to "medium", ReasoningEffort.HIGH to "high", ReasoningEffort.XHIGH to "xhigh", ReasoningEffort.MAX to "max")
+            for ((protocol, response) in listOf(ApiProtocols.OPENAI_CHAT_COMPLETIONS to chatSuccess, ApiProtocols.OPENAI_RESPONSES to responsesSuccess)) {
+                for ((effort, wireValue) in values) {
+                    server.enqueue(MockResponse().setBody(response.toString()))
+                    val request = request(server, protocol).let { it.copy(preset = it.preset.copy(reasoningEffort = effort, maxOutputTokens = 4096)) }
+                    provider.generate(request, UUID.randomUUID().toString().toCharArray())
+                    val body = json(server.takeRequest().body.readUtf8()).jsonObject
+                    assertFalse(body.containsKey("max_tokens")); assertFalse(body.containsKey("temperature"))
+                    if (protocol == ApiProtocols.OPENAI_RESPONSES) {
+                        assertEquals(json("""{"effort":"$wireValue"}"""), body["reasoning"])
+                        assertEquals(json("4096"), body["max_output_tokens"])
+                        assertFalse(body.containsKey("reasoning_effort")); assertFalse(body.containsKey("max_completion_tokens"))
+                    } else {
+                        assertEquals(JsonPrimitive(wireValue), body["reasoning_effort"])
+                        assertEquals(json("4096"), body["max_completion_tokens"])
+                        assertFalse(body.containsKey("reasoning")); assertFalse(body.containsKey("max_output_tokens"))
+                    }
+                }
+            }
+            assertEquals(14, server.requestCount)
+        }
+    }
+    @Test fun `pasted endpoints normalize once for both protocols without changing custom prefixes`() = runBlocking {
+        MockWebServer().use { server ->
+            val provider = OpenAiCompatibleProvider(true)
+            for ((protocol, response) in listOf(ApiProtocols.OPENAI_CHAT_COMPLETIONS to chatSuccess, ApiProtocols.OPENAI_RESPONSES to responsesSuccess)) {
+                for (suffix in listOf("", "/", "/responses", "/responses/", "/chat/completions/", "/models")) {
+                    server.enqueue(MockResponse().setBody(response.toString()))
+                    val request = request(server, protocol).let { it.copy(preset = it.preset.copy(baseUrl = server.url("/gateway/v1$suffix").toString())) }
+                    provider.generate(request, UUID.randomUUID().toString().toCharArray())
+                    val path = if (protocol == ApiProtocols.OPENAI_RESPONSES) "/gateway/v1/responses" else "/gateway/v1/chat/completions"
+                    assertEquals(path, server.takeRequest().path)
+                }
+            }
+            assertEquals(12, server.requestCount)
+            assertEquals("/proxy-responses", validateConnection(server.url("/proxy-responses").toString(), ApiProtocols.OPENAI_RESPONSES, 30, true).encodedPath)
+        }
+    }
+    @Test fun `configuration and authentication failures identify HTTP status without leaking provider echoes or retrying`() = runBlocking {
+        MockWebServer().use { server ->
+            for (protocol in ApiProtocols.supported.map { it.id }) {
+                for ((status, code) in listOf(400 to ErrorCode.VALIDATION, 422 to ErrorCode.VALIDATION,
+                    401 to ErrorCode.PROVIDER_AUTH, 403 to ErrorCode.PROVIDER_AUTH, 404 to ErrorCode.PROVIDER_UNAVAILABLE)) {
+                    val marker = UUID.randomUUID().toString()
+                    server.enqueue(MockResponse().setResponseCode(status).setBody("""{"error":{"message":"$marker","param":"$marker","code":"$marker","type":"$marker"}}"""))
+                    val request = request(server, protocol).let { it.copy(preset = it.preset.copy(reasoningEffort = ReasoningEffort.HIGH)) }
+                    val failure = assertFailsWith<ProviderException> { OpenAiCompatibleProvider(true).generate(request, marker.toCharArray()) }
+                    assertEquals(code, failure.fault.code); assertFalse(failure.fault.retryable)
+                    assertContains(failure.fault.message, "HTTP $status"); assertFalse(failure.fault.message.contains(marker))
+                }
+            }
+            assertEquals(10, server.requestCount)
+        }
+    }
+    @Test fun `known parameter errors retain actionable diagnostics without provider text`() = runBlocking {
+        MockWebServer().use { server ->
+            val examples = listOf(
+                """{"error":{"message":"Response input messages must contain the word 'json' in some form to use 'text.format' of type 'json_object'.","type":"invalid_request_error","param":"input","code":null}}""" to "JSON 输出指令",
+                """{"error":{"message":"private provider echo","type":"invalid_request_error","param":"reasoning.effort","code":"unsupported_value"}}""" to "思维程度",
+            )
+            for ((body, expected) in examples) {
+                server.enqueue(MockResponse().setResponseCode(400).setBody(body))
+                val error = assertFailsWith<ProviderException> { OpenAiCompatibleProvider(true).generate(request(server, ApiProtocols.OPENAI_RESPONSES), UUID.randomUUID().toString().toCharArray()) }
+                assertEquals(ErrorCode.VALIDATION, error.fault.code); assertContains(error.fault.message, expected)
+                assertContains(error.fault.message, "参数"); assertContains(error.fault.message, "invalid_request_error")
+                assertFalse(error.fault.message.contains("private provider echo")); assertFalse(error.fault.retryable)
             }
         }
     }

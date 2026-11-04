@@ -86,6 +86,8 @@ adb -s emulator-5556 shell am start -n app.wordprism/.MainActivity
 
 模型标识可手动填写，也可输入服务地址与密钥后点击“拉取模型”，搜索、选择并保存。已有预设可复用本机凭证；服务商没有 `/models` 时仍支持手动填写。功能与契约见[模型目录](api-protocols.md#拉取模型)。
 
+预设的“思维程度”可使用模型默认或显式档位，修改后先保存再测试。服务地址兼容 API 根地址与完整端点；具体映射、旧数据兼容和可分享样例见[API 接入](api-protocols.md#思维程度)。
+
 新增的模型选择器 Compose 仪器测试使用合成列表，不查询供应商。可在 `android/` 执行 `:app:assembleDebugAndroidTest`，安装 debug APK 和 `app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk` 后，只对指定设备运行：
 
 ```powershell
@@ -98,7 +100,7 @@ adb -s emulator-5556 shell am instrument -w -r -e class app.wordprism.ui.setting
 
 ## 运行边界
 
-- API 支持 `openai_chat_completions` 和原生 `openai_responses`，在现有预设中选择；`baseUrl` 为供应商的 API 根路径。请求、用量、失败、重试及配置样例见[LLM 协议接入](api-protocols.md)。
+- API 支持 `openai_chat_completions` 和原生 `openai_responses`，在现有预设中选择；`baseUrl` 可填写 API 根路径或完整端点。请求、用量、失败、重试及配置样例见[LLM 协议接入](api-protocols.md)。
 - 一个模型任务最多 50 个词；手动添加最多 200 个。资料库限制 10,000 词、100,000 作答、30,000 题目；专属包压缩 32 MiB、展开 64 MiB。超限会明确失败。
 - 个人拟合在本机执行，单线程、5 个 epoch、最长 256 条目标历史、最多 5,000 个样本、30 秒可取消预算。选取近期样本并保留各目标首次延迟前缀，避免把中段历史当作首次学习；按时间切分评估，数据不足保留原参数。
 - SQLite/Room 按稳定身份存储独立记录，只写变化行；当前事务仍读取并解码资料库快照。目标规模的响应时间和内存需要设备验证，不能用桌面测试推断真机性能。

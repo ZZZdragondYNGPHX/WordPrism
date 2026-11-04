@@ -90,6 +90,7 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
     var adapterId by rememberSaveable { mutableStateOf("") }
     var baseUrl by rememberSaveable { mutableStateOf("") }
     var model by rememberSaveable { mutableStateOf("") }
+    var reasoningEffort by rememberSaveable { mutableStateOf<String?>(null) }
     var maxTokens by rememberSaveable { mutableStateOf("1200") }
     var timeout by rememberSaveable { mutableStateOf("30") }
     // The secret is held only while typing; it is never read back from the backend.
@@ -99,6 +100,7 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
     var initialized by rememberSaveable { mutableStateOf(presetId == null) }
     var confirmDelete by remember { mutableStateOf<PresetDeletionImpact?>(null) }
     var protocolMenu by remember { mutableStateOf(false) }
+    var effortMenu by remember { mutableStateOf(false) }
     var modelPicker by remember { mutableStateOf(false) }
     fun resetModels() { vm.models.reset(); modelPicker = false }
     DisposableEffect(vm) { onDispose { vm.models.reset() } }
@@ -111,6 +113,7 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
         val v = p
         if (!initialized && v != null) {
             name = v.name; adapterId = v.adapterId; baseUrl = v.baseUrl; model = v.model
+            reasoningEffort = v.reasoningEffort
             maxTokens = v.maxOutputTokens?.toString().orEmpty(); timeout = v.timeoutSeconds.toString(); initialized = true
         }
     }
@@ -167,6 +170,20 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                     else -> "使用当前地址与密钥查询，也可手动填写模型。"
                 }, style = MaterialTheme.typography.bodySmall, color = c.muted)
             }
+            val efforts = adapters.firstOrNull { it.id == adapterId }?.reasoningEfforts.orEmpty()
+            ExposedDropdownMenuBox(effortMenu, { if (!saving && initialized) effortMenu = it }, Modifier.padding(top = 8.dp)) {
+                OutlinedTextField(
+                    efforts.firstOrNull { it.id == reasoningEffort }?.label ?: reasoningEffort ?: "默认（由模型决定）", {},
+                    readOnly = true, enabled = !saving && initialized, label = { Text("思维程度") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(effortMenu) },
+                    supportingText = { Text("较高程度可能增加等待和 token 用量；支持档位由模型决定。") },
+                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                )
+                ExposedDropdownMenu(effortMenu, { effortMenu = false }) {
+                    DropdownMenuItem(text = { Text("默认（由模型决定）") }, onClick = { reasoningEffort = null; effortMenu = false })
+                    efforts.forEach { effort -> DropdownMenuItem(text = { Text(effort.label) }, onClick = { reasoningEffort = effort.id; effortMenu = false }) }
+                }
+            }
             val cred = p?.credential
             OutlinedTextField(
                 secret, { resetModels(); secret = it; removeSecret = false }, singleLine = true, label = { Text("API 密钥") },
@@ -195,16 +212,17 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                         id = savedId?.let(::PresetId), expectedVersion = p?.version, name = name, adapterId = adapterId, baseUrl = baseUrl, model = model,
                         maxOutputTokens = maxTokens.toIntOrNull(), timeoutSeconds = timeout.toIntOrNull() ?: 0,
                         credential = when { secret.isNotEmpty() -> secret; removeSecret -> ""; else -> null },
+                        reasoningEffort = reasoningEffort,
                     )) { secret = ""; removeSecret = false }
                 },
-                enabled = !saving, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                enabled = !saving && initialized, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             ) { Text(if (saving) "正在保存…" else "保存") }
             Text("保存只检查格式，不会联网。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp))
 
             val v = p
             if (v != null) {
                 SectionTitle("连接测试")
-                Text("会向服务商发送一次真实的小请求，可能产生少量用量。", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                Text("使用已保存的预设发送一次真实请求，可能产生用量。", style = MaterialTheme.typography.bodySmall, color = c.muted)
                 v.lastTest?.let { t ->
                     Text((if (t.ok) "正常" else "失败") + "：${t.message}（${t.at.dayAndClock()}${t.latencyMs?.let { "，$it ms" } ?: ""}）",
                         style = MaterialTheme.typography.bodyMedium, color = if (t.ok) c.positive else c.negative, modifier = Modifier.padding(top = 8.dp))

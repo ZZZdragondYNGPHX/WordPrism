@@ -14,12 +14,25 @@ import java.util.UUID
 import dev.wordprism.contract.ApiPreset as CPreset
 import dev.wordprism.contract.Id as CId
 import dev.wordprism.contract.PresetView as CPresetView
+import dev.wordprism.contract.ReasoningEffort as CReasoningEffort
 
 class CodexPresets(private val b: CodexBridge) : PresetsApi {
-    override fun observeAdapters() = b.live(Query.Protocols) { (it as? View.Protocols)?.protocols?.map { p -> ProtocolAdapter(p.id, p.label, p.defaultBaseUrl, p.notes) } }.map { it.orEmpty() }
+    override fun observeAdapters() = b.live(Query.Protocols) { (it as? View.Protocols)?.protocols?.map { p ->
+        ProtocolAdapter(p.id, p.label, p.defaultBaseUrl, p.notes, p.reasoningEfforts.map { effort ->
+            ReasoningEffortOption(effort.name, when (effort) {
+                CReasoningEffort.NONE -> "关闭（none）"
+                CReasoningEffort.MINIMAL -> "极低（minimal）"
+                CReasoningEffort.LOW -> "低（low）"
+                CReasoningEffort.MEDIUM -> "中（medium）"
+                CReasoningEffort.HIGH -> "高（high）"
+                CReasoningEffort.XHIGH -> "很高（xhigh）"
+                CReasoningEffort.MAX -> "最高（max）"
+            })
+        })
+    } }.map { it.orEmpty() }
     private fun CPresetView.map(bindings: List<Binding>, protocols: List<ProtocolInfo>) = ApiPreset(PresetId(preset.id.value), preset.name, preset.version.toInt(), preset.protocol,
         protocols.firstOrNull { it.id == preset.protocol }?.label ?: preset.protocol, preset.baseUrl, preset.model, preset.maxOutputTokens, preset.timeoutSeconds, CredentialState(hasCredential, null), preset.enabled,
-        lastTest?.let { ConnectionTestResult(it.ok, it.atMs, it.message, it.latencyMs) }, bindings.filter { it.presetId == preset.id }.map { it.feature.toSdk() })
+        lastTest?.let { ConnectionTestResult(it.ok, it.atMs, it.message, it.latencyMs) }, bindings.filter { it.presetId == preset.id }.map { it.feature.toSdk() }, preset.reasoningEffort?.name)
     private suspend fun protocols() = (b.view(Query.Protocols) as View.Protocols).protocols
     override fun observePresets(): Flow<List<ApiPreset>> = b.live {
         val v = b.view(Query.Presets) as View.Presets
@@ -35,9 +48,12 @@ class CodexPresets(private val b: CodexBridge) : PresetsApi {
     override suspend fun savePreset(draft: PresetDraft, request: ClientRequestId): SdkResult<ApiPreset> = safely {
         val id = CId(draft.id?.value ?: UUID.nameUUIDFromBytes("preset:${request.value}".toByteArray()).toString())
         val version = draft.expectedVersion?.toLong() ?: 0
+        val reasoningEffort = draft.reasoningEffort?.let { value ->
+            CReasoningEffort.entries.firstOrNull { it.name == value } ?: return@safely invalid<ApiPreset>("不支持此思维程度，请重新选择")
+        }
         // Only submitted fields determine this command, so an idempotent replay stays identical.
         val preset = CPreset(id, version + 1, draft.name.trim(), draft.baseUrl.trim(), draft.model.trim(), draft.adapterId,
-            timeoutSeconds = draft.timeoutSeconds, maxOutputTokens = draft.maxOutputTokens ?: 2048)
+            timeoutSeconds = draft.timeoutSeconds, maxOutputTokens = draft.maxOutputTokens ?: 2048, reasoningEffort = reasoningEffort)
         val saved = b.exec(request, Command.SavePreset(preset, version, preserveAdvancedSettings = true)) { it }
         if (saved is SdkResult.Err) return@safely saved
         draft.credential?.let { secret ->

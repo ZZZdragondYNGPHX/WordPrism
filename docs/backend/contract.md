@@ -35,6 +35,8 @@ JSON 使用 `type` 判别、枚举原名和字符串 ID。进程内 Kotlin 客�
 
 `Protocols` 提供 Chat Completions 与原生 Responses 的稳定 ID、名称和说明；预设选择、调用与用量共用上述接口。协议请求映射、错误语义和兼容样例统一维护在[LLM 协议接入](api-protocols.md)。
 
+`ApiPreset.reasoningEffort: ReasoningEffort?` 默认 `null`，目录字段 `ProtocolInfo.reasoningEfforts` 提供可选值；表示适配器可发送的档位，不承诺模型均支持。旧行和备份缺字段时保持默认，任务和用量保留当次配置。见[思维程度及同源样例](api-protocols.md#思维程度)。
+
 ## 任务与迟到结果
 
 | 状态 | 含义 |

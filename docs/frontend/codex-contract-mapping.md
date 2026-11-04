@@ -28,6 +28,7 @@
 | `adaptation` | `Settings`、`SetSettings`、`AnalyzeLearning`、`PolicyChanges`、`OperationEffects`、`Capabilities` | 读取实际生效策略及内容变化；手动、自动、锁定和撤销共享业务规则 |
 | `presets` | `Protocols`、`Presets`、`SavePreset`、`DeletePreset`、`BindPreset`、`UnbindPreset`、`CallPolicy`、`SetCallPolicy`、`TestConnection`、`GetUsage` | 协议目录与名称、版本化编辑、默认/独立/备用绑定、调用控制、测试状态及真实用量；不读取完整密钥 |
 | `presets.listModels` | `listModels(ModelCatalogRequest, CharArray?) → View.Models` | 未保存表单或同地址的已保存凭证；门面只映射模型 ID/所有者，页面管理取消、重试与搜索选择，规则和样例见[模型目录](../backend/api-protocols.md#拉取模型) |
+| 预设思维程度 | `ApiPreset.reasoningEffort`、`ProtocolInfo.reasoningEfforts` | 界面门面使用核心枚举名及显示标签；默认值 `null` 与显式 `NONE` 分开，保存、请求映射与兼容行为见[思维程度](../backend/api-protocols.md#思维程度) |
 | `dataTransfer` | `GetPackagePreview`、流式预览/导出、`CommitImport`、`RestoreBackup` | 正式 `.wordprism` 容器；预览绑定资料库修订；同目的地导出收据去重，恢复可重试 |
 | `operations` | `Operations`、`GetOperation`、`CancelOperation`、`RetryOperation`、`UndoOperation` | 显示真实终态与动作，不根据页面动画猜测任务结果 |
 | 答案草稿 | `SaveDraft`、`GetDraft` | 持久版本化草稿；AI 添加的纯界面草稿继续使用前端 DataStore |

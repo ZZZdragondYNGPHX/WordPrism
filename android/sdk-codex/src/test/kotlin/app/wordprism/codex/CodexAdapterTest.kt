@@ -148,5 +148,9 @@ class CodexAdapterTest {
 
         val bad = presets.savePreset(PresetDraft(name = "x", adapterId = "openai_chat_completions", baseUrl = "", model = "m", maxOutputTokens = null, timeoutSeconds = 30), ClientRequestId("r2"))
         assertEquals(UiErr.Validation, (bad as SdkResult.Err).error.code)
+        val unknownEffort = presets.savePreset(PresetDraft(name = "x", adapterId = "openai_chat_completions", baseUrl = "https://example.invalid/v1",
+            model = "m", maxOutputTokens = null, timeoutSeconds = 30, reasoningEffort = "unknown"), ClientRequestId("unknown-effort"))
+        assertEquals(UiErr.Validation, (unknownEffort as SdkResult.Err).error.code)
+        assertEquals(1, core.presets.size)
     }
 }

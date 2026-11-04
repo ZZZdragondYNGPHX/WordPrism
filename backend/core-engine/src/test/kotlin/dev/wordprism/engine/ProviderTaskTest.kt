@@ -7,6 +7,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.Dispatcher
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.jupiter.api.Test
 import kotlin.test.*
 
@@ -18,26 +20,46 @@ class ProviderTaskTest {
         suspend fun command(command: Command, key: String = UUID.randomUUID().toString()): View {
             val reply = core.execute(Request(key, command)); assertNull(reply.fault, reply.fault.toString()); return reply.value!!
         }
-        suspend fun preset(protocol: String): ApiPreset {
-            val preset = ApiPreset(Id(protocol), name = protocol, baseUrl = server.url("/v1").toString(), model = "synthetic-model", protocol = protocol)
+        suspend fun preset(protocol: String, effort: ReasoningEffort? = null): ApiPreset {
+            val preset = ApiPreset(Id(protocol), name = protocol, baseUrl = server.url("/v1").toString(), model = "synthetic-model", protocol = protocol, reasoningEffort = effort)
             command(Command.SavePreset(preset)); assertNull(core.setCredential(preset.id, UUID.randomUUID().toString().toCharArray()).fault)
             return preset
         }
     }
 
     private val intake = """{"words":[{"spelling":"linear","meaning":"线性的"}],"reason":"Synthetic HTTP response"}"""
-    private fun nativeSuccess() = buildJsonObject {
+    private fun nativeSuccess(content: String = intake) = buildJsonObject {
         put("status", "completed")
         putJsonArray("output") { addJsonObject {
             put("type", "message"); put("role", "assistant"); put("status", "completed")
-            putJsonArray("content") { addJsonObject { put("type", "output_text"); put("text", intake) } }
+            putJsonArray("content") { addJsonObject { put("type", "output_text"); put("text", content) } }
         } }
         put("usage", json("""{"input_tokens":7,"output_tokens":9}"""))
     }.toString()
 
+    @Test fun `connection test JSON instruction is present in Responses input as required by the real endpoint`() = runBlocking {
+        MockWebServer().use { server ->
+            server.dispatcher = object : Dispatcher() {
+                override fun dispatch(request: RecordedRequest): MockResponse {
+                    val body = json(request.body.readUtf8()).jsonObject
+                    val input = body["input"]!!.jsonPrimitive.content
+                    // Reproduces the HTTP 400 observed from the real API when only instructions said JSON.
+                    if (!input.contains("json", ignoreCase = true)) return MockResponse().setResponseCode(400)
+                        .setBody("""{"error":{"type":"invalid_request_error","param":"input","message":"Response input messages must contain the word 'json' in some form to use 'text.format' of type 'json_object'."}}""")
+                    return MockResponse().setBody(nativeSuccess("""{"ok":true}"""))
+                }
+            }
+            val h = HttpHarness(server); val preset = h.preset(ApiProtocols.OPENAI_RESPONSES, ReasoningEffort.LOW)
+            val op = (h.command(Command.TestConnection(Ref(preset.id, preset.version))) as View.OperationResult).operation
+            h.core.tasks.run(op.id)
+            assertEquals(OperationStatus.SUCCEEDED, h.store.read().operations.getValue(op.id).status)
+            assertEquals(1, server.requestCount)
+        }
+    }
+
     @Test fun `Responses intake waits offline then commits once with its preset snapshot and usage`() = runBlocking {
         MockWebServer().use { server ->
-            val h = HttpHarness(server); val preset = h.preset(ApiProtocols.OPENAI_RESPONSES)
+            val h = HttpHarness(server); val preset = h.preset(ApiProtocols.OPENAI_RESPONSES, ReasoningEffort.HIGH)
             h.command(Command.BindPreset(Binding(Feature.WORD_INTAKE, preset.id)))
             val command = Command.SubmitIntake("linear")
             val op = (h.command(command, "same-intake") as View.OperationResult).operation
@@ -45,7 +67,7 @@ class ProviderTaskTest {
             assertEquals(OperationStatus.WAITING_NETWORK, h.store.read().operations.getValue(op.id).status)
             assertEquals(0, server.requestCount); assertTrue(h.store.read().usage.isEmpty())
             // Editing this reusable preset cannot relabel or reroute an already authorized request.
-            h.command(Command.SavePreset(preset.copy(protocol = ApiProtocols.OPENAI_CHAT_COMPLETIONS), preset.version))
+            h.command(Command.SavePreset(preset.copy(protocol = ApiProtocols.OPENAI_CHAT_COMPLETIONS, reasoningEffort = ReasoningEffort.LOW), preset.version))
             server.enqueue(MockResponse().setBody(nativeSuccess()))
             h.core.tasks.run(op.id)
             val replay = h.command(command, "same-intake") as View.OperationResult
@@ -56,13 +78,15 @@ class ProviderTaskTest {
             assertEquals(preset, state.usage.values.single().preset)
             assertEquals(7L, state.usage.values.single().inputTokens); assertEquals(9L, state.usage.values.single().outputTokens)
             assertEquals("received", state.usage.values.single().outcome)
-            assertEquals("/v1/responses", server.takeRequest().path); assertEquals(1, server.requestCount)
+            val sent = server.takeRequest()
+            assertEquals("/v1/responses", sent.path); assertEquals(json("""{"effort":"high"}"""), json(sent.body.readUtf8()).jsonObject["reasoning"])
+            assertEquals(1, server.requestCount)
         }
     }
 
     @Test fun `configured fallback crosses protocols while retaining native failure usage`() = runBlocking {
         MockWebServer().use { server ->
-            val h = HttpHarness(server); val native = h.preset(ApiProtocols.OPENAI_RESPONSES); val chat = h.preset(ApiProtocols.OPENAI_CHAT_COMPLETIONS)
+            val h = HttpHarness(server); val native = h.preset(ApiProtocols.OPENAI_RESPONSES, ReasoningEffort.HIGH); val chat = h.preset(ApiProtocols.OPENAI_CHAT_COMPLETIONS, ReasoningEffort.LOW)
             h.command(Command.BindPreset(Binding(Feature.WORD_INTAKE, native.id)))
             val settings = h.store.read().settings
             h.command(Command.SetSettings(settings.copy(maxRetries = 1, fallbackPresetId = chat.id), settings.version))
@@ -83,7 +107,10 @@ class ProviderTaskTest {
             assertEquals(listOf(native, chat), usage.map { it.preset })
             assertEquals(listOf(3L, 5L), usage.map { it.inputTokens }); assertEquals(listOf(1L, 6L), usage.map { it.outputTokens })
             assertEquals(listOf("PROVIDER_RATE_LIMIT", "received"), usage.map { it.outcome })
-            assertEquals("/v1/responses", server.takeRequest().path); assertEquals("/v1/chat/completions", server.takeRequest().path)
+            val first = server.takeRequest(); val second = server.takeRequest()
+            assertEquals("/v1/responses", first.path); assertEquals("/v1/chat/completions", second.path)
+            assertEquals(json("""{"effort":"high"}"""), json(first.body.readUtf8()).jsonObject["reasoning"])
+            assertEquals(JsonPrimitive("low"), json(second.body.readUtf8()).jsonObject["reasoning_effort"])
             assertEquals(2, server.requestCount); assertEquals(1, state.words.size)
         }
     }

@@ -74,7 +74,9 @@ class PackageTest {
         val h = Harness(); h.configure(protocol = ApiProtocols.OPENAI_RESPONSES); h.seed(); h.answer()
         val marker = java.util.UUID.randomUUID().toString()
         val presetId = h.store.read().presets.keys.single()
-        val chatPreset = ApiPreset(Id("chat-preset"), name = "Chat fallback", baseUrl = "https://example.invalid/v1", model = "test-model")
+        val native = h.store.read().presets.getValue(presetId)
+        h.command(Command.SavePreset(native.copy(reasoningEffort = ReasoningEffort.HIGH), native.version))
+        val chatPreset = ApiPreset(Id("chat-preset"), name = "Chat fallback", baseUrl = "https://example.invalid/v1", model = "test-model", reasoningEffort = ReasoningEffort.LOW)
         h.command(Command.SavePreset(chatPreset)); h.command(Command.BindPreset(Binding(Feature.EXPLANATION, chatPreset.id)))
         h.core.setCredential(presetId, marker.toCharArray())
         h.clock.advance(30_000); h.command(Command.SetTimer(h.store.read().sessions.keys.single(), TimerMode.PAUSED))
@@ -92,6 +94,9 @@ class PackageTest {
         assertEquals(original.words, after.words); assertEquals(original.answers, after.answers); assertEquals(original.schedules, after.schedules)
         assertEquals(original.changes, after.changes); assertEquals(original.bindings, after.bindings); assertEquals(original.timeSpans, after.timeSpans)
         assertEquals(original.presets, after.presets)
+        assertEquals(original.presetVersions, after.presetVersions)
+        assertEquals(ReasoningEffort.HIGH, after.operations.getValue(pending.operation.id).preset!!.reasoningEffort)
+        assertEquals(ReasoningEffort.LOW, after.presets.getValue(chatPreset.id).reasoningEffort)
         assertEquals(setOf(ApiProtocols.OPENAI_CHAT_COMPLETIONS, ApiProtocols.OPENAI_RESPONSES), after.presets.values.map { it.protocol }.toSet())
         assertEquals(ApiProtocols.OPENAI_RESPONSES, after.operations.getValue(pending.operation.id).preset!!.protocol)
         assertTrue(after.credentialRefs.isEmpty())
@@ -101,6 +106,25 @@ class PackageTest {
         restored.core.setCredential(presetId, java.util.UUID.randomUUID().toString().toCharArray())
         restored.command(Command.RestoreBackup(token), "restore-once"); assertEquals(original.answers.size, restored.store.read().answers.size)
         assertTrue((restored.core.query(Query.Presets).value as View.Presets).presets.single { it.preset.id == presetId }.hasCredential)
+    }
+    @Test fun `old backup omitting reasoning effort restores provider defaults and original history`() = runBlocking {
+        val h = Harness(); h.configure(); h.seed(); h.answer(); h.command(Command.SubmitIntake("linen"))
+        val output = ByteArrayOutputStream(); assertNull(h.core.exportPackage(PackagePurpose.BACKUP, output).fault)
+        fun withoutEffort(value: JsonElement): JsonElement = when (value) {
+            is JsonObject -> JsonObject(value.filterKeys { it != "reasoningEffort" }.mapValues { withoutEffort(it.value) })
+            is JsonArray -> JsonArray(value.map { withoutEffort(it) })
+            else -> value
+        }
+        val oldPackage = rewrite(output.toByteArray()) { entries -> entries.replaceAll { _, value -> withoutEffort(value) } }
+        val restored = Harness()
+        val preview = restored.core.previewPackage(ByteArrayInputStream(oldPackage))
+        assertNull(preview.fault, preview.fault.toString())
+        restored.command(Command.RestoreBackup((preview.value as View.ImportPreview).preview.token))
+        val state = restored.store.read()
+        assertEquals(h.store.read().presets, state.presets); assertEquals(h.store.read().presetVersions, state.presetVersions)
+        assertEquals(h.store.read().answers, state.answers)
+        assertTrue(state.operations.values.mapNotNull { it.preset }.all { it.reasoningEffort == null })
+        restored.core.tasks.runPending(true); assertTrue(restored.provider.requests.isEmpty())
     }
     @Test fun `preview cannot overwrite learning that happened afterwards`() = runBlocking {
         val h = Harness(); h.seed(); h.answer()

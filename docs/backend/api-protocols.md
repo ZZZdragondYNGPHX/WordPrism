@@ -6,16 +6,34 @@
 
 ## 选择与配置
 
-在“设置 → API 预设”创建或编辑预设，通过“接口协议”选择协议；填写供应商的 API 根地址和密钥后，可点击“拉取模型”，搜索并选择返回的模型，也可手动填写模型标识。保存后再为所需功能绑定。保存只做本地检查；“测试连接”会向所选地址发起一次真实推理请求。
+在“设置 → API 预设”创建或编辑预设，通过“接口协议”选择协议；填写供应商的地址和密钥后，可点击“拉取模型”，搜索并选择返回的模型，也可手动填写模型标识。选择思维程度并保存后，再为所需功能绑定。保存只做本地检查；“测试连接”使用已保存的预设发起一次真实推理请求。
 
 | 协议 ID | 界面名称 | `baseUrl` 示例 | 实际请求 |
 | --- | --- | --- | --- |
 | `openai_chat_completions` | OpenAI Chat Completions | `https://api.openai.com/v1` | `POST /v1/chat/completions` |
 | `openai_responses` | OpenAI Responses | `https://api.openai.com/v1` | `POST /v1/responses` |
 
-服务地址填写根路径，不含末尾的 `/responses` 或 `/chat/completions`；也支持供应商自己的路径前缀。切换协议保留已填写的服务地址。模型须支持所选协议与文本 JSON 对象输出；应用没有预设固定模型名单。
+服务地址可填写 API 根路径（如 `https://api.openai.com/v1`）或完整端点。核心统一去掉末尾的 `/responses`、`/chat/completions` 或 `/models`，再按操作追加路径，避免出现 `/responses/responses`。自定义路径前缀和服务域名保持不变；不会自动改到其他服务商。已有预设和任务快照在发送时采用同一规范化，不改写历史配置。切换协议保留已填写的服务地址。模型须支持所选协议与文本 JSON 对象输出；应用没有预设固定模型名单。
 
 协议 ID 与支持目录由 [`ApiProtocols.kt`](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ApiProtocols.kt) 统一维护。`Query.Protocols` 返回完整目录，预设校验和生成样例复用同一来源。前端的选项、说明以及已保存预设的协议名称均读取该目录。
+
+## 思维程度
+
+唯一类型是核心 `ReasoningEffort`，字段为 `ApiPreset.reasoningEffort`。`Query.Protocols → ProtocolInfo.reasoningEfforts` 提供适配器支持发送的档位，前端只映射显示标签。该目录不代表当前模型支持全部档位，也不从 `/models` 的 ID 猜测能力。
+
+| 选择 | 本地契约值 | 请求值 |
+| --- | --- | --- |
+| 默认（由模型决定） | `null`，旧数据缺失字段时也取此值 | 省略参数 |
+| 关闭 | `NONE` | `none` |
+| 极低 | `MINIMAL` | `minimal` |
+| 低 / 中 / 高 | `LOW / MEDIUM / HIGH` | `low / medium / high` |
+| 很高 / 最高 | `XHIGH / MAX` | `xhigh / max` |
+
+Responses 使用 `reasoning: { effort: ... }`；Chat Completions 使用 `reasoning_effort`。Chat 显式配置档位时将输出上限映射到包含推理 tokens 的 `max_completion_tokens`，未指定时保留旧预设的 `max_tokens`。输出上限与超时不会因提高档位而被静默扩大；较高档位可能增加时长、用量或触发截断。服务商不支持的参数明确失败，不自动降档或重发付费请求。
+
+修改后须保存，再点击“测试连接”。新任务使用保存后的预设版本，排队或在途任务保留原快照；用量同样保留当次思维程度。完整备份保留当前值和历史版本，恢复不会自动启用调用。选择默认会真实清除显式配置，`preserveAdvancedSettings` 只保留 `enabled/jsonMode/temperature`，不会覆盖提交的思维程度。
+
+同源样例：[保存高思维程度](fixtures/save-reasoning-preset.request.json)、[返回的预设](fixtures/reasoning-preset.json)、[恢复模型默认](fixtures/reset-reasoning-preset.request.json)。不携带密钥或真实学习资料。
 
 ## 拉取模型
 
@@ -43,8 +61,9 @@ UI 门面为 `PresetsApi.listModels(ModelCatalogDraft, secret)`。点击才发�
 | 本地字段/内容 | Chat Completions | 原生 Responses |
 | --- | --- | --- |
 | 任务指令 | `messages` 中 `system` 消息 | `instructions` |
-| 业务 JSON 上下文 | `messages` 中 `user.content` 字符串 | `input` 字符串 |
-| 输出上限 | `max_tokens` | `max_output_tokens`，包含可见输出及推理 tokens |
+| 业务 JSON 上下文 | `messages` 中 `user.content` 字符串 | `input` 字符串，JSON 模式时前置明确的 JSON 输出指令 |
+| 输出上限 | 未指定思维程度时为 `max_tokens`；显式配置时为 `max_completion_tokens` | `max_output_tokens`，包含可见输出及推理 tokens |
+| 可选思维程度 | `reasoning_effort` | `reasoning.effort` |
 | JSON mode | `response_format.type = json_object` | `text.format.type = json_object` |
 | 可选采样参数 | 配置后发送 `temperature` | 配置后发送 `temperature` |
 | 文本提取 | `choices[0].message.content` | 遍历 `output` 中已完成的 assistant message，拼接其 `content` 中的 `output_text.text` |
@@ -52,13 +71,17 @@ UI 门面为 `PresetsApi.listModels(ModelCatalogDraft, secret)`。点击才发�
 
 Responses 每次发送 `store: false`、`stream: false`。当前任务使用独立请求，不保存远端会话 ID，也不依赖 `previous_response_id`。原始 HTTP 不提供 SDK 的 `output_text` 便利属性，因此不会把该属性或第一个推理项当成模型答案。模型文本先验证为 JSON 对象，再按对应业务类型校验，全部有效后才提交本地变更。
 
+Responses JSON 模式的输入检查要求 `input` 消息包含 JSON 指令；只在 `instructions` 中声明会被真实服务以 HTTP 400 拒绝。适配器在 `input` 的业务数据之前加一条固定 JSON 输出指令，业务结构和主指令保持完整。此行为由用户临时 key 的真实调用定位，不能以本地合成响应的通过替代验证。
+
 `ApiPreset.jsonMode` 默认为 `true`；关闭时省略相应格式参数。`temperature` 默认为 `null`，不发送模型可能不支持的采样参数。当前 Compose 表单保留这些高级字段，配置入口仍以本地契约为准。没有新增依赖或供应商 SDK。
 
 ## 失败、取消与用量
 
 | 服务商结果 | 本地错误/处理 |
 | --- | --- |
-| HTTP 401 / 403 | `PROVIDER_AUTH` |
+| HTTP 400 / 422 | `VALIDATION`，检查模型与请求参数 |
+| HTTP 401 / 403 | `PROVIDER_AUTH`，分别显示认证失败 / 访问权限或地区限制与状态码 |
+| HTTP 404 | `PROVIDER_UNAVAILABLE`，检查端点、协议与模型 |
 | HTTP 429 或 Responses `failed` + `rate_limit_exceeded` | `PROVIDER_RATE_LIMIT`，可按用户设置重试 |
 | HTTP 5xx 或 Responses `failed` + `server_error` | `PROVIDER_UNAVAILABLE`，可按用户设置重试 |
 | Responses `failed` + `invalid_prompt` | `VALIDATION`，提示检查输入或模型配置 |
@@ -67,6 +90,8 @@ Responses 每次发送 `store: false`、`stream: false`。当前任务使用独�
 | Responses `queued / in_progress` | `OUTCOME_UNKNOWN`；同步请求没有取得最终结果，不自动重发 |
 | Responses `cancelled` | `CANCELLED`；保留本地任务和失败用量 |
 | 超时 / 连接中断 | `PROVIDER_TIMEOUT / OUTCOME_UNKNOWN`，须明确选择重试 |
+
+HTTP 错误保留状态码，以及核心白名单内的参数名、服务商 code/type；为 JSON 输入缺指令和思维程度不支持提供具体处理说明。服务商任意原始 message 不保存或回显，避免错误响应回显密钥或学习内容。未识别的内容使用稳定的本地错误。
 
 每次尝试保留实际协议、预设版本、模型与已知用量。`output_tokens` 已包含 reasoning tokens，不再叠加子项；缺失、负数或畸形 token 数保留未知。即使生成被截断、拒绝或失败，服务商已提供的有效用量仍写入任务记录。取消或关闭后的结果是否可提交继续由核心的持久状态及版本校验决定。
 
@@ -80,10 +105,14 @@ Responses 每次发送 `store: false`、`stream: false`。当前任务使用独�
 
 这些样例由 `contract-fixtures` 从正式类型生成，没有真实密钥，模型名称是占位符。`ApiPreset.protocol` 延续可序列化字符串，默认值保持 `openai_chat_completions`；已有预设不会被改为 Responses。模型目录新增同源请求 schema 与 `View.Models`，仍为契约版本 1，客户端与核心一起构建；数据库和包模块版本不变。完整备份保留两种协议、绑定及任务中的预设快照，恢复后依旧清除凭证、关闭自动调用，并等待显式恢复未完成任务。
 
+新增 `reasoningEffort` 为可选字段；旧 Room / SQLite 行、任务与 `.wordprism` 备份缺少字段时采用 `null`，无需迁移数据库结构。默认 `null` 在序列化时省略，保留旧 `SavePreset` 命令的摘要与幂等身份；非空档位参与摘要，同键改变档位仍返回 `IDEMPOTENCY_CONFLICT`。保存命令中省略或显式传 `null` 均表示恢复供应商默认，不表示保留原档位。历史记录、默认预设的请求行为保持兼容；客户端与核心仍共同构建。新枚举值对旧版客户端不承诺可执行，备份恢复规则继续由专属格式维护。
+
 ## 依据与验证边界
 
 按 OpenAI 官方的 [Responses 迁移指南](https://developers.openai.com/api/docs/guides/migrate-to-responses?api-mode=responses)、[文本输出指南](https://developers.openai.com/api/docs/guides/text)及 [Create response API 参考](https://developers.openai.com/api/reference/resources/responses/methods/create.md)核对请求字段、输出项、状态和用量含义。
 
 模型目录按官方 [List models API 参考](https://developers.openai.com/api/reference/resources/models/methods/list.md)核对 GET 路径、鉴权与 `data` 字段。供应商未实现此接口时，保留手动输入，不内置一份可能过时的模型名单。
 
-验证使用真实 OkHttp 与本地 `MockWebServer`，覆盖原生 HTTP 格式、错误及取消，并经实际任务执行器验证离线排队、同键重放、预设快照和跨协议备用重试。SQLite/前端门面测试验证重开、标签与绑定，完整备份测试验证两种协议恢复。具体执行结果见[验证记录](validation.md)。这些是合成 HTTP / 模型数据，尚未使用真实供应商 API 或物理手机验证。
+思维程度及模型差异依据官方 [Reasoning models](https://developers.openai.com/api/docs/guides/reasoning)、[Create chat completion](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)与 Create response 参考。JSON 输入要求见 [Structured outputs / JSON mode](https://developers.openai.com/api/docs/guides/structured-outputs#json-mode)，HTTP 400 的实际响应将问题定位到 `input`。
+
+回归使用真实 OkHttp 与本地 `MockWebServer`，覆盖 HTTP 格式、错误与取消；任务执行器验证离线排队、同键重放、预设快照和跨协议备用重试，SQLite 与完整备份验证配置兼容。另按用户授权使用临时 key，对 OpenAI `gpt-6-luna` 真实验证了 Responses 默认/低思维程度、Chat 低思维程度和模型目录。真实调用从 Windows 宿主执行正式适配器与任务核心；Android 模拟器只验证本地界面与存储。具体用量和范围见[验证记录](validation.md)，未将合成服务或宿主测试当作手机真实网络证据。

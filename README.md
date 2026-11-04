@@ -12,14 +12,14 @@
 
 应用要求 Android 8.0 / API 26 以上，打包 `arm64-v8a` 与 `x86_64`。Debug APK 可直接安装，release 当前为未签名构建。首次启动是空词库，可在“设置 → 导入与导出”导入[三个示例词的正式内容包](docs/backend/packages/example-content.wordprism)，离线开始学习。AI 功能需要在 API 预设中填写自己的连接与凭证；连接测试也会调用供应商。
 
-可直接下载 [v0.4.0-test.3 测试版 APK](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/tag/v0.4.0-test.3)，包含原生 Responses 和模型列表拉取，可覆盖安装上一测试版。仓库为私有，需要登录有访问权的 GitHub 账号。在预设中输入地址与密钥后，点击“拉取模型”，搜索、选择并保存；也可继续手动填写。
+可直接下载 [v0.4.0-test.4 测试版 APK](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/tag/v0.4.0-test.4)，包含原生 Responses、模型列表拉取与思维程度，并修复 Responses 连接测试的 JSON 输入错误。可覆盖安装上一测试版。仓库为私有，需要登录有访问权的 GitHub 账号。在预设中输入地址与密钥后，点击“拉取模型”，搜索、选择思维程度并保存；也可继续手动填写模型。
 
 ## 已实现
 
 - 稳定词条、义项与组关系；离线混合训练、真实作答历史、FSRS 调度、本机参数拟合与评估。
 - AI 添加与持续归组、拼写和归组选择、额外推荐点击加入；持久任务、重复提交保护、取消与可追溯撤销。
 - 用户与 AI 共用的总览、日终分析去重、手动与关闭控制；遵守用户设置的策略及内容调整，撤销保留之后的作答。
-- Chat Completions 与原生 Responses、服务商模型列表拉取与搜索选择、多 API 预设、默认及按功能绑定、备用与重试控制、设备凭证、按实际请求记录用量。
+- Chat Completions 与原生 Responses、模型列表拉取与搜索选择、思维程度、多 API 预设、默认及按功能绑定、备用与重试控制、设备凭证、按实际请求记录用量。
 - 正式 `.wordprism` 内容包与完整备份、预览、版本迁移和原子恢复；恢复后关闭自动调用并重新配置凭证。
 
 ## 实现入口与验证
@@ -31,4 +31,4 @@
 - [方案索引](docs/plan/index.md)：已确认需求、产品模块和职责边界。
 - [第三方源码与许可](backend/third-party/wordprism-notices/README.md)：随应用打包的组件记录、许可与必需源码附件。
 
-模型业务测试使用脚本响应和本地 HTTP 服务，尚无真实 LLM API、物理手机、arm64 运行或长期学习效果证据。当前存储事务仍读取资料库快照，大规模响应时间和内存尚待设备测量。具体限制见[验证记录](docs/backend/validation.md#证据边界与限制)。
+模型业务回归使用脚本响应和本地 HTTP 服务；另已通过宿主上的正式适配器与任务执行器，对 OpenAI `gpt-6-luna` 完成真实 Responses / Chat 连接及模型目录验证。真实服务证据限于连接请求，尚无真实 AI 学习任务、物理手机成功运行、arm64 运行或长期效果证据。当前存储事务仍读取资料库快照，大规模响应时间和内存尚待设备测量。具体限制见[验证记录](docs/backend/validation.md#证据边界与限制)。

@@ -1,6 +1,6 @@
 # 方案索引
 
-更新日期：2026-11-03（America/Los_Angeles）
+更新日期：2026-11-04（America/Los_Angeles）
 
 当前版本：`v0.4`。本机业务核心已实现，并接入 Claude 完成的原生 Compose 前端。已确认本地存储、离线学习、手机直连 API、暂不做云同步，以及每天学习结束后分析一次、半小时以内预算和记忆质量优先。实现入口为[本地后端契约](../backend/contract.md)，实际验证与限制见[验证记录](../backend/validation.md)。
 
@@ -35,6 +35,7 @@
 | U23 | 每天大致投入半小时以内，优先提高记忆质量，愿意配合有效训练，具体学习量和时长按实际表现动态调整 | [个人目标与动态预算](adaptive-learning.md#个人目标与动态预算) |
 | U24 | 扩大 API 接口，增加原生 Responses 协议 | [API 预设](api-presets.md)、[LLM 协议接入](../backend/api-protocols.md) |
 | U25 | 提供从 API 服务商拉取模型的功能 | [API 预设](api-presets.md)、[拉取模型接口与样例](../backend/api-protocols.md#拉取模型) |
+| U26 | API 预设补充思维程度 | [思维程度](../backend/api-protocols.md#思维程度)、核心 `ApiPreset.reasoningEffort` |
 
 ## 方向决策状态
 
@@ -55,7 +56,7 @@
 | D11 | 前后端分工 | Codex 负责数据与业务、LLM、调度和接口；Claude 负责界面与交互实现；共同遵循接口契约 | 已按同一核心契约接入，门面映射不复制业务规则 |
 | D12 | 学习总结 | 后端计算统一事实快照，前端给用户浏览，AI 从同一口径读取并查询明细 | 已接入“学习总览”，区分观察、预测与 AI 评价 |
 | D13 | 自动调整权限与运行 | 应用业务层最高权限；每天学习结束后自动分析一次，支持手动和关闭，保留可撤销记录 | 方向与触发已确认，执行细节见模块 |
-| D14 | API 预设 | 可保存多个连接与模型配置，按功能绑定；任务保留预设版本，调用受用户控制 | 已实现 Chat Completions 与原生 Responses；真实供应商尚未验证 |
+| D14 | API 预设 | 可保存多个连接与模型配置，按功能绑定；任务保留预设版本，调用受用户控制 | 两协议、模型目录与思维程度已实现；OpenAI 真实连接验证通过，业务质量待验证 |
 | D15 | 个人优化目标 | 记忆质量优先；默认日预算 30 分钟以内，词数、题型和计划时长按实际表现调整 | 已确认；预算计时与执行细则为方案 |
 
 ## 讨论安排
@@ -77,6 +78,8 @@ API 协议扩展入口：[LLM 协议接入](../backend/api-protocols.md)。原�
 
 模型目录入口：`WordPrism.listModels(ModelCatalogRequest, CharArray?) → View.Models`，唯一类型为 [`ModelCatalog.kt`](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ModelCatalog.kt)。前端通过 `PresetsApi.listModels` 接入；新表单、已保存凭证、错误与取消规则见[接口和契约样例](../backend/api-protocols.md#拉取模型)。
 
+思维程度入口：`ApiPreset.reasoningEffort: ReasoningEffort?`，`Query.Protocols` 提供各适配器可发送的档位。默认 `null` 保持供应商默认；前端通过现有预设门面选择、保存，见[行为和样例](../backend/api-protocols.md#思维程度)。
+
 按当前议题选读，详细规则由对应模块维护：
 
 1. 总体范围：[产品方向](product-direction.md)
@@ -93,7 +96,7 @@ API 协议扩展入口：[LLM 协议接入](../backend/api-protocols.md)。原�
 | --- | --- |
 | Android 前端与绑定 | 原生 Kotlin / Compose；所有门面已接真实核心，见[对应关系](../frontend/codex-contract-mapping.md) |
 | 算法内核与拟合 | 源码与许可核对、宿主/JNI 与 Android 执行已完成；真机资源及长期质量待验证 |
-| API 适配与配置 | HTTPS Chat Completions、原生 Responses、模型列表拉取、多预设及凭证已实现；本地 HTTP 和脚本响应测试已通过，无真实 API 凭证验证 |
+| API 适配与配置 | 两协议、模型列表、思维程度、多预设与凭证已实现；本地回归及 OpenAI 真实连接/模型目录验证通过，详见[记录](../backend/validation.md) |
 | 类型、数据库与专属格式 | 同源契约/schema/样例已生成，Room 迁移与完整恢复已验证 |
 | Android 分发 | Debug 与 unsigned release 已构建；两个 ABI 和 16 KiB 对齐已检查，无物理手机与发行签名证据 |
 
@@ -110,3 +113,4 @@ API 协议扩展入口：[LLM 协议接入](../backend/api-protocols.md)。原�
 | v0.4 实现 | 2026-11-03 | 固定类型权威、版本与许可；实现本机核心及全部前端门面；完成测试、构建、实际模拟器学习/恢复验证，记录真实 API 与真机证据限制 |
 | v0.4 协议扩展 | 2026-11-03 | 增加原生 Responses 请求与解析，共用预设、功能绑定、任务和用量；同步类型目录、前端协议选择与契约样例 |
 | v0.4 模型目录 | 2026-11-03 | 增加服务商模型列表拉取，支持未保存连接、已保存凭证、搜索选择、取消和迟到结果隔离；同源类型与样例接入现有预设页面 |
+| v0.4 思维程度与调用修复 | 2026-11-04 | 增加预设思维程度、协议参数映射和备份兼容；保留旧请求身份，兼容完整端点地址，修复 Responses JSON 模式输入导致的 HTTP 400 |

@@ -10,6 +10,7 @@ import dev.wordprism.contract.View
 import dev.wordprism.contract.WordSeed
 import dev.wordprism.contract.GroupSeed
 import dev.wordprism.contract.Relation
+import dev.wordprism.contract.ReasoningEffort
 import dev.wordprism.engine.CoreEngine
 import dev.wordprism.engine.CredentialStore
 import dev.wordprism.engine.LlmProvider
@@ -188,9 +189,10 @@ class CoreIntegrationTest {
         Harness().use { h ->
             val adapters = h.sdk.presets.observeAdapters().first()
             assertEquals(setOf(ApiProtocols.OPENAI_CHAT_COMPLETIONS, ApiProtocols.OPENAI_RESPONSES), adapters.map { it.id }.toSet())
+            assertTrue(adapters.all { it.reasoningEfforts.map { e -> e.id } == ReasoningEffort.entries.map { e -> e.name } })
             val chat = h.configure()
             val draft = PresetDraft(name = "Native Responses", adapterId = ApiProtocols.OPENAI_RESPONSES, baseUrl = "https://example.invalid/v1", model = "synthetic-responses",
-                maxOutputTokens = 4096, timeoutSeconds = 45, credential = UUID.randomUUID().toString())
+                maxOutputTokens = 4096, timeoutSeconds = 45, credential = UUID.randomUUID().toString(), reasoningEffort = "HIGH")
             val saved = ok(h.sdk.presets.savePreset(draft, ClientRequestId("responses-preset")))
             assertEquals(adapters.single { it.id == ApiProtocols.OPENAI_RESPONSES }.label, saved.adapterLabel)
             assertEquals(saved, ok(h.sdk.presets.savePreset(draft, ClientRequestId("responses-preset"))))
@@ -202,15 +204,25 @@ class CoreIntegrationTest {
             val restored = h.sdk.presets.observePresets().first().single { it.id == saved.id }
             assertEquals(saved.adapterId, restored.adapterId); assertEquals(saved.adapterLabel, restored.adapterLabel)
             assertEquals(saved.baseUrl, restored.baseUrl); assertEquals(listOf(FeatureId.WordIntake), restored.boundFeatures)
+            assertEquals("HIGH", restored.reasoningEffort)
+            val edit = draft.copy(id = restored.id, expectedVersion = restored.version, credential = null, reasoningEffort = "LOW")
+            val edited = ok(h.sdk.presets.savePreset(edit, ClientRequestId("edit-effort")))
+            assertEquals("LOW", edited.reasoningEffort)
+            assertEquals(edited, ok(h.sdk.presets.savePreset(edit, ClientRequestId("edit-effort"))))
             assertEquals(chat, h.sdk.presets.observeCallPolicy().first().defaultPresetId)
             assertEquals(CStatus.WAITING_NETWORK, h.store.read().operations.getValue(CId(op.value)).status)
             h.provider.response = { ProviderResponse(Contract.json.parseToJsonElement("""{"words":[{"spelling":"linear","meaning":"线性的"}],"reason":"Synthetic Responses task"}"""), 5, 9) }
             h.core.tasks.run(CId(op.value))
             assertEquals(ApiProtocols.OPENAI_RESPONSES, h.provider.requests.single().preset.protocol)
             assertEquals(ApiProtocols.OPENAI_RESPONSES, h.store.read().usage.values.single().preset.protocol)
+            assertEquals(ReasoningEffort.HIGH, h.provider.requests.single().preset.reasoningEffort)
+            assertEquals(ReasoningEffort.HIGH, h.store.read().usage.values.single().preset.reasoningEffort)
             assertEquals(OperationStatus.Succeeded, h.sdk.operations.observe(op).filterNotNull().first().status)
             assertEquals(op, ok(h.sdk.intake.submit(IntakeRequest("linear"), ClientRequestId("native-intake"))))
             h.core.tasks.run(CId(op.value)); assertEquals(1, h.provider.requests.size)
+            ok(h.sdk.presets.savePreset(edit.copy(expectedVersion = edited.version, reasoningEffort = null), ClientRequestId("default-effort")))
+            h.restart()
+            assertNull(h.sdk.presets.observePresets().first().single { it.id == saved.id }.reasoningEffort)
         }
     }
     @Test fun fullBackupThroughDocumentStreamsRestoresFeedbackAndRetriesCommitAfterTokenRemoval() = runBlocking {

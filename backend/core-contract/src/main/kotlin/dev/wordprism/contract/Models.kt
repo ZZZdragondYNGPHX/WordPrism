@@ -1,5 +1,7 @@
 package dev.wordprism.contract
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -187,11 +189,17 @@ object Contract {
     val candidateRmse: Float?, val accepted: Boolean, val note: String,
     val algorithm: String = "fsrs-6/fsrs-rs-6.6.2",
 )
+/** Adapter-level values, not a claim that every model supports every effort. */
+@Serializable enum class ReasoningEffort { NONE, MINIMAL, LOW, MEDIUM, HIGH, XHIGH, MAX }
 @Serializable data class ApiPreset(
     val id: Id, val version: Long = 1, val name: String, val baseUrl: String, val model: String,
     val protocol: String = ApiProtocols.OPENAI_CHAT_COMPLETIONS, val enabled: Boolean = true,
     val timeoutSeconds: Int = 45, val maxOutputTokens: Int = 2048,
     val jsonMode: Boolean = true, val temperature: Float? = null,
+    /** null keeps the provider's default and the legacy serialized request identity; NONE is explicit. */
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val reasoningEffort: ReasoningEffort? = null,
 )
 @Serializable data class PresetView(val preset: ApiPreset, val hasCredential: Boolean, val lastTest: ConnectionTest? = null)
 @Serializable data class Binding(val feature: Feature, val presetId: Id, val userLocked: Boolean = true)

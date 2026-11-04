@@ -30,13 +30,21 @@ internal fun validateConnection(baseUrl: String, protocol: String, timeoutSecond
     requireBusiness(url.toUri().rawUserInfo == null && url.query == null && url.fragment == null, "地址不能包含凭证、查询或片段")
     requireBusiness(ApiProtocols.supported.any { it.id == protocol }, "暂不支持此协议", ErrorCode.UNSUPPORTED_VERSION)
     requireBusiness(timeoutSeconds in 5..180, "超时范围为 5–180 秒")
-    return url
+    // Users often paste a complete endpoint from provider docs. Strip only a known terminal
+    // endpoint, preserving the origin and custom path prefix for both inference and /models.
+    val path = url.encodedPath.trimEnd('/')
+    val endpoint = listOf("/chat/completions", "/responses", "/models").firstOrNull { path.endsWith(it) }
+    val rootPath = endpoint?.let { path.removeSuffix(it) } ?: path
+    return url.newBuilder().encodedPath(rootPath.ifEmpty { "/" }).build()
 }
 
-internal fun validatePreset(preset: ApiPreset, allowLocalHttp: Boolean = false) {
-    validateConnection(preset.baseUrl, preset.protocol, preset.timeoutSeconds, allowLocalHttp)
+internal fun validatePreset(preset: ApiPreset, allowLocalHttp: Boolean = false): HttpUrl {
+    val root = validateConnection(preset.baseUrl, preset.protocol, preset.timeoutSeconds, allowLocalHttp)
     requireBusiness(preset.name.isNotBlank() && preset.name.length <= 120 && preset.model.isNotBlank() && preset.model.length <= 200, "预设名称或模型无效")
     requireBusiness(preset.maxOutputTokens in 64..16384 && (preset.temperature?.let { it.isFinite() && it in 0f..2f } != false), "预设参数超出支持范围")
+    requireBusiness(preset.reasoningEffort == null || preset.reasoningEffort in ApiProtocols.supported.first { it.id == preset.protocol }.reasoningEfforts,
+        "此协议不支持该思维程度")
+    return root
 }
 
 class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : LlmProvider {
@@ -44,7 +52,7 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
     private val calls = ConcurrentHashMap<Id, Call>()
     override suspend fun generate(request: ProviderRequest, secret: CharArray): ProviderResponse {
         try {
-            validatePreset(request.preset, allowLocalHttp)
+            val root = validatePreset(request.preset, allowLocalHttp)
             val preset = request.preset
             val body = encode(request).toString()
             requireBusiness(body.toByteArray(Charsets.UTF_8).size <= 256 * 1024, "本次上下文过大", ErrorCode.LIMIT_EXCEEDED)
@@ -52,7 +60,7 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
                 ApiProtocols.OPENAI_RESPONSES -> "/responses"
                 else -> "/chat/completions"
             }
-            val http = okhttp3.Request.Builder().url(preset.baseUrl.trimEnd('/') + path)
+            val http = okhttp3.Request.Builder().url(root.toString().trimEnd('/') + path)
                 .header("Authorization", "Bearer " + String(secret)).post(body.toRequestBody("application/json".toMediaType())).build()
             secret.fill('\u0000')
             return exchange(http, preset.timeoutSeconds, request.operationId) { parse(it, preset.protocol) }
@@ -107,13 +115,17 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
         when (preset.protocol) {
             ApiProtocols.OPENAI_RESPONSES -> {
                 put("max_output_tokens", preset.maxOutputTokens)
+                preset.reasoningEffort?.let { effort -> putJsonObject("reasoning") { put("effort", effort.name.lowercase()) } }
                 put("store", false)
                 put("instructions", request.system)
-                put("input", request.data.toString())
+                // Responses validates JSON mode against input messages, not only instructions.
+                put("input", if (preset.jsonMode) "Return a JSON object for the following task data:\n${request.data}" else request.data.toString())
                 if (preset.jsonMode) putJsonObject("text") { putJsonObject("format") { put("type", "json_object") } }
             }
             else -> {
-                put("max_tokens", preset.maxOutputTokens)
+                // Explicit effort opts into the reasoning-capable limit; legacy presets keep their wire format.
+                put(if (preset.reasoningEffort == null) "max_tokens" else "max_completion_tokens", preset.maxOutputTokens)
+                preset.reasoningEffort?.let { put("reasoning_effort", it.name.lowercase()) }
                 if (preset.jsonMode) putJsonObject("response_format") { put("type", "json_object") }
                 putJsonArray("messages") {
                     addJsonObject { put("role", "system"); put("content", request.system) }
@@ -135,7 +147,7 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
         val raw = readJson(response)
         val errors = TokenUsage(null, null)
         if (response.code in setOf(404, 405)) errors.problem(ErrorCode.PROVIDER_UNAVAILABLE, "服务商未提供 /models 列表，请手动填写模型标识")
-        checkStatus(response, errors)
+        checkStatus(response, errors, raw)
         val models = raw?.get("data") as? JsonArray ?: errors.problem(ErrorCode.INVALID_RESPONSE, "服务商未返回有效的模型列表")
         if (models.size > 10000) errors.problem(ErrorCode.LIMIT_EXCEEDED, "模型列表超过 10000 项，请手动填写模型标识")
         return models.map { element ->
@@ -152,7 +164,7 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
         val native = protocol == ApiProtocols.OPENAI_RESPONSES
         val tokens = TokenUsage(usage?.tokens(if (native) "input_tokens" else "prompt_tokens"),
             usage?.tokens(if (native) "output_tokens" else "completion_tokens"))
-        checkStatus(response, tokens)
+        checkStatus(response, tokens, raw)
         if (raw == null) tokens.problem(ErrorCode.INVALID_RESPONSE, "服务商未返回有效 JSON 对象")
         val content = if (native) responsesText(raw, tokens) else chatText(raw, tokens)
         val parsed = runCatching { Contract.json.parseToJsonElement(content) as? JsonObject }.getOrNull()
@@ -160,12 +172,33 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
         return ProviderResponse(parsed, tokens.input, tokens.output)
     }
 
-    private fun checkStatus(response: Response, tokens: TokenUsage) {
+    private fun checkStatus(response: Response, tokens: TokenUsage, raw: JsonObject?) {
+        // Provider messages can echo credentials or study text. Only recognized diagnostic fields
+        // and locally worded causes are persisted or shown; arbitrary raw error strings are not.
+        val error = raw?.get("error") as? JsonObject
+        val parameter = error?.text("param")?.takeIf { it in diagnosticParameters }
+        val code = error?.text("code")?.takeIf { it in diagnosticCodes }
+        val type = error?.text("type")?.takeIf { it in diagnosticTypes }
+        val details = listOfNotNull(parameter?.let { "参数 $it" }, code, type).joinToString("；")
+        fun problem(localCode: ErrorCode, message: String, retryable: Boolean = false): Nothing =
+            tokens.problem(localCode, message + if (details.isBlank()) "" else "（$details）", retryable)
         if (!response.isSuccessful) when (response.code) {
-            401, 403 -> tokens.problem(ErrorCode.PROVIDER_AUTH, "服务商拒绝认证，请检查凭证")
-            429 -> tokens.problem(ErrorCode.PROVIDER_RATE_LIMIT, "服务商限流，可稍后重试", true)
-            in 500..599 -> tokens.problem(ErrorCode.PROVIDER_UNAVAILABLE, "服务商暂不可用", true)
-            else -> tokens.problem(ErrorCode.PROVIDER_UNAVAILABLE, "服务商返回 HTTP ${response.code}")
+            400, 422 -> {
+                val cause = when {
+                    parameter == "input" && error?.text("message")?.let { it.contains("json", true) && it.contains("json_object", true) } == true ->
+                        "JSON 模式要求 input 消息包含 JSON 输出指令，请更新应用后重试"
+                    parameter in setOf("reasoning.effort", "reasoning_effort") -> "服务商拒绝所选思维程度，请调整并保存后重试"
+                    code == "unsupported_parameter" || code == "unsupported_value" -> "模型不支持所选参数或取值，请检查预设配置"
+                    else -> "服务商拒绝请求参数，请检查模型与预设配置"
+                }
+                problem(ErrorCode.VALIDATION, "$cause（HTTP ${response.code}）")
+            }
+            401 -> problem(ErrorCode.PROVIDER_AUTH, "认证失败（HTTP 401）：请确认使用该服务商的 API 密钥，并已保存")
+            403 -> problem(ErrorCode.PROVIDER_AUTH, "访问被拒绝（HTTP 403）：请检查密钥权限、模型访问权限或服务地区限制")
+            429 -> problem(ErrorCode.PROVIDER_RATE_LIMIT, "服务商限流，可稍后重试", true)
+            404 -> problem(ErrorCode.PROVIDER_UNAVAILABLE, "接口或模型不存在（HTTP 404），请检查服务地址、协议和模型标识")
+            in 500..599 -> problem(ErrorCode.PROVIDER_UNAVAILABLE, "服务商暂不可用", true)
+            else -> problem(ErrorCode.PROVIDER_UNAVAILABLE, "服务商返回 HTTP ${response.code}")
         }
     }
 
@@ -220,6 +253,12 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
     }
     override fun cancel(operationId: Id) { calls[operationId]?.cancel() }
 }
+
+private val diagnosticParameters = setOf("input", "instructions", "model", "reasoning", "reasoning.effort", "reasoning_effort",
+    "text.format", "text.format.type", "response_format", "response_format.type", "temperature", "max_tokens", "max_completion_tokens", "max_output_tokens", "store", "stream")
+private val diagnosticCodes = setOf("invalid_api_key", "insufficient_quota", "model_not_found", "unsupported_country_region_territory",
+    "unsupported_parameter", "unsupported_value", "invalid_value", "context_length_exceeded", "invalid_request_error", "rate_limit_exceeded", "server_error")
+private val diagnosticTypes = setOf("invalid_request_error", "authentication_error", "permission_error", "rate_limit_error", "server_error")
 
 private fun JsonObject.text(key: String): String? = (get(key) as? JsonPrimitive)?.takeIf { it.isString }?.content
 private fun JsonObject.tokens(key: String): Long? = (get(key) as? JsonPrimitive)?.longOrNull?.takeIf { it >= 0 }

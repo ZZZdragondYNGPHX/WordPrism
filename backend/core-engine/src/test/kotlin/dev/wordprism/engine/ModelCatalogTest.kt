@@ -24,10 +24,12 @@ class ModelCatalogTest {
 
     @Test fun `saved credential accepts canonical same root across installed protocols and remains stored`() = runBlocking {
         val h = Harness(); h.configure(); val before = h.store.read()
-        val reply = h.core.listModels(draft.copy(baseUrl = "https://EXAMPLE.invalid:443/v1/", credentialPreset = saved))
-        assertEquals(View.Models(emptyList()), reply.value); assertNull(reply.fault)
-        assertTrue(h.provider.modelSecret!!.all { it == '\u0000' }); assertEquals(before, h.store.read())
-        assertTrue(h.core.hasCredential(before, saved.id)); assertEquals(1, h.provider.modelRequests.size)
+        for (suffix in listOf("", "responses/", "chat/completions", "models")) {
+            val reply = h.core.listModels(draft.copy(baseUrl = "https://EXAMPLE.invalid:443/v1/$suffix", credentialPreset = saved))
+            assertEquals(View.Models(emptyList()), reply.value); assertNull(reply.fault)
+            assertTrue(h.provider.modelSecret!!.all { it == '\u0000' }); assertEquals(before, h.store.read())
+        }
+        assertTrue(h.core.hasCredential(before, saved.id)); assertEquals(4, h.provider.modelRequests.size)
     }
 
     @Test fun `missing outdated or moved connections never borrow a saved credential`() = runBlocking {

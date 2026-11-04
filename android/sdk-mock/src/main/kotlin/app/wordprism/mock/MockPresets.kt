@@ -21,7 +21,7 @@ internal class MockPresets(private val c: MockCore, private val insights: MockIn
     private fun MPreset.view(d: MockDb) = ApiPreset(
         PresetId(id), name, version, adapterId, adapters.firstOrNull { it.id == adapterId }?.label ?: adapterId, baseUrl, model,
         maxOutputTokens, timeoutSeconds, CredentialState(credentialHint != null, credentialHint), enabled, lastTest,
-        d.bindings.filterValues { it == id }.keys.map(::FeatureId),
+        d.bindings.filterValues { it == id }.keys.map(::FeatureId), reasoningEffort,
     )
 
     override fun observePresets() = c.db.map { d -> d.presets.values.sortedBy { it.name }.map { it.view(d) } }.distinctUntilChanged()
@@ -48,7 +48,8 @@ internal class MockPresets(private val c: MockCore, private val insights: MockIn
                 else -> "••••" + draft.credential!!.takeLast(4)
             }
             val p = MPreset(existing?.id ?: c.newId("p"), draft.name.trim(), (existing?.version ?: 0) + 1, draft.adapterId, draft.baseUrl.trim().trimEnd('/'),
-                draft.model.trim(), draft.maxOutputTokens, draft.timeoutSeconds, hint, existing?.enabled ?: true, if (existing?.let { it.baseUrl == draft.baseUrl && it.model == draft.model && draft.credential == null } == true) existing.lastTest else null)
+                draft.model.trim(), draft.maxOutputTokens, draft.timeoutSeconds, hint, existing?.enabled ?: true, if (existing?.let { it.baseUrl == draft.baseUrl && it.model == draft.model && draft.reasoningEffort == it.reasoningEffort && draft.credential == null } == true) existing.lastTest else null,
+                reasoningEffort = draft.reasoningEffort)
             val n = d.copy(presets = d.presets + (p.id to p))
             n to SdkResult.Ok(p.view(n))
         }

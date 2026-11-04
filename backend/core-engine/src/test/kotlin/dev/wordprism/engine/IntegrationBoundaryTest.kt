@@ -2,6 +2,8 @@ package dev.wordprism.engine
 
 import dev.wordprism.contract.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Test
 import kotlin.test.*
 
@@ -45,11 +47,61 @@ class IntegrationBoundaryTest {
         val original = h.store.read().presets.values.single()
         h.command(Command.SavePreset(original.copy(enabled = false, jsonMode = false, temperature = 0.4f), original.version))
         val before = h.store.read().presets.values.single()
-        val command = Command.SavePreset(ApiPreset(before.id, name = "renamed", baseUrl = before.baseUrl, model = before.model), before.version, preserveAdvancedSettings = true)
+        val command = Command.SavePreset(ApiPreset(before.id, name = "renamed", baseUrl = before.baseUrl, model = before.model, reasoningEffort = ReasoningEffort.HIGH), before.version, preserveAdvancedSettings = true)
         h.command(command, "form-once"); h.command(command, "form-once")
         val after = h.store.read().presets.values.single()
         assertFalse(after.enabled); assertFalse(after.jsonMode); assertEquals(0.4f, after.temperature)
+        assertEquals(ReasoningEffort.HIGH, after.reasoningEffort)
         assertEquals(before.version + 1, after.version)
+        val clear = Command.SavePreset(after.copy(reasoningEffort = null), after.version, preserveAdvancedSettings = true)
+        h.command(clear, "clear-effort"); h.command(clear, "clear-effort")
+        assertNull(h.store.read().presets.getValue(after.id).reasoningEffort)
+        assertEquals(after.version + 1, h.store.read().presets.getValue(after.id).version)
+        assertEquals(ReasoningEffort.HIGH, h.store.read().presetVersions.getValue("${after.id.value}:${after.version}").reasoningEffort)
+    }
+
+    @Test fun `legacy rows without reasoning effort decode as provider default including queued snapshots`() = runBlocking {
+        val h = Harness(); h.configure(); h.command(Command.SubmitIntake("linear"))
+        fun withoutEffort(value: JsonElement): JsonElement = when (value) {
+            is JsonObject -> JsonObject(value.filterKeys { it != "reasoningEffort" }.mapValues { withoutEffort(it.value) })
+            is JsonArray -> JsonArray(value.map { withoutEffort(it) })
+            else -> value
+        }
+        val original = h.store.read()
+        val legacy = StateCodec.rows(original).map { it.copy(payload = withoutEffort(json(it.payload)).toString()) }
+        val loaded = StateCodec.decode(legacy)
+        assertEquals(original, loaded)
+        assertNull(loaded.presets.values.single().reasoningEffort)
+        assertNull(loaded.operations.values.single().preset!!.reasoningEffort)
+        assertFailsWith<kotlinx.serialization.SerializationException> {
+            Contract.json.decodeFromString<ApiPreset>("""{"id":"bad","name":"invalid","baseUrl":"https://example.invalid/v1","model":"test","reasoningEffort":"arbitrary"}""")
+        }
+    }
+
+    @Test fun `upgrading preserves legacy preset request identities while explicit effort remains distinct`() = runBlocking {
+        // The test.3 command representation predates reasoningEffort; its hash must survive an upgrade.
+        val legacyJson = """{"type":"save_preset","preset":{"id":"fixture-responses-preset","version":1,"name":"Responses 示例","baseUrl":"https://api.openai.com/v1","model":"your-responses-model","protocol":"openai_responses","enabled":true,"timeoutSeconds":45,"maxOutputTokens":4096,"jsonMode":true,"temperature":null},"expectedVersion":0,"preserveAdvancedSettings":false}"""
+        val command = Contract.json.decodeFromString<Command>(legacyJson) as Command.SavePreset
+        val h = Harness()
+        h.command(command, "legacy-preset")
+        h.store.transaction { db ->
+            db.requests["legacy-preset"] = db.requests.getValue("legacy-preset").copy(fingerprint = sha256(legacyJson.toByteArray()))
+        }
+        val before = h.store.read()
+        val reopened = CoreEngine(h.store, h.credentials, h.memory, h.clock, h.provider)
+        assertNull(reopened.execute(Request("legacy-preset", command)).fault)
+        assertEquals(before, h.store.read())
+        assertEquals(legacyJson, Contract.json.encodeToString<Command>(command))
+
+        val changed = command.copy(preset = command.preset.copy(reasoningEffort = ReasoningEffort.HIGH))
+        assertEquals(ErrorCode.IDEMPOTENCY_CONFLICT, reopened.execute(Request("legacy-preset", changed)).fault?.code)
+        val update = changed.copy(expectedVersion = 1)
+        assertNull(reopened.execute(Request("explicit-effort", update)).fault)
+        val updated = h.store.read()
+        assertNull(reopened.execute(Request("explicit-effort", update)).fault)
+        assertEquals(updated, h.store.read())
+        assertEquals(ReasoningEffort.HIGH, updated.presets.getValue(command.preset.id).reasoningEffort)
+        assertEquals(ErrorCode.IDEMPOTENCY_CONFLICT, reopened.execute(Request("explicit-effort", update.copy(preset = command.preset))).fault?.code)
     }
 
     @Test fun `appending group members retains order after row codec reload`() = runBlocking {

@@ -58,7 +58,8 @@ import kotlinx.serialization.Serializable
     ) : Command
     @Serializable @SerialName("fit_memory") data class FitMemory(val applyIfBetter: Boolean = false) : Command
     @Serializable @SerialName("evaluate_parameters") data class EvaluateParameters(val weights: List<Float>) : Command
-    /** UI forms that do not expose enabled/jsonMode/temperature preserve them transactionally. */
+    /** UI forms that do not expose enabled/jsonMode/temperature preserve them transactionally.
+     * reasoningEffort is always submitted, including null to return to the provider default. */
     @Serializable @SerialName("save_preset") data class SavePreset(val preset: ApiPreset, val expectedVersion: Long = 0, val preserveAdvancedSettings: Boolean = false) : Command
     @Serializable @SerialName("delete_preset") data class DeletePreset(val preset: Ref) : Command
     @Serializable @SerialName("bind_preset") data class BindPreset(val binding: Binding) : Command

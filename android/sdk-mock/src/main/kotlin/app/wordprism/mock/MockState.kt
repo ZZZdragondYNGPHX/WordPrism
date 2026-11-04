@@ -159,6 +159,7 @@ internal data class MPreset(
     val credentialHint: String?,
     val enabled: Boolean = true,
     val lastTest: ConnectionTestResult? = null,
+    val reasoningEffort: String? = null,
 )
 
 /** Seeded synthetic history so the overview has something to show on first run. */

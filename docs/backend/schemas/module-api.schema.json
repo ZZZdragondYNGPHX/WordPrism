@@ -80,6 +80,25 @@
                             "type": "null"
                         }
                     ]
+                },
+                "reasoningEffort": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "enum": [
+                                "NONE",
+                                "MINIMAL",
+                                "LOW",
+                                "MEDIUM",
+                                "HIGH",
+                                "XHIGH",
+                                "MAX"
+                            ]
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
