@@ -75,14 +75,19 @@ class CodexStudy(private val b: CodexBridge) : StudyApi {
             CKind.FAMILIARITY -> ActivityView.Familiarity(id, label, a.targetWords.firstOrNull().orEmpty(), null)
             CKind.CONTRAST -> a.groupId?.let { gid -> (b.view(Query.GetGroup(gid)) as View.Library).group(GroupId(gid.value)) }
                 ?.let { ActivityView.Contrast(id, label, it) } ?: ActivityView.Unknown(id, label, a.prompt)
-            CKind.CHOICE -> ActivityView.Choice(id, label, "选择符合释义或语境的词", a.prompt, null, a.choices.map { ChoiceOption(it.id, it.text) }, a.hintAllowed)
-            CKind.RECALL, CKind.SPELLING -> ActivityView.Recall(id, label, "独立写出对应的英文词", a.prompt, null, null, draft, a.hintAllowed)
+            CKind.CHOICE -> ActivityView.Choice(id, label, "选择符合释义或语境的词", studyText(a.prompt, a.passage, a.question, a.sourceSentence), null,
+                a.choices.map { ChoiceOption(it.id, it.text) }, a.hintAllowed)
+            CKind.RECALL, CKind.SPELLING -> ActivityView.Recall(id, label, "独立写出对应的英文词",
+                studyText(a.prompt, a.passage, a.question, a.sourceSentence), a.cue, null, draft, a.hintAllowed)
             CKind.PASSAGE -> if (a.choices.isEmpty()) ActivityView.Unknown(id, label, a.prompt) else ActivityView.Reading(id, label, a.passage ?: a.prompt,
-                a.question ?: a.prompt, a.choices.map { ChoiceOption(it.id, it.text) }, a.source.toSdk(), a.hintAllowed)
-            CKind.WRITING, CKind.REWRITE -> ActivityView.Production(id, label, a.prompt, a.cue, a.sourceSentence, a.targetWords, draft,
+                studyText(a.prompt.takeUnless { it == a.passage }, a.question, a.sourceSentence), a.choices.map { ChoiceOption(it.id, it.text) }, a.source.toSdk(), a.hintAllowed)
+            CKind.WRITING, CKind.REWRITE -> ActivityView.Production(id, label, a.prompt, a.cue,
+                studyText(a.passage, a.question, a.sourceSentence).ifBlank { null }, a.targetWords, draft,
                 (b.view(Query.PreviewCall(CFeature.WRITING_FEEDBACK)) as View.Preview).preview.toSdk(b.online.value), a.hintAllowed)
         }
     }
+    /** Model fields can carry essential context for any kind; keep them all in the existing UI slots. */
+    private fun studyText(vararg parts: String?): String = parts.mapNotNull { it?.trim()?.takeIf(String::isNotBlank) }.distinct().joinToString("\n\n")
     internal fun mapFeedback(v: View.AnswerResult): Feedback {
         val a = v.answer; val ai = v.feedback.lastOrNull { it.source == CGrade.AI }
         val practice = !a.affectsSchedule && (a.input.hintUsed || a.input.answerRevealed) && a.gradeSource == CGrade.OBJECTIVE

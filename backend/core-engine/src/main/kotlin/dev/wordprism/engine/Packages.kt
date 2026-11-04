@@ -156,6 +156,7 @@ internal class Packages(private val engine: CoreEngine) {
             requireBusiness(stored.preview.conflicts.isEmpty(), "内容包存在冲突，请先在来源库修正后重新导出", ErrorCode.VERSION_CONFLICT)
             val before = db.captureLibrary()
             db.words.putAll(staged.words); db.senses.putAll(staged.senses); db.groups.putAll(staged.groups); db.memberships.putAll(staged.memberships)
+            db.recommendations.putAll(staged.recommendations)
             staged.targets.forEach { (targetId, target) -> if (targetId !in db.targets) { db.targets[targetId] = target; db.schedules[targetId] = Schedule(targetId, dueAtMs = now, policyVersion = db.policy.version) } }
             db.activities.putAll(staged.activities); db.activityVersions.putAll(staged.activityVersions)
             db.archivedModules.putAll(staged.archivedModules); db.recordLibraryUndo(opId, before)
@@ -191,7 +192,12 @@ internal class Packages(private val engine: CoreEngine) {
         result.archivedModules.putAll(unknown)
         if (manifest.purpose == PackagePurpose.CONTENT) {
             requireBusiness(manifest.modules.none { it.name in moduleFields && it.name != "library" }, "内容包不能携带个人学习记录或 API 配置", ErrorCode.INVALID_PACKAGE)
-            result.recommendations.clear(); result.drafts.clear()
+            // Content may carry only the candidates explicitly linked by its saved supplements.
+            // Acceptance is personal history and must be decided anew in the destination library.
+            val candidates = result.senses.values.flatMap { it.explanation?.recommendationIds.orEmpty() }.toSet()
+            result.recommendations.keys.retainAll(candidates)
+            result.recommendations.replaceAll { _, rec -> rec.copy(acceptedOperationId = null, inLibrary = false, libraryWordId = null) }
+            result.drafts.clear()
             result.targets.forEach { (id, _) -> result.schedules[id] = Schedule(id, dueAtMs = 0) }
         }
         return result
@@ -208,7 +214,10 @@ internal class Packages(private val engine: CoreEngine) {
             db.memberships.values.filter { it.active && it.groupId in groupIds }.forEach { db.senses[it.senseId]?.wordId?.let(chosenWords::add) }
         } while (chosenWords.size != count)
         val out = Database(libraryId = db.libraryId)
-        out.words.putAll(db.words.filterKeys { it in chosenWords }); out.senses.putAll(db.senses.filterKeys { it in senseIds })
+        out.words.putAll(db.words.filterKeys { it in chosenWords })
+        out.senses.putAll(db.senses.filterKeys { it in senseIds }.mapValues { (_, sense) -> sense.copy(explanation = db.explanation(sense)) })
+        val candidates = out.senses.values.flatMap { it.explanation?.recommendationIds.orEmpty() }.toSet()
+        out.recommendations.putAll(db.recommendations.filterKeys { it in candidates }.mapValues { (_, rec) -> rec.copy(acceptedOperationId = null, inLibrary = false, libraryWordId = null) })
         out.groups.putAll(db.groups.filterKeys { it in groupIds }); out.memberships.putAll(db.memberships.filterValues { it.groupId in groupIds && it.senseId in senseIds })
         out.targets.putAll(db.targets.filterValues { it.senseId in senseIds && (it.groupId == null || it.groupId in groupIds) })
         out.activities.putAll(db.activities.filterValues { it.targetId in out.targets })
@@ -255,6 +264,15 @@ fun validateDatabase(db: Database, memory: dev.wordprism.memory.MemoryKernel) {
     valid(db.words.values.map { it.normalized }.distinct().size == db.words.size, "存在重复规范词形")
     valid(db.senses.all { (id, value) -> id == value.id && value.wordId in db.words && value.version > 0 && value.meaning.length in 1..4000 &&
         value.acceptedForms.size <= 31 && value.acceptedForms.all { it.length in 1..4000 } && value.examples.size <= 20 && value.examples.all { it.length <= 4000 } }, "义项引用或内容无效")
+    db.senses.values.forEach { sense -> sense.explanation?.let { saved ->
+        validateExplanationContent(saved.content, ErrorCode.INVALID_PACKAGE)
+        valid(saved.version in 1..sense.version && saved.basedOnSenseVersion in 1..sense.version && saved.recommendationIds.size <= 6 &&
+            saved.recommendationIds.distinct().size == saved.recommendationIds.size && saved.recommendationIds.all { db.recommendations[it]?.originSenseId == sense.id },
+            "讲解版本或词族候选引用无效")
+    } }
+    valid(db.recommendations.all { (id, rec) -> id == rec.id && rec.spelling.isNotBlank() && rec.spelling.length <= 100 && rec.reason.length <= 4000 &&
+        (rec.groupId == null || rec.groupId in db.groups) && (rec.originSenseId == null || rec.originSenseId in db.senses && rec.groupId == null) &&
+        (rec.content?.let { validRecommendationContent(it) && normalize(it.spelling) == normalize(rec.spelling) } != false) }, "推荐引用或内容无效")
     valid(db.groups.all { (id, value) -> id == value.id && value.version > 0 && value.title.length in 1..200 && value.purpose.length in 1..4000 }, "词组身份无效")
     valid(db.memberships.all { (id, value) -> id == value.id && value.version > 0 && value.position >= 0 && value.groupId in db.groups && value.senseId in db.senses }, "成员引用无效")
     valid(db.memberships.values.map { it.groupId to it.senseId }.distinct().size == db.memberships.size, "成员关系重复")

@@ -191,12 +191,171 @@
                 },
                 "source": {
                     "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                },
+                "explanation": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.SenseExplanation"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
                 "id",
                 "wordId",
                 "meaning"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.SenseExplanation": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "integer"
+                },
+                "basedOnSenseVersion": {
+                    "type": "integer"
+                },
+                "content": {
+                    "$ref": "#/$defs/dev.wordprism.contract.ExplanationContent"
+                },
+                "recommendationIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "source": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                }
+            },
+            "required": [
+                "version",
+                "basedOnSenseVersion",
+                "content",
+                "source"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.ExplanationContent": {
+            "type": "object",
+            "properties": {
+                "explanation": {
+                    "type": "string"
+                },
+                "englishDefinition": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "wordParts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.WordPart"
+                    }
+                },
+                "etymology": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.EtymologyNote"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "mnemonic": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Mnemonic"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "usageNotes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "examples": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "explanation"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.WordPart": {
+            "type": "object",
+            "properties": {
+                "form": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "PREFIX",
+                        "ROOT",
+                        "SUFFIX",
+                        "STEM"
+                    ]
+                },
+                "meaning": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "form",
+                "kind",
+                "meaning"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.EtymologyNote": {
+            "type": "object",
+            "properties": {
+                "explanation": {
+                    "type": "string"
+                },
+                "uncertainty": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "explanation"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Mnemonic": {
+            "type": "object",
+            "properties": {
+                "story": {
+                    "type": "string"
+                },
+                "cue": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "story"
             ],
             "additionalProperties": false
         },
@@ -527,6 +686,26 @@
                 },
                 "inLibrary": {
                     "type": "boolean"
+                },
+                "originSenseId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "libraryWordId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

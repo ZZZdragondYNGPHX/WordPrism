@@ -1,8 +1,8 @@
 # 本地后端契约
 
-契约版本：`1` · 产品：`v0.4` · 实现与联调：2026-11-03。
+契约版本：`1` · 产品：`v0.4` · 实现与联调：2026-11-04。
 
-唯一业务类型权威是 [WordPrism.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/WordPrism.kt)、[Models.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Models.kt)、[Projections.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Projections.kt)、[ApiProtocols.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ApiProtocols.kt) 和 [ModelCatalog.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ModelCatalog.kt)。命令、查询、错误、实体、派生事实、协议和模型目录均从这里定义；[JSON schema](schemas/) 与 [样例](fixtures/) 由同源序列化描述生成。
+唯一业务类型权威是 [WordPrism.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/WordPrism.kt)、[Models.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Models.kt)、[Projections.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Projections.kt)、[Explanations.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Explanations.kt)、[ApiProtocols.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ApiProtocols.kt) 和 [ModelCatalog.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ModelCatalog.kt)。命令、查询、错误、实体、派生事实、讲解、协议和模型目录均从这里定义；[JSON schema](schemas/) 与 [样例](fixtures/) 由同源序列化描述生成。
 
 Claude 的 Compose 前端现通过 `android/sdk-codex` 调用已发布的本地 Maven 构件。`android/sdk-contract` 是界面门面，适配器负责格式、标签和类型映射；存储、判分、归组、调度和统计集中在 `backend/`。具体对应见[前端映射](../frontend/codex-contract-mapping.md)，构建见 [running.md](running.md)。
 
@@ -24,6 +24,7 @@ JSON 使用 `type` 判别、枚举原名和字符串 ID。进程内 Kotlin 客�
 | 词库 | `Library`、`LibrarySummary`、`GetWord`、`GetGroup`；原子 `EditWord`、`RenameGroup`、`EditMemberships`；稳定成员顺序、字形对齐与差异区间、核心计算的学习状态 |
 | AI 添加 | `SubmitIntake`、`ResolveSpelling`、`ResolveIntake`；持久拼写选择、候选组多选、单独保存或新组、结构化 `IntakeEffect` |
 | 推荐 | `Recommendations`、`PreviewCall`、`RequestRecommendations`、`AcceptRecommendations`；额外词只有被选中后加入，有完整内容时可不调用模型 |
+| 讲解与词源 | `ExplainSense`、`GetExplanation`；版本化构词、词源、助记、英英释义、用法、例句与词族，供用户及 AI 共用，见[讲解接口](explanations.md) |
 | 学习 | `StartSession`、`NextActivity`、`SubmitAnswer`、`RequestHint`、`BeginAnswerRevision`、`ReviseAnswer`、`MarkDifficulty`、`DisputeActivity`；可恢复的题目展示及反馈 |
 | 计划与学习日 | `GetLearningDay`、`SetTimer`、`FinishSession`、`FinishLearningDay`；预算状态、独立目标数、去重的新词数、已完成目标、自动分析身份 |
 | 总览与证据 | `Overview`、`Snapshot`、`Evidence`、`ConfusionEvidence`；观察与预测、延迟回忆、新语境、表达评价、低样本、按日投入、负担与用量 |

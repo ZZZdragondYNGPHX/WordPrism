@@ -69,6 +69,15 @@ internal class MockLibrary(private val c: MockCore) : LibraryApi {
         }
     }.distinctUntilChanged()
 
+    // This optional developer mock does not invent a second explanation engine.
+    override fun observeExplanation(senseId: SenseId): Flow<ExplanationDetail?> = flowOf(ExplanationDetail(senseId, 1))
+    override fun explanationRequirement() = c.observeRequirement(FeatureId.Explanation)
+    override suspend fun requestExplanation(senseId: SenseId, expectedVersion: Long, request: ClientRequestId): SdkResult<OperationId> =
+        explanationUnavailable()
+    override fun acceptRequirement(ids: List<String>) = c.observeRequirement(FeatureId.WordIntake)
+    override suspend fun acceptRecommendations(ids: List<String>, request: ClientRequestId): SdkResult<OperationId> = explanationUnavailable()
+    private fun explanationUnavailable() = SdkResult.Err(SdkError(ErrorCode("unsupported_mock"), "开发模拟模式未提供词源与助记，请切换到本机核心", false))
+
     override suspend fun updateWord(id: WordId, expectedVersion: Long, patch: WordPatch, request: ClientRequestId): SdkResult<WriteReceipt> = c.tx { d ->
         val w = d.words[id.value] ?: return@tx d to notFound()
         if (w.version != expectedVersion) return@tx d to conflict()

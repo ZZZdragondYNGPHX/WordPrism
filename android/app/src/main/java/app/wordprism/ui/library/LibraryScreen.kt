@@ -49,7 +49,7 @@ private val filters = listOf(
 )
 
 @Composable
-fun LibraryScreen(openGroup: (String) -> Unit, openIntake: (String) -> Unit, openTasks: () -> Unit) {
+fun LibraryScreen(openGroup: (String) -> Unit, openIntake: (String) -> Unit, openTasks: () -> Unit, openWord: (String) -> Unit) {
     val vm = wpViewModel { sdk, s -> LibraryViewModel(sdk, s) }
     val text by vm.text.collectAsStateWithLifecycle()
     val filter by vm.filter.collectAsStateWithLifecycle()
@@ -98,10 +98,11 @@ fun LibraryScreen(openGroup: (String) -> Unit, openIntake: (String) -> Unit, ope
                         item { SectionTitle("待整理") { Text("可以单独学习，也可以以后归组", style = MaterialTheme.typography.bodySmall, color = c.muted) } }
                         items(p.ungroupedWords, key = { it.id.value }) { w ->
                             Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
+                                Column(Modifier.weight(1f).clickable { openWord(w.id.value) }.heightIn(min = 48.dp)) {
                                     Text(w.lemma, style = WpType.wordSmall, color = c.ink)
                                     Text(listOfNotNull(w.partOfSpeech, w.glossZh).joinToString(" "), style = MaterialTheme.typography.bodySmall, color = c.muted, maxLines = 1)
                                 }
+                                TextButton(onClick = { openWord(w.id.value) }) { Text("详解") }
                                 TextButton(onClick = { openIntake("${w.lemma} 和 ") }) { Text("归组") }
                             }
                             Hairline()

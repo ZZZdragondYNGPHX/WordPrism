@@ -18,7 +18,9 @@ internal fun CRelation.toSdk() = when (this) {
 }
 internal fun RelationKind.toCore() = CRelation.entries.firstOrNull { it.toSdk() == this }
 internal fun CStudy?.toSdk() = StudyStatus(this?.state?.name?.lowercase() ?: "not_started")
-internal fun CSense.toSdk() = Sense(SenseId(id.value), partOfSpeech, meaning, version = version)
+internal fun CSense.toSdk() = Sense(SenseId(id.value), partOfSpeech, meaning,
+    glossEn = explanation?.takeIf { it.basedOnSenseVersion == version }?.content?.englishDefinition, version = version,
+    examples = examples.map { Example(it, source.toSdk()) })
 internal fun dev.wordprism.contract.GroupOverview.toSdk() = GroupSummary(GroupId(group.id.value), group.title, group.relation.toSdk(), group.purpose,
     members.map { MemberRef(WordId(it.id.value), it.spelling) }, study.toSdk(), study.dueCount, group.version)
 
@@ -55,6 +57,17 @@ class CodexLibrary(private val b: CodexBridge) : LibraryApi {
             WordDetail(id, w.spelling, v.senses.map { it.toSdk() }, w.notes.ifBlank { null }, groups.map { it.toSdk() }, v.wordStudy[w.id].toSdk(), w.version)
         }
     }
+    override fun observeExplanation(senseId: SenseId): Flow<ExplanationDetail?> = b.live {
+        val v = b.optionalView(Query.GetExplanation(CId(senseId.value))) as? View.Explanation ?: return@live null
+        val saved = v.explanation
+        val sourceOperation = saved?.source?.operationId?.let { b.optionalView(Query.GetOperation(it)) as? View.OperationResult }?.operation
+        ExplanationDetail(senseId, v.sense.version, saved?.version, saved?.content?.sections().orEmpty(),
+            saved?.source?.toSdk()?.copy(presetName = sourceOperation?.preset?.name), v.stale,
+            v.recommendations.map { it.toSdkRecommendation() }, v.operation?.toSdk(), v.family.map { it.toSdkRecommendation() })
+    }
+    override fun explanationRequirement() = b.requirement(CFeature.EXPLANATION)
+    override suspend fun requestExplanation(senseId: SenseId, expectedVersion: Long, request: ClientRequestId): SdkResult<OperationId> =
+        b.exec(request, Command.ExplainSense(Ref(CId(senseId.value), expectedVersion))) { (it as? View.OperationResult)?.operation?.id?.value?.let(::OperationId) }
     override suspend fun updateWord(id: WordId, expectedVersion: Long, patch: WordPatch, request: ClientRequestId): SdkResult<WriteReceipt> = safely {
         val result = b.exec(request, Command.EditWord(Ref(CId(id.value), expectedVersion), patch.note,
             patch.senseId?.let { Ref(CId(it.value), patch.senseVersion ?: return@safely invalid<WriteReceipt>("需要义项版本")) }, patch.glossZh)) { it as? View.OperationResult }
@@ -80,17 +93,41 @@ class CodexLibrary(private val b: CodexBridge) : LibraryApi {
     private fun receipt(v: View.OperationResult, version: Long) = WriteReceipt(version, OperationId(v.operation.id.value), v.operation.undoable, v.operation.summary.ifBlank { "修改已保存" })
     override fun observeRecommendations(groupId: GroupId): Flow<RecommendationSet> = b.live {
         val data = (b.view(Query.Recommendations(CId(groupId.value))) as View.Recommendations).recommendations
-        RecommendationSet(groupId, data.map { Recommendation(it.id.value, it.spelling, it.content?.meaning, it.reason, it.content == null, it.inLibrary) },
+        RecommendationSet(groupId, data.map { it.toSdkRecommendation() },
             data.maxOfOrNull { it.source.atMs }, data.firstOrNull()?.source?.toSdk())
     }
     override fun recommendationRequirement() = b.requirement(CFeature.WORD_RECOMMENDATION)
-    override fun acceptRequirement(groupId: GroupId, ids: List<String>) = b.requirement(CFeature.WORD_INTAKE, ids.map(::CId))
+    override fun acceptRequirement(groupId: GroupId, ids: List<String>) = acceptRequirement(ids)
+    override fun acceptRequirement(ids: List<String>) = b.requirement(CFeature.WORD_INTAKE, ids.map(::CId))
     override suspend fun requestRecommendations(groupId: GroupId, request: ClientRequestId): SdkResult<OperationId> = safely {
         val group = (b.view(Query.GetGroup(CId(groupId.value))) as View.Library).groups.first()
         b.exec(request, Command.RequestRecommendations(Ref(group.id, group.version))) { (it as? View.OperationResult)?.operation?.id?.value?.let(::OperationId) }
     }
     override suspend fun acceptRecommendations(groupId: GroupId, ids: List<String>, request: ClientRequestId): SdkResult<OperationId> =
+        acceptRecommendations(ids, request)
+    override suspend fun acceptRecommendations(ids: List<String>, request: ClientRequestId): SdkResult<OperationId> =
         b.exec(request, Command.AcceptRecommendations(ids.map(::CId), allowApi = true)) { (it as? View.OperationResult)?.operation?.id?.value?.let(::OperationId) }
+}
+
+private fun dev.wordprism.contract.Recommendation.toSdkRecommendation() =
+    Recommendation(id.value, spelling, content?.meaning, reason, content == null, inLibrary, libraryWordId?.value?.let(::WordId))
+
+private fun dev.wordprism.contract.ExplanationContent.sections(): List<ExplanationSection> = buildList {
+    add(ExplanationSection("explanation", "理解这个词", explanation))
+    englishDefinition?.let { add(ExplanationSection("english_definition", "英英释义", it)) }
+    if (wordParts.isNotEmpty()) add(ExplanationSection("word_parts", "词根与词缀", wordParts.joinToString("\n\n") { part ->
+        val kind = when (part.kind) {
+            dev.wordprism.contract.WordPartKind.PREFIX -> "前缀"; dev.wordprism.contract.WordPartKind.ROOT -> "词根"
+            dev.wordprism.contract.WordPartKind.SUFFIX -> "后缀"; dev.wordprism.contract.WordPartKind.STEM -> "词干"
+        }
+        "${part.form} · $kind\n${part.meaning}" + part.note.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty()
+    }))
+    etymology?.let { add(ExplanationSection("etymology", "词源说明", it.explanation,
+        listOf("词源尚未经词典核验", it.uncertainty).filter { text -> text.isNotBlank() }.joinToString("。"))) }
+    mnemonic?.let { add(ExplanationSection("mnemonic", "助记故事", it.story,
+        listOf("记忆联想，不是历史词源", it.cue).filter { text -> text.isNotBlank() }.joinToString("。"))) }
+    if (usageNotes.isNotEmpty()) add(ExplanationSection("usage", "用法与辨析", usageNotes.joinToString("\n\n")))
+    if (examples.isNotEmpty()) add(ExplanationSection("examples", "语境例句", examples.joinToString("\n\n")))
 }
 
 class CodexIntake(private val b: CodexBridge) : IntakeApi {

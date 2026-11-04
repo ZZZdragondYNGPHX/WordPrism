@@ -63,7 +63,8 @@ private val actionCapabilities = listOf(
         Capability("dispute_activity", "标记争议题并排除受影响评分", "action", JsonNull, "Ref version; replay actual history", affectsSchedule = true),
         Capability("bind_preset", "调整未被用户锁定的功能预设", "action", JsonNull, "only unlocked feature bindings; existing enabled preset"),
         Capability("generate_activity", "在用户授权范围内生成练习", "action", JsonNull, "automaticGeneration; shared request budget"),
-        Capability("explain_sense", "在用户授权范围内补充讲解", "action", JsonNull, "automaticGeneration; shared request budget"),
+        Capability("explain_sense", "为薄弱义项补充词根、词源、助记、用法和词族候选；已保存内容供后续练习使用", "action", JsonNull,
+            "Ref version; automaticGeneration; shared request budget; extra words require user acceptance; reading never counts as mastery", version = 2),
 )
 internal val aiActionTypes: Set<String> = actionCapabilities.map { it.id }.toSet()
 internal val aiActionSchema by lazy { JsonSchemas.document(Command.serializer().descriptor, "Implemented AI actions", variants = aiActionTypes) }

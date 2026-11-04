@@ -20,6 +20,7 @@ import dev.wordprism.jvm.SqliteStateStore
 import dev.wordprism.memory.NativeMemoryKernel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.ByteArrayInputStream
@@ -56,12 +57,11 @@ class CoreIntegrationTest {
         } finally { secret.fill('\u0000') }
         override fun cancel(operationId: CId) = Unit // tests late provider delivery intentionally
     }
-    private class Harness : AutoCloseable {
+    private class Harness(private val clock: Clock = Clock.fixed(Instant.parse("2026-11-03T18:00:00Z"), ZoneId.of("UTC"))) : AutoCloseable {
         private val directory = Files.createTempDirectory("wordprism-adapter-")
         val documents = Documents(); val credentials = Credentials(); val provider = Provider()
         private var scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         var store = SqliteStateStore(directory.resolve("core.db"))
-        private val clock = Clock.fixed(Instant.parse("2026-11-03T18:00:00Z"), ZoneId.of("UTC"))
         var core = CoreEngine(store, credentials, NativeMemoryKernel(), clock, provider)
         var sdk = CodexSdk(core, scope, documents)
         suspend fun restart() {
@@ -100,6 +100,127 @@ class CoreIntegrationTest {
     }
     companion object {
         private fun <T> ok(result: SdkResult<T>): T { if (result is SdkResult.Err) fail(result.error.toString()); return (result as SdkResult.Ok).value }
+    }
+
+    @Test fun generatedExerciseContextSurvivesEveryUiMappingAndReopen() = runBlocking {
+        for (kind in listOf(dev.wordprism.contract.ActivityKind.CHOICE, dev.wordprism.contract.ActivityKind.RECALL,
+            dev.wordprism.contract.ActivityKind.SPELLING, dev.wordprism.contract.ActivityKind.PASSAGE,
+            dev.wordprism.contract.ActivityKind.WRITING, dev.wordprism.contract.ActivityKind.REWRITE)) {
+            Harness().use { h ->
+                h.configure(); h.seed()
+                val choice = kind in setOf(dev.wordprism.contract.ActivityKind.CHOICE, dev.wordprism.contract.ActivityKind.PASSAGE)
+                val open = kind in setOf(dev.wordprism.contract.ActivityKind.WRITING, dev.wordprism.contract.ActivityKind.REWRITE)
+                h.provider.response = { ProviderResponse(buildJsonObject {
+                    put("prompt", "合成题型指令"); put("passage", "A synthetic context paragraph.")
+                    put("question", "合成中文释义或问题"); put("sourceSentence", "A separate source sentence.")
+                    putJsonArray("choices") { if (choice) { addJsonObject { put("id", "A"); put("text", "Option A") }; addJsonObject { put("id", "B"); put("text", "Option B") } } }
+                    putJsonArray("acceptedAnswers") { if (!open) add(if (choice) "A" else "concealed-answer") }
+                    put("explanation", "grading-only-marker")
+                }) }
+                val target = h.store.read().targets.values.first()
+                val generated = h.command(Command.GenerateActivity(target.id, kind)) as View.OperationResult
+                h.core.tasks.run(generated.operation.id)
+                val op = h.store.read().operations.getValue(generated.operation.id)
+                assertEquals(CStatus.SUCCEEDED, op.status)
+                val activity = h.store.read().activities.getValue(op.resultIds.first())
+                val db = h.store.read()
+                h.command(Command.ApplyPolicy(dev.wordprism.contract.PolicyPatch(mapOf(
+                    "mix" to buildJsonObject { put(kind.name, 100) },
+                    "suspendedTargets" to JsonArray(db.targets.keys.filter { it != activity.targetId }.map { JsonPrimitive(it.value) }),
+                ), "合成测试：展示指定题型"), db.policy.version))
+                val session = h.scoredSession()
+                suspend fun verify() {
+                    val shown = h.state(session).current!!
+                    val text = when (shown) {
+                        is ActivityView.Choice -> shown.instruction + shown.stem
+                        is ActivityView.Recall -> shown.instruction + shown.stem
+                        is ActivityView.Reading -> shown.passage + shown.question
+                        is ActivityView.Production -> shown.instruction + shown.sourceSentence
+                        else -> error("Unexpected kind $kind")
+                    }
+                    for (part in listOf("合成题型指令", "A synthetic context paragraph.", "合成中文释义或问题", "A separate source sentence.")) {
+                        assertTrue("$kind lost $part", part in text)
+                    }
+                    assertFalse(text.contains("grading-only-marker")); assertFalse(text.contains("concealed-answer"))
+                }
+                verify(); h.restart(); verify()
+            }
+        }
+    }
+
+    @Test fun explanationReadAndFamilyAcceptanceUsePersistedCoreAcrossReopen() = runBlocking {
+        Harness().use { h ->
+            h.configure(); h.seed()
+            val word = h.sdk.library.observeLibrary(LibraryQuery()).first().groups.first().members.first()
+            val sense = h.sdk.library.observeWord(word.wordId).first()!!.senses.first()
+            assertNull(h.sdk.library.observeExplanation(sense.id).first()!!.version)
+            assertTrue(h.provider.requests.isEmpty())
+            assertEquals(FeatureId.Explanation, h.sdk.library.explanationRequirement().first().feature)
+            h.provider.response = { ProviderResponse(Contract.json.parseToJsonElement("""{
+                "content":{"explanation":"合成测试讲解","englishDefinition":"synthetic English definition",
+                    "mnemonic":{"story":"这是一个虚构的记忆故事","cue":"记住字母顺序"},"examples":["A synthetic example."]},
+                "recommendations":[{"spelling":"linearity","reason":"合成派生词示例","content":{"spelling":"linearity","meaning":"线性","partOfSpeech":"noun"}}]
+            }"""), 7, 11) }
+            val request = ClientRequestId("explain-from-word-page")
+            val op = ok(h.sdk.library.requestExplanation(sense.id, sense.version, request))
+            assertEquals(op, ok(h.sdk.library.requestExplanation(sense.id, sense.version, request)))
+            h.core.tasks.run(CId(op.value)); h.restart()
+            val support = h.sdk.library.observeExplanation(sense.id).first()!!
+            assertEquals(OperationStatus.Succeeded, support.operation!!.status)
+            assertEquals("Synthetic provider", support.source!!.presetName)
+            assertTrue(support.sections.any { it.text == "这是一个虚构的记忆故事" && it.note!!.contains("不是历史词源") })
+            assertTrue(support.sections.none { it.id == "etymology" }) // absent knowledge is not fabricated by the facade
+            val candidate = support.recommendations.single()
+            assertFalse(h.sdk.library.acceptRequirement(listOf(candidate.id)).first().requiresApi)
+            val acceptKey = ClientRequestId("accept-family-once")
+            val added = ok(h.sdk.library.acceptRecommendations(listOf(candidate.id), acceptKey))
+            assertEquals(added, ok(h.sdk.library.acceptRecommendations(listOf(candidate.id), acceptKey)))
+            assertEquals(3, h.store.read().words.size); assertEquals(1, h.provider.requests.size)
+            assertTrue(h.sdk.library.observeExplanation(sense.id).first()!!.recommendations.isEmpty())
+            val family = h.sdk.library.observeExplanation(sense.id).first()!!.family.single()
+            assertEquals("linearity", h.sdk.library.observeWord(family.wordId!!).first()!!.lemma)
+            ok(h.sdk.operations.undo(added, ClientRequestId("undo-family")))
+            assertEquals(1, h.sdk.library.observeExplanation(sense.id).first()!!.recommendations.size)
+            ok(h.sdk.operations.undo(op, ClientRequestId("undo-support")))
+            assertNull(h.sdk.library.observeExplanation(sense.id).first()!!.version)
+            assertEquals(1, h.provider.requests.size)
+        }
+    }
+
+    @Test fun explanationFailureAfterCancelIsNotShownAsSavedContent() = runBlocking {
+        Harness().use { h ->
+            h.configure(); h.seed()
+            val sense = h.store.read().senses.values.first()
+            val started = CompletableDeferred<Unit>(); val finish = CompletableDeferred<Unit>()
+            h.provider.response = { started.complete(Unit); finish.await(); ProviderResponse(Contract.json.parseToJsonElement("""{"content":{"explanation":"迟到的合成内容"}}""")) }
+            val op = ok(h.sdk.library.requestExplanation(SenseId(sense.id.value), sense.version, ClientRequestId("cancel-support")))
+            val job = launch { h.core.tasks.run(CId(op.value)) }; started.await()
+            ok(h.sdk.operations.cancel(op)); finish.complete(Unit); job.join(); h.restart()
+            val shown = h.sdk.library.observeExplanation(SenseId(sense.id.value)).first()!!
+            assertNull(shown.version); assertTrue(shown.sections.isEmpty()); assertEquals(OperationStatus.Cancelled, shown.operation!!.status)
+        }
+    }
+
+    @Test fun newerExplanationTaskIsVisibleAfterSqliteReopenAndEarlierCancellation() = runBlocking {
+        val clock = object : Clock() {
+            var at = Instant.parse("2026-11-03T18:00:00Z")
+            override fun instant(): Instant = at
+            override fun getZone(): ZoneId = ZoneId.of("UTC")
+            override fun withZone(zone: ZoneId): Clock = this
+        }
+        Harness(clock).use { h ->
+            h.configure(); h.seed()
+            val sense = h.store.read().senses.values.first()
+            val old = ok(h.sdk.library.requestExplanation(SenseId(sense.id.value), sense.version, ClientRequestId("earlier-explanation")))
+            h.core.tasks.run(CId(old.value), false); ok(h.sdk.operations.cancel(old))
+            clock.at = clock.at.plusSeconds(1)
+            val current = ok(h.sdk.library.requestExplanation(SenseId(sense.id.value), sense.version, ClientRequestId("newer-explanation")))
+            h.core.tasks.run(CId(current.value), false); h.restart()
+            val shown = h.sdk.library.observeExplanation(SenseId(sense.id.value)).first()!!
+            assertEquals(current, shown.operation!!.id)
+            assertEquals(OperationStatus.WaitingNetwork, shown.operation!!.status)
+            assertTrue(h.provider.requests.isEmpty())
+        }
     }
 
     @Test fun retryAfterPresetEditAndReopenUsesSavedConfigurationAndRetainsPriorUsage() = runBlocking {

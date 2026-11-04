@@ -120,7 +120,11 @@ internal fun Database.undoLibrary(operation: Operation) {
     }
     entries.filter { it.bucket == "senses" && it.before != null }.forEach { entry ->
         val sense = senses[Id(entry.key)].found("义项")
-        senses[sense.id] = Contract.json.decodeFromJsonElement<Sense>(entry.before!!).copy(version = sense.version + 1)
+        val previous = Contract.json.decodeFromJsonElement<Sense>(entry.before!!)
+        val nextVersion = sense.version + 1
+        senses[sense.id] = previous.copy(version = nextVersion, explanation = previous.explanation?.let { saved ->
+            saved.copy(version = nextVersion, basedOnSenseVersion = if (saved.basedOnSenseVersion == previous.version) nextVersion else saved.basedOnSenseVersion)
+        })
     }
     entries.filter { it.bucket == "targets" }.forEach { entry ->
         val target = targets[Id(entry.key)].found("学习目标")

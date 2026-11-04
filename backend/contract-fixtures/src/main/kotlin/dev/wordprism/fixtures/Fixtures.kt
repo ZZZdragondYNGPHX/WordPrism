@@ -35,6 +35,19 @@ fun main(args: Array<String>) {
     val word = Word(Id("fixture-word"), spelling = "linear", normalized = "linear")
     val sense = Sense(Id("fixture-sense"), word.id, meaning = "线性的", acceptedForms = listOf("linear"))
     val target = LearningTarget(Id("fixture-target"), sense.id, Ability.RECALL)
+    val explanationOperation = operation.copy(kind = "explain_sense", feature = Feature.EXPLANATION, status = OperationStatus.SUCCEEDED, undoable = true, resultIds = listOf(sense.id))
+    val family = Recommendation(Id("fixture-family"), "linearity", "合成示例：派生关系", content = WordSeed("linearity", "线性", "noun"),
+        source = Provenance("synthetic_example", explanationOperation.id, atMs = at), originSenseId = sense.id)
+    val explanation = SenseExplanation(2, 2, ExplanationContent("合成讲解：把词形与具体语境联系起来。", "arranged in a line",
+        wordParts = listOf(WordPart("line", WordPartKind.STEM, "线", "合成示例字段")),
+        etymology = EtymologyNote("这里展示词源说明", "合成示例，未经词典核验"),
+        mnemonic = Mnemonic("想象一条直线贯穿图纸。", "这只是记忆联想"),
+        usageNotes = listOf("结合修饰的名词理解词义。"), examples = listOf("The graph shows a linear relationship.")),
+        listOf(family.id), Provenance("synthetic_example", explanationOperation.id, atMs = at))
+    samples["explanation-empty"] = Reply(10, View.Explanation(Ref(sense.id, 1), null, false, emptyList()))
+    samples["explanation-saved"] = Reply(11, View.Explanation(Ref(sense.id, 2), explanation, false, listOf(family), explanationOperation, listOf(family)))
+    samples["explanation-stale"] = Reply(12, View.Explanation(Ref(sense.id, 3), explanation, true, emptyList(), explanationOperation, listOf(family)))
+    samples["explanation-cancelled"] = Reply(13, View.Explanation(Ref(sense.id, 1), null, false, emptyList(), explanationOperation.copy(status = OperationStatus.CANCELLED, undoable = false)))
     samples["populated-library"] = Reply(3, View.Library(listOf(word), listOf(sense), emptyList(), emptyList(), listOf(target), listOf(Schedule(target.id, dueAtMs = at))))
     samples["active-session"] = Reply(4, View.SessionState(Session(Id("fixture-session"), Id("fixture-day"), Id("fixture-plan"), 1, targetIds = listOf(target.id), currentActivityId = Id("fixture-activity"), currentPresentationId = Id("fixture-presentation")),
         ActivityCard(Id("fixture-activity"), 1, target.id, ActivityKind.RECALL, "回忆表达‘线性的’的单词", emptyList(), "fixture-context")))
@@ -68,6 +81,8 @@ fun main(args: Array<String>) {
     File(output, "reset-reasoning-preset.request.json").writeText(Contract.json.encodeToString(Request("fixture-reasoning-default-key",
         Command.SavePreset(reasoningPreset.copy(reasoningEffort = null), expectedVersion = 1, preserveAdvancedSettings = true))) + "\n")
     File(output, "retry-operation.request.json").writeText(Contract.json.encodeToString(Request("fixture-retry-key", Command.RetryOperation(operation.id))) + "\n")
+    File(output, "explain-sense.request.json").writeText(Contract.json.encodeToString(Request("fixture-explanation-key", Command.ExplainSense(Ref(sense.id, 1)))) + "\n")
+    File(output, "accept-word-family.request.json").writeText(Contract.json.encodeToString(Request("fixture-family-key", Command.AcceptRecommendations(listOf(family.id), false))) + "\n")
     val catalogRequests = mapOf(
         "unsaved-models" to ModelCatalogRequest("https://api.openai.com/v1", ApiProtocols.OPENAI_RESPONSES),
         "saved-models" to ModelCatalogRequest("https://api.openai.com/v1", ApiProtocols.OPENAI_RESPONSES, credentialPreset = Ref(responsesPreset.id, responsesPreset.version)),
@@ -79,5 +94,6 @@ fun main(args: Array<String>) {
     }
     writeSchemas(File(output.parentFile, "schemas"))
     if ("--skip-packages" !in args) kotlinx.coroutines.runBlocking { writeReferencePackages(File(output.parentFile, "packages")) }
-    println("Validated ${samples.size} typed response fixtures, five command requests and ${catalogRequests.size} model catalog requests in ${output.absolutePath}")
+    if ("--explanation-package" in args) kotlinx.coroutines.runBlocking { writeExplanationPackage(File(output.parentFile, "packages")) }
+    println("Validated ${samples.size} typed response fixtures, seven command requests and ${catalogRequests.size} model catalog requests in ${output.absolutePath}")
 }

@@ -86,6 +86,8 @@ adb -s emulator-5556 shell am start -n app.wordprism/.MainActivity
 
 模型标识可手动填写，也可输入服务地址与密钥后点击“拉取模型”，搜索、选择并保存。已有预设可复用本机凭证；服务商没有 `/models` 时仍支持手动填写。功能与契约见[模型目录](api-protocols.md#拉取模型)。
 
+test.6 可从组内“词源与助记”或待整理词的“详解”打开单词讲解，使用默认预设或 `EXPLANATION` 的功能绑定。离线体验可导入 `docs/backend/packages/example-explanation.wordprism`；其中 hospital 内容明确为人工示例。真实生成的配置预算、重试与 AI 学习衔接见[词源与助记接口](explanations.md)和[真实验证](validation.md#test6词源与助记及完整-ai-流程)。
+
 预设的“思维程度”可使用模型默认或显式档位，修改后先保存再测试。服务地址兼容 API 根地址与完整端点；具体映射、旧数据兼容和可分享样例见[API 接入](api-protocols.md#思维程度)。
 
 AI 添加比连接测试需要更长时间。test.5 修复了读取阶段仍在 10 秒提前超时的问题；如果旧任务已失败，修改超时等参数并保存后，在该任务点击“重试”即可采用已保存版本。每次尝试仍分别记录来源与已知用量，见[超时与重试](api-protocols.md#失败取消与用量)。

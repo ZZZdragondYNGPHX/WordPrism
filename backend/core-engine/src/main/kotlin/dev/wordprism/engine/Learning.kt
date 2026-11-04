@@ -257,7 +257,7 @@ internal fun Database.answerView(answer: Answer): View.AnswerResult {
         answer.valid && answer.verdict == Verdict.CORRECT && answer.affectsSchedule && answer.gradeSource == GradeSource.OBJECTIVE,
         difficultyMark(answer)?.difficult ?: answer.input.difficult,
         answer.gradeSource == GradeSource.UNGRADED && !answer.input.skipped && activity?.kind in setOf(ActivityKind.WRITING, ActivityKind.REWRITE),
-        operations.values.lastOrNull { op -> (jobs[op.id]?.command as? Command.EvaluateResponse)?.answer == Ref(answer.id, answer.version) && op.status != OperationStatus.SUPERSEDED }?.id)
+        operations.values.asSequence().filter { op -> (jobs[op.id]?.command as? Command.EvaluateResponse)?.answer == Ref(answer.id, answer.version) && op.status != OperationStatus.SUPERSEDED }.latestOperation()?.id)
 }
 
 internal fun review(before: Schedule, answer: Answer, policy: TrainingPolicy, kernel: MemoryKernel): Schedule {

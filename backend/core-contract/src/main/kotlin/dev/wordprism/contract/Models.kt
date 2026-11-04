@@ -51,6 +51,9 @@ object Contract {
     val id: Id, val wordId: Id, val version: Long = 1, val partOfSpeech: String = "",
     val meaning: String, val acceptedForms: List<String> = emptyList(),
     val examples: List<String> = emptyList(), val source: Provenance = Provenance(),
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val explanation: SenseExplanation? = null,
 )
 @Serializable data class Group(
     val id: Id, val version: Long = 1, val title: String, val relation: Relation,
@@ -213,6 +216,14 @@ object Contract {
     val id: Id, val spelling: String, val reason: String, val groupId: Id? = null,
     val content: WordSeed? = null, val acceptedOperationId: Id? = null, val source: Provenance,
     val inLibrary: Boolean = false,
+    /** A supplement candidate is visible only while its owning explanation still references it. */
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val originSenseId: Id? = null,
+    /** Query projection, not a persistent ownership link. */
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val libraryWordId: Id? = null,
 )
 @Serializable data class WordSeed(
     val spelling: String, val meaning: String, val partOfSpeech: String = "",

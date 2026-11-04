@@ -19,7 +19,8 @@ internal fun Database.queue(command: Command, feature: Feature?, now: Long, auto
         is Command.RequestRecommendations -> mapOf("group:${command.group.id.value}" to command.group.version)
         is Command.ExplainSense -> mapOf("sense:${command.sense.id.value}" to command.sense.version)
         is Command.EvaluateResponse -> mapOf("answer:${command.answer.id.value}" to command.answer.version)
-        is Command.AcceptRecommendations -> command.ids.mapNotNull { recommendations[it]?.groupId }.distinct().associate { "group:${it.value}" to groups[it].found("词组").version }
+        is Command.AcceptRecommendations -> command.ids.mapNotNull { recommendations[it]?.groupId }.distinct().associate { "group:${it.value}" to groups[it].found("词组").version } +
+            command.ids.mapNotNull { recommendations[it]?.originSenseId }.distinct().associate { "sense:${it.value}" to senses[it].found("义项").version }
         is Command.GenerateActivity -> targets[command.targetId].found("目标").let { mapOf("sense:${it.senseId.value}" to senses[it.senseId].found("义项").version) }
         else -> emptyMap()
     }
@@ -190,14 +191,16 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
                     put("groups", Contract.json.encodeToJsonElement(candidates))
                     val sids = db.memberships.values.filter { it.groupId in candidates.map { g -> g.id } && it.active }.map { it.senseId }.toSet()
                     val selected = db.senses.values.filter { it.id in sids }.take(120)
-                    put("senses", Contract.json.encodeToJsonElement(selected)); put("words", Contract.json.encodeToJsonElement(db.words.values.filter { it.id in selected.map { s -> s.wordId } }))
+                    put("senses", Contract.json.encodeToJsonElement(selected.map { it.copy(explanation = null) })); put("words", Contract.json.encodeToJsonElement(db.words.values.filter { it.id in selected.map { s -> s.wordId } }))
                     put("membershipCorrections", Contract.json.encodeToJsonElement(db.memberships.values.filter { !it.active && it.groupId in candidates.map { g -> g.id } }.take(100)))
                     if (command is Command.AcceptRecommendations) put("selectedRecommendations", Contract.json.encodeToJsonElement(command.ids.map { db.recommendations[it].found("推荐") }))
                 }
                 is Command.GenerateActivity -> {
                     val target = db.targets[command.targetId].found("目标")
                     val policy = db.policyVersions[op.policyVersion].found("生成策略")
-                    put("target", Contract.json.encodeToJsonElement(target)); put("sense", Contract.json.encodeToJsonElement(db.senses[target.senseId]))
+                    val sense = db.senses[target.senseId].found("义项")
+                    put("target", Contract.json.encodeToJsonElement(target)); put("sense", Contract.json.encodeToJsonElement(sense.copy(explanation = null)))
+                    put("studyExplanation", Contract.json.encodeToJsonElement(db.explanation(sense)?.takeIf { it.basedOnSenseVersion == sense.version }))
                     put("word", Contract.json.encodeToJsonElement(db.words[db.senses[target.senseId]?.wordId])); put("policy", Contract.json.encodeToJsonElement(policy))
                     putJsonObject("generationConstraints") {
                         put("requestedPassageWords", policy.passageWords); put("backgroundVocabulary", policy.backgroundDifficulty)
@@ -205,7 +208,21 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
                     }
                     put("recentPrompts", Contract.json.encodeToJsonElement(db.activities.values.filter { it.targetId == target.id }.sortedByDescending { it.source.atMs }.take(10).map { it.prompt }))
                 }
-                is Command.ExplainSense -> { put("sense", Contract.json.encodeToJsonElement(db.senses[command.sense.id])); put("word", Contract.json.encodeToJsonElement(db.words[db.senses[command.sense.id]?.wordId])) }
+                is Command.ExplainSense -> {
+                    val sense = db.senses[command.sense.id].found("义项")
+                    put("maxOutputTokensIncludingReasoning", op.preset!!.maxOutputTokens)
+                    put("sense", Contract.json.encodeToJsonElement(sense.copy(explanation = null)))
+                    put("word", Contract.json.encodeToJsonElement(db.words[sense.wordId]))
+                    put("previousExplanation", Contract.json.encodeToJsonElement(db.explanation(sense)))
+                    val groupIds = db.memberships.values.filter { it.active && it.senseId == sense.id }.map { it.groupId }.toSet()
+                    val related = db.memberships.values.filter { it.active && it.groupId in groupIds && it.senseId != sense.id }
+                        .mapNotNull { db.senses[it.senseId] }.distinctBy { it.id }.take(12)
+                    put("relatedSenses", Contract.json.encodeToJsonElement(related.map { it.copy(explanation = null) }))
+                    put("relatedWords", Contract.json.encodeToJsonElement(related.mapNotNull { db.words[it.wordId] }.distinctBy { it.id }))
+                    val evidence = db.answers.values.filter { db.targets[it.targetId]?.senseId == sense.id }.sortedByDescending { it.sequence }.take(8)
+                    put("learningEvidence", Contract.json.encodeToJsonElement(evidence))
+                    put("evidenceActivities", Contract.json.encodeToJsonElement(evidence.mapNotNull { db.activityVersions["${it.activityId.value}:${it.activityVersion}"] }.distinctBy { it.id to it.version }))
+                }
                 is Command.EvaluateResponse -> { val answer = db.answers[command.answer.id].found("答案"); put("answer", Contract.json.encodeToJsonElement(answer)); put("activity", Contract.json.encodeToJsonElement(db.activities[answer.activityId])) }
                 is Command.AnalyzeLearning -> {
                     put("snapshot", Contract.json.encodeToJsonElement(db.snapshots[op.snapshotId])); put("capabilities", Contract.json.encodeToJsonElement(db.capabilities()))
@@ -214,7 +231,19 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
                     val targets = (evidence.mapNotNull { db.targets[it.targetId] } + db.policy.focusTargets.mapNotNull { db.targets[it] } + db.targets.values.filter { db.activeTarget(it) }).distinctBy { it.id }.take(30)
                     val senses = targets.mapNotNull { db.senses[it.senseId] }.distinctBy { it.id }.take(20)
                     val groups = targets.mapNotNull { it.groupId?.let(db.groups::get) }.distinctBy { it.id }
-                    put("targets", Contract.json.encodeToJsonElement(targets)); put("senses", Contract.json.encodeToJsonElement(senses))
+                    put("targets", Contract.json.encodeToJsonElement(targets)); put("senses", Contract.json.encodeToJsonElement(senses.map { it.copy(explanation = null) }))
+                    put("explanations", JsonArray(senses.map { sense ->
+                        val support = db.explanationView(sense.id)
+                        buildJsonObject {
+                            put("senseId", sense.id.value); put("available", support.explanation != null); put("stale", support.stale)
+                            put("version", support.explanation?.version?.let(::JsonPrimitive) ?: JsonNull)
+                            put("summary", support.explanation?.content?.explanation?.take(600).orEmpty())
+                            put("hasEtymology", support.explanation?.content?.etymology != null); put("hasMnemonic", support.explanation?.content?.mnemonic != null)
+                            put("source", Contract.json.encodeToJsonElement(support.explanation?.source))
+                            put("operationId", support.operation?.id?.value?.let(::JsonPrimitive) ?: JsonNull)
+                            put("operationStatus", support.operation?.status?.name?.let(::JsonPrimitive) ?: JsonNull)
+                        }
+                    }))
                     put("words", Contract.json.encodeToJsonElement(senses.mapNotNull { db.words[it.wordId] }.distinctBy { it.id }))
                     put("groups", Contract.json.encodeToJsonElement(groups))
                     put("activities", Contract.json.encodeToJsonElement(evidence.mapNotNull { db.activityVersions["${it.activityId.value}:${it.activityVersion}"] }.distinctBy { it.id to it.version }.take(10)))
@@ -229,10 +258,10 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
         val schema = when (command) {
             is Command.SubmitIntake, is Command.AcceptRecommendations -> "Schema: {words:[{spelling,meaning,partOfSpeech,acceptedForms:[],examples:[]}],groupId:null|suppliedID,newGroup:null|{title,relation:LOOK_ALIKE|SYNONYM|WORD_FAMILY|SOUND_ALIKE|PERSONAL,purpose},candidates:[{groupId,reason}],reason,recommendations:[{spelling,reason,groupId:null|suppliedID,content:null}],corrections:[{original,suggested:{spelling,meaning,partOfSpeech,acceptedForms:[],examples:[]},reason}]}. Only explicitly requested words go in words, retaining exact input spellings. For suspected misspellings, put the corrected alternative in corrections; never silently replace the original. Corrections require user choice. Extra words only in recommendations. Group ambiguity goes in candidates. Reuse existing senses."
             is Command.RequestRecommendations -> "Schema: {recommendations:[{spelling,reason,groupId:null|suppliedID,content:null|{spelling,meaning,partOfSpeech,acceptedForms:[],examples:[]}}]}. At most 10."
-            is Command.GenerateActivity -> "Schema: {prompt,passage:null|string,question:null|string,sourceSentence:null|string,choices:[{id,text,senseId:null}],acceptedAnswers:[string],explanation}. For PASSAGE, supply separate passage and question, at least two choices, accepted choice IDs. Follow generationConstraints for length and background vocabulary. Open writing/rewriting has no standard answer. Objective tasks need sufficient constraints and all valid answers."
+            is Command.GenerateActivity -> "Schema: {prompt,passage:null|string,question:null|string,sourceSentence:null|string,choices:[{id,text,senseId:null}],acceptedAnswers:[string],explanation}. For PASSAGE, supply separate passage and question, at least two choices, accepted choice IDs. Follow generationConstraints for length and background vocabulary. Open writing/rewriting has no standard answer. Objective tasks need sufficient constraints and all valid answers. studyExplanation is previously saved learning support, not verified dictionary evidence. Use its meaning/use contrasts in a NEW context; never test a mnemonic story as history or treat it as a factual grading rule. Do not reveal the answer in the question."
             is Command.EvaluateResponse -> "Schema: {explanation,targetUsage:good|misused|acceptable_unnatural|equally_valid|uncertain,quotedAnswer}. Quote an exact substring of the submitted answer. Separate target word usage from unrelated grammar; use uncertain when evidence is insufficient. This feedback never directly rates FSRS."
-            is Command.ExplainSense -> "Schema: {explanation,examples:[string]}. Explain only the supplied sense."
-            is Command.AnalyzeLearning -> "Schema: {patch:{values:{capabilityId:value},reason,evidenceIds:[suppliedID]},actions:[]}. Keep current settings with empty values when appropriate. Optimize delayed recall and new-context memory quality within user budget. Available action types use the local Command schema: fit_memory, update_word, update_sense, change_membership, dispute_activity, bind_preset, generate_activity, explain_sense. Never alter real answers, accept extra recommended words, credentials, user locks or user budgets. Algorithm weights require local evaluation; request fit_memory with applyIfBetter:true instead of inventing weights."
+            is Command.ExplainSense -> "Schema: {content:{explanation,englishDefinition:null|string,wordParts:[{form,kind:PREFIX|ROOT|SUFFIX|STEM,meaning,note}],etymology:null|{explanation,uncertainty},mnemonic:null|{story,cue},usageNotes:[string],examples:[string]},recommendations:[{spelling,reason,groupId:null,content:null|{spelling,meaning,partOfSpeech,acceptedForms:[],examples:[]}}]}. Produce a compact study card, not an essay: about 500-800 Chinese characters total plus short English text. Main explanation, etymology and mnemonic each at most 120 Chinese characters; English definition at most 25 words; exactly 2 short examples and at most 2 usage notes. Use learningEvidence to address a specific confusion when present. Include only confident linguistic parts (usually 0-3); leave wordParts empty for doubtful decompositions. Distinguish historical etymology from a fictional mnemonic. When history is uncertain, say so briefly or use null and continue; do not enumerate speculative origins, research alternatives or invent citations. A mnemonic is a memory association, never a historical claim. Offer 0-3 useful word-family candidates with one-line relationship, short meaning and at most one example each; resemblance alone does not establish a shared origin. groupId must be null. Never include the original word or insert candidates into a group. Keep the complete JSON compact enough for the supplied output budget, which also includes reasoning tokens."
+            is Command.AnalyzeLearning -> "Schema: {patch:{values:{capabilityId:value},reason,evidenceIds:[suppliedID]},actions:[]}. Keep current settings with empty values when appropriate. Optimize delayed recall and new-context memory quality within user budget. Available action types use the local Command schema: fit_memory, update_word, update_sense, change_membership, dispute_activity, bind_preset, generate_activity, explain_sense. Use explanations availability/staleness and actual weak-sense evidence to request explain_sense when useful and authorized; reuse current support instead of repeatedly regenerating it. Reading or generating support is never evidence of mastery. Never alter real answers, accept extra recommended words, credentials, user locks or user budgets. Algorithm weights require local evaluation; request fit_memory with applyIfBetter:true instead of inventing weights."
             else -> "Schema: {ok:true}. This is a user-requested connection test."
         }
         return ProviderRequest(op.id, op.preset!!, common + schema, data)
@@ -338,14 +367,15 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
                 db.feedback[feedback.id] = feedback; results += feedback.id
             }
             is Command.ExplainSense -> {
-                val proposal = Contract.json.decodeFromJsonElement<ExplanationProposal>(response)
-                requireBusiness(proposal.explanation.isNotBlank() && proposal.explanation.length <= 4000 && proposal.examples.size <= 20, "讲解内容无效", ErrorCode.INVALID_RESPONSE)
+                val proposal = decodeExplanationProposal(response)
                 val sense = db.senses[command.sense.id].found("义项")
-                db.senses[sense.id] = sense.copy(version = sense.version + 1, examples = (sense.examples + proposal.examples).distinct().takeLast(20))
+                validateExplanationContent(proposal.content)
+                requireBusiness(proposal.recommendations.size <= 6 && proposal.recommendations.all { it.groupId == null && normalize(it.spelling) != db.words[sense.wordId]?.normalized },
+                    "词族候选数量或归属无效", ErrorCode.INVALID_RESPONSE)
+                val candidates = proposal.recommendations.map { db.saveRecommendation(it, source, emptySet(), sense.id) }.distinct()
+                val version = sense.version + 1
+                db.senses[sense.id] = sense.copy(version = version, explanation = SenseExplanation(version, version, proposal.content, candidates, source))
                 db.words[sense.wordId]?.let { db.words[it.id] = it.copy(version = it.version + 1) }
-                // Keep the original sense definition; generated explanations are distinct versioned content.
-                val draftKey = "explanation:${sense.id.value}"
-                db.drafts[draftKey] = Draft(draftKey, proposal.explanation, (db.drafts[draftKey]?.version ?: 0) + 1, now)
                 results += sense.id; undoable = true
             }
             is Command.AnalyzeLearning -> {
@@ -357,7 +387,7 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
                     val result = engine.applyCommand(db, action, Actor.AI, now)
                     if (result is View.OperationResult) {
                         results += result.operation.id
-                        db.operations[result.operation.id] = result.operation.copy(actor = Actor.AI, parentOperationId = op.id, summary = proposal.patch.reason)
+                        if (result.operation.parentOperationId == null) db.operations[result.operation.id] = result.operation.copy(actor = Actor.AI, parentOperationId = op.id, summary = proposal.patch.reason)
                     }
                 }
                 if (proposal.actions.isNotEmpty()) undoable = true
@@ -371,6 +401,7 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
             summary = when (command) { is Command.AnalyzeLearning -> Contract.json.decodeFromJsonElement<AnalysisProposal>(response).patch.reason
                 is Command.SubmitIntake, is Command.AcceptRecommendations -> "词条与归组已保存"
                 is Command.EvaluateResponse -> "表达反馈已保存，未直接修改记忆评分"
+                is Command.ExplainSense -> "词源与助记讲解已保存，可离线查看；词族候选由你选择加入"
                 is Command.TestConnection -> "连接测试成功"; else -> "任务已完成" },
             effects = if (command is Command.SubmitIntake || command is Command.AcceptRecommendations) db.intakeEffects(before, results, Contract.json.decodeFromJsonElement<IntakeProposal>(response).reason) else op.effects)
         if (command is Command.SubmitIntake || command is Command.AcceptRecommendations || command is Command.GenerateActivity) db.invalidatePlans(now)
@@ -387,11 +418,12 @@ internal fun Database.applyIntakeWords(proposal: IntakeProposal, groups: List<Re
     if (groups.isEmpty()) return saveWords(Command.SaveWords(seeds, if (ungrouped) null else proposal.newGroup ?: if (seeds.size > 1) GroupSeed(seeds.joinToString(" / ") { it.spelling }, Relation.PERSONAL, proposal.reason) else null), source, now)
     return groups.flatMap { group -> saveWords(Command.SaveWords(seeds, existingGroup = group), source, now) }
 }
-internal fun Database.saveRecommendation(seed: RecommendationSeed, source: Provenance, allowed: Set<Id>): Id {
+internal fun Database.saveRecommendation(seed: RecommendationSeed, source: Provenance, allowed: Set<Id>, originSenseId: Id? = null): Id {
     requireBusiness(seed.spelling.isNotBlank() && seed.spelling.length <= 100 && seed.reason.length <= 4000 && (seed.groupId == null || seed.groupId in allowed), "推荐内容无效", ErrorCode.INVALID_RESPONSE)
     requireBusiness(seed.content == null || normalize(seed.content.spelling) == normalize(seed.spelling), "推荐内容词形不一致", ErrorCode.INVALID_RESPONSE)
-    recommendations.values.find { normalize(it.spelling) == normalize(seed.spelling) && it.groupId == seed.groupId }?.let { return it.id }
-    val recommendation = Recommendation(id(), seed.spelling, seed.reason, seed.groupId, seed.content, source = source)
+    seed.content?.let { requireBusiness(validRecommendationContent(it), "推荐词的释义或例句无效", ErrorCode.INVALID_RESPONSE) }
+    recommendations.values.find { normalize(it.spelling) == normalize(seed.spelling) && it.groupId == seed.groupId && it.originSenseId == originSenseId }?.let { return it.id }
+    val recommendation = Recommendation(id(), seed.spelling, seed.reason, seed.groupId, seed.content, source = source, originSenseId = originSenseId)
     recommendations[recommendation.id] = recommendation; return recommendation.id
 }
 
@@ -405,3 +437,6 @@ internal fun Database.completeIntakeChoice(op: Operation, proposal: IntakePropos
         choices = emptyList(), spellingChoices = emptyList(), effects = intakeEffects(before, results, proposal.reason), summary = "词条已保存，你的拼写与归组选择已生效")
     operations[op.id] = done; return View.OperationResult(done)
 }
+/** SQL row order and restored map insertion order do not describe when a task was requested. */
+internal fun Sequence<Operation>.latestOperation(): Operation? =
+    sortedWith(compareBy<Operation> { it.createdAtMs }.thenBy { it.updatedAtMs }).lastOrNull()

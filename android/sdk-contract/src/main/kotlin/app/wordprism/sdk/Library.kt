@@ -71,7 +71,8 @@ data class LibraryPage(
 )
 
 @Serializable
-data class Sense(val id: SenseId, val partOfSpeech: String, val glossZh: String, val glossEn: String? = null, val version: Long = 1)
+data class Sense(val id: SenseId, val partOfSpeech: String, val glossZh: String, val glossEn: String? = null, val version: Long = 1,
+    val examples: List<Example> = emptyList())
 
 @Serializable
 data class Example(val text: String, val source: ContentSource, val translationZh: String? = null)
@@ -139,6 +140,7 @@ data class Recommendation(
     /** True if accepting needs a model call to generate content. */
     val requiresApi: Boolean,
     val alreadyInLibrary: Boolean,
+    val wordId: WordId? = null,
 )
 
 @Serializable
@@ -153,6 +155,10 @@ interface LibraryApi {
     fun observeLibrary(query: LibraryQuery): Flow<LibraryPage>
     fun observeGroup(id: GroupId): Flow<GroupDetail?>
     fun observeWord(id: WordId): Flow<WordDetail?>
+    /** Offline read of saved support and its durable task. Never initiates generation. */
+    fun observeExplanation(senseId: SenseId): Flow<ExplanationDetail?>
+    fun explanationRequirement(): Flow<ApiRequirement>
+    suspend fun requestExplanation(senseId: SenseId, expectedVersion: Long, request: ClientRequestId): SdkResult<OperationId>
     suspend fun updateWord(id: WordId, expectedVersion: Long, patch: WordPatch, request: ClientRequestId): SdkResult<WriteReceipt>
     suspend fun changeMembership(change: MembershipChange, expectedVersion: Long, request: ClientRequestId): SdkResult<WriteReceipt>
     suspend fun renameGroup(id: GroupId, title: String, expectedVersion: Long, request: ClientRequestId): SdkResult<WriteReceipt>
@@ -161,8 +167,11 @@ interface LibraryApi {
     fun observeRecommendations(groupId: GroupId): Flow<RecommendationSet>
     fun recommendationRequirement(): Flow<ApiRequirement>
     fun acceptRequirement(groupId: GroupId, ids: List<String>): Flow<ApiRequirement> = recommendationRequirement()
+    /** Shared acceptance path for candidates without a group, including word families. */
+    fun acceptRequirement(ids: List<String>): Flow<ApiRequirement>
     /** User-initiated search for more candidates (calls `word_recommendation`). */
     suspend fun requestRecommendations(groupId: GroupId, request: ClientRequestId): SdkResult<OperationId>
     /** Adds selected candidates; may call the API for content. Result is undoable via [OperationsApi.undo]. */
     suspend fun acceptRecommendations(groupId: GroupId, ids: List<String>, request: ClientRequestId): SdkResult<OperationId>
+    suspend fun acceptRecommendations(ids: List<String>, request: ClientRequestId): SdkResult<OperationId>
 }

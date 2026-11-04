@@ -29,6 +29,9 @@
                     "$ref": "#/$defs/evaluation-variant"
                 },
                 {
+                    "$ref": "#/$defs/sense_explanation-variant"
+                },
+                {
                     "$ref": "#/$defs/feedback-variant"
                 },
                 {
@@ -235,6 +238,22 @@
             "required": [
                 "type",
                 "id"
+            ],
+            "additionalProperties": false
+        },
+        "sense_explanation-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "sense_explanation"
+                },
+                "senseId": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "senseId"
             ],
             "additionalProperties": false
         },

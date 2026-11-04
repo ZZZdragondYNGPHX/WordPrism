@@ -1,6 +1,6 @@
 # 前端门面与本地核心的对应
 
-日期：2026-11-03 · 契约：`backend/core-contract`，`Contract.VERSION = 1` · 状态：全部业务门面已接入真实核心。
+日期：2026-11-04 · 契约：`backend/core-contract`，`Contract.VERSION = 1` · 状态：全部业务门面已接入真实核心。
 
 唯一业务类型权威是 `dev.wordprism.contract`，入口见[本地后端契约](../backend/contract.md)。Claude 起草的 `app.wordprism.sdk` 保留为界面门面；`android/sdk-codex` 只负责类型、标签与调用映射，不计算第二套判分、调度、预算或统计。它依赖发布到 `backend/build/repository` 的构件，不编译后端源码副本。
 
@@ -21,6 +21,7 @@
 | `library` | `LibrarySummary`、`GetGroup`、`EditWord`、`RenameGroup`、`EditMemberships` | 词库筛选与分页、义项及关系原子编辑、稳定排序；学习状态、对齐字形和差异区间来自核心 |
 | `intake` | `SubmitIntake`、`ResolveSpelling`、`ResolveIntake`、`GetOperation` | 拼写与归组选择持久化；返回新增、复用及归组的结构化效果 |
 | 推荐 | `Recommendations`、`PreviewCall`、`RequestRecommendations`、`AcceptRecommendations` | 查看不调用 API；选中后按实际需要决定是否调用，统一取消与撤销 |
+| 单词讲解 | `GetExplanation`、`ExplainSense`、`PreviewCall(EXPLANATION)` | 分段映射构词、词源、助记、英英释义、例句和用法；当前/过期状态、候选及已接纳词族、来源、任务与撤销均来自核心，见[接口](../backend/explanations.md) |
 | `study` | `StartSession`、`NextActivity`、`SubmitAnswer`、`GetPresentation`、`GetFeedback` | 理解步骤与各题型映射；提交身份、反馈与进度可在新进程恢复 |
 | 提示、修订、争议 | `RequestHint`、`BeginAnswerRevision`、`ReviseAnswer`、`MarkDifficulty`、`DisputeActivity` | 不把提示或理解步骤记为独立回忆；开放反馈绑定原答案版本 |
 | 学习日与计划 | `GetLearningDay`、`SetTimer`、`FinishSession`、`FinishLearningDay` | 计划目标数、新词数、预算和自动分析状态直接使用核心投影；暂停与结束当天分开 |
@@ -62,6 +63,6 @@ Chat Completions 与原生 Responses 通过相同预设页面配置。`observeAd
 
 ## 验证
 
-`sdk-codex` 已执行 19 个 JVM 测试：8 个门面映射测试，以及 11 个使用真实 `CoreEngine + SQLite + Rust JNI` 的集成测试。后者覆盖 SQLite 重开后的作答幂等、理解步骤、原子编辑/撤销、调用额度、正式备份流、统一总览与保留后续学习的撤销、持久拼写选择、关闭自动分析后的迟到结果，以及 Responses 协议标签、独立绑定、离线任务重开、模型目录选择保存和保存新版预设后重开重试。模型拉取的页面状态另有 6 个单元测试，模型选择器另有 2 个实际 Android Compose 仪器测试；这些自动化用合成目录，真实供应商的 Android 验证另见下段。
+`sdk-codex` 已执行 23 个 JVM 测试：8 个门面映射测试，以及 15 个使用真实 `CoreEngine + SQLite + Rust JNI` 的集成测试。后者覆盖 SQLite 重开后的作答幂等、理解步骤、原子编辑/撤销、调用额度、正式备份流、统一总览与保留后续学习的撤销、持久拼写选择、关闭自动分析后的迟到结果，以及 Responses 协议标签、独立绑定、离线任务重开、模型目录选择保存和保存新版预设后重开重试。本轮新增讲解分段与来源、词族接纳/撤销、六种题型的完整题面及重开后的最新任务选择。模型拉取的页面状态另有 6 个单元测试，模型选择器另有 2 个此前执行的实际 Android Compose 仪器测试；这些自动化用合成响应，真实供应商的 Android 验证另见下段。
 
-实际 Android 应用也已在 API 35 x86_64 模拟器完成正式包导入、学习、强停恢复、总览、SAF 导出和完整替换恢复。test.5 进一步完成 OpenAI 真实模型目录、`complement / compliment` 添加与重开后的实际词组展示；修复明确点击添加被输入法 composition 阻挡的问题，沿用学习页的可见文本提交方式。详细记录与最终 APK 检查见[后端与集成验证](../backend/validation.md)。[Claude 的早期验证](validation-2026-11-03.md)保留为模拟前端阶段记录，不能作为真实 API 或核心验证。
+实际 Android 应用已在 API 35 x86_64 模拟器完成正式包导入、学习、强停恢复、总览、SAF 导出和完整替换恢复。test.5 完成 OpenAI 真实模型目录、`complement / compliment` 添加；test.6 再完成 `affect / effect` 添加、真实讲解、保存新版预设后原任务重试、离线词族接纳/撤销、断网重开及包含新内容和待执行任务的完整恢复。恢复前后的原始作答、讲解、词族、调度及用量逐项一致，恢复后不自动重发，测试凭证已清除。详细配置、失败诊断及证据范围见[后端与集成验证](../backend/validation.md)。[Claude 的早期验证](validation-2026-11-03.md)保留为模拟前端阶段记录，不能作为真实 API 或核心验证。

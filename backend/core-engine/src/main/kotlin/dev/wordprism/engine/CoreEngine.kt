@@ -83,6 +83,7 @@ class CoreEngine(
             is Query.Library -> db.library(query.search, query.afterId, query.limit, now = now())
             is Query.LibrarySummary -> View.LibrarySummary(db.libraryOverview(query, now()))
             is Query.GetWord -> { db.words[query.id].found("词条"); db.library(wordId = query.id, now = now()) }
+            is Query.GetExplanation -> db.explanationView(query.senseId)
             is Query.GetGroup -> { db.groups[query.id].found("词组"); db.library(groupId = query.id, limit = 10000, now = now()) }
             is Query.GetSession -> db.sessionView(db.sessions[query.id].found("会话"))
             is Query.GetActivity -> db.activities[query.id].found("题目").let { View.ActivityDetails(db.card(it), it.source) }
@@ -105,8 +106,8 @@ class CoreEngine(
             is Query.GetOperation -> View.OperationResult(db.operations[query.id].found("操作"))
             is Query.OperationEffects -> { db.operations[query.id].found("操作"); View.OperationEffects(db.businessEffects(query.id)) }
             is Query.Operations -> { requireBusiness(query.limit in 1..200, "分页数量须为 1–200"); View.Operations(db.operations.values.sortedByDescending { it.createdAtMs }.take(query.limit)) }
-            is Query.Recommendations -> View.Recommendations(db.recommendations.values.filter { (query.groupId == null || it.groupId == query.groupId) && (it.acceptedOperationId == null || db.operations[it.acceptedOperationId]?.undoneBy != null) }
-                .map { rec -> rec.copy(content = db.recommendationContent(rec), inLibrary = db.words.values.any { !it.archived && it.normalized == normalize(rec.spelling) }) })
+            is Query.Recommendations -> View.Recommendations(db.recommendations.values.filter { (query.groupId == null || it.groupId == query.groupId) && db.recommendationAvailable(it) && (it.acceptedOperationId == null || db.operations[it.acceptedOperationId]?.undoneBy != null) }
+                .map(db::recommendationView))
             Query.Settings -> View.Settings(db.settings, db.policy, db.bindings.values.toList())
             Query.Capabilities -> View.Capabilities(db.capabilities())
             Query.PolicyChanges -> View.PolicyChanges(db.changes.values.toList(), db.changes.values.filter { change -> change.undoneBy == null &&
@@ -116,8 +117,8 @@ class CoreEngine(
             Query.Protocols -> View.Protocols(ApiProtocols.supported)
             is Query.GetPackagePreview -> View.ImportPreview(db.previews[query.token].found("导入预览").preview)
             is Query.ExportScope -> View.ExportScope(query.purpose,
-                if (query.purpose == PackagePurpose.BACKUP) listOf("完整词库、义项与组关系", "真实作答、内容版本与会话", "记忆状态、策略与拟合评估", "分析、调整、撤销与任务记录", "API 非敏感配置、功能绑定与用量")
-                else listOf("选中词条及其完整关联词组", "义项、目标与已保存练习内容"),
+                if (query.purpose == PackagePurpose.BACKUP) listOf("完整词库、义项与组关系", "词源、助记讲解与词族候选", "真实作答、内容版本与会话", "记忆状态、策略与拟合评估", "分析、调整、撤销与任务记录", "API 非敏感配置、功能绑定与用量")
+                else listOf("选中词条及其完整关联词组", "义项、目标与已保存练习内容", "词源、助记与待选择的词族候选"),
                 if (query.purpose == PackagePurpose.BACKUP) listOf("API 凭证", "设备专用凭证引用") else listOf("个人学习历史与记忆状态", "API 配置、凭证和用量", "分析、任务与自动执行授权"),
                 "wordprism-${query.purpose.name.lowercase()}-${java.time.Instant.ofEpochMilli(now()).atZone(ZoneId.of(db.settings.zoneId)).toLocalDate()}.wordprism")
             is Query.ConfusionEvidence -> {
@@ -319,12 +320,15 @@ class CoreEngine(
             }
             is Command.ExplainSense -> {
                 if (actor == Actor.AI) requireBusiness(db.settings.automaticGeneration, "未授权自动补充", ErrorCode.DISABLED)
-                View.OperationResult(db.queue(command, Feature.EXPLANATION, now, actor == Actor.AI))
+                checkRef(command.sense, db.senses[command.sense.id].found("义项").version)
+                View.OperationResult(db.operations.values.asSequence().filter { it.actor == actor && db.jobs[it.id]?.command == command &&
+                    (it.status in pendingStatuses || it.status == OperationStatus.RUNNING) }.latestOperation()
+                    ?: db.queue(command, Feature.EXPLANATION, now, actor == Actor.AI))
             }
             is Command.EvaluateResponse -> {
                 val answer = db.answers[command.answer.id].found("答案"); checkRef(command.answer, answer.version)
                 requireBusiness(db.activities[answer.activityId]?.kind in setOf(ActivityKind.WRITING, ActivityKind.REWRITE), "只有开放表达需要此反馈")
-                View.OperationResult(db.operations.values.lastOrNull { db.jobs[it.id]?.command == command && it.status !in setOf(OperationStatus.CANCELLED, OperationStatus.SUPERSEDED) }
+                View.OperationResult(db.operations.values.asSequence().filter { db.jobs[it.id]?.command == command && it.status !in setOf(OperationStatus.CANCELLED, OperationStatus.SUPERSEDED) }.latestOperation()
                     ?: db.queue(command, Feature.WRITING_FEEDBACK, now))
             }
             is Command.StartSession -> db.startSession(now, command.continuePastBudget, command.includeIntroductions)
@@ -415,7 +419,8 @@ class CoreEngine(
             is Command.TestConnection -> { val preset = db.presets[command.preset.id].found("预设"); checkRef(command.preset, preset.version); View.OperationResult(db.queue(command, Feature.WORD_INTAKE, now, fixedPreset = preset)) }
             is Command.CancelOperation -> {
                 val operation = db.operations[command.id].found("操作")
-                val result = if (operation.status !in terminalStatuses) operation.copy(status = OperationStatus.CANCELLED, updatedAtMs = now) else operation
+                val result = if (operation.status !in terminalStatuses) operation.copy(status = OperationStatus.CANCELLED,
+                    fault = null, retryable = false, updatedAtMs = now) else operation
                 db.operations[operation.id] = result; View.OperationResult(result)
             }
             is Command.RetryOperation -> {
@@ -441,6 +446,7 @@ class CoreEngine(
         val selected = command.ids.map { db.recommendations[it].found("推荐") }
         val pending = selected.filter { it.acceptedOperationId == null || db.operations[it.acceptedOperationId]?.undoneBy != null }
         if (pending.isEmpty()) return View.OperationResult(db.operations[selected.first().acceptedOperationId].found("已加入操作"))
+        requireBusiness(pending.all(db::recommendationAvailable), "词族讲解已撤销或更新，请重新读取候选", ErrorCode.VERSION_CONFLICT)
         val reserved = db.operations.values.filter { it.status !in terminalStatuses && it.status != OperationStatus.RESTORED_PENDING }.filter { operation ->
             (db.jobs[operation.id]?.command as? Command.AcceptRecommendations)?.ids?.any { recommendation -> pending.any { it.id == recommendation } } == true
         }
@@ -511,7 +517,7 @@ class CoreEngine(
         requireBusiness(original.status == OperationStatus.SUCCEEDED && original.undoable, "此操作不可撤销", ErrorCode.VERSION_CONFLICT)
         val undoId = id()
         // Undo separately recorded child actions before reverting the parent's policy.
-        original.resultIds.mapNotNull { db.operations[it] }.asReversed().forEach { child ->
+        original.resultIds.mapNotNull { db.operations[it] }.filter { it.parentOperationId == original.id }.asReversed().forEach { child ->
             if (child.status !in terminalStatuses) db.operations[child.id] = child.copy(status = OperationStatus.CANCELLED, updatedAtMs = now)
             else if (child.undoable && child.undoneBy == null) undo(db, child.id, now)
         }
@@ -559,7 +565,9 @@ internal fun Database.localOperation(kind: String, now: Long, action: (Id) -> Li
     recordLibraryUndo(opId, before)
     if (undos[opId]?.any { it.bucket in setOf("words", "senses", "targets", "memberships") } == true) invalidatePlans(now)
     val op = Operation(opId, kind, OperationStatus.SUCCEEDED, now, now, resultIds = resultIds,
-        undoable = undos[opId]?.isNotEmpty() == true || changes.values.any { it.operationId == opId }, summary = "修改已保存",
+        // Accepting an already-owned family word still changes the recommendation's state.
+        // Undo uses its acceptedOperationId/undoneBy relationship even when no library row changed.
+        undoable = kind == "accept_recommendations" || undos[opId]?.isNotEmpty() == true || changes.values.any { it.operationId == opId }, summary = "修改已保存",
         effects = if (kind in setOf("save_words", "accept_recommendations")) intakeEffects(before, resultIds, "本次选择已保存") else emptyList())
     operations[opId] = op; return View.OperationResult(op)
 }
@@ -568,10 +576,11 @@ internal fun Database.invalidatePlans(now: Long) {
     days.replaceAll { _, day -> if (day.closesAtMs > now) day.copy(planId = null) else day }
 }
 internal fun Database.recommendationContent(recommendation: Recommendation): WordSeed? {
-    recommendation.content?.let { return it }
-    val word = words.values.find { it.normalized == normalize(recommendation.spelling) } ?: return null
-    val sense = senses.values.singleOrNull { it.wordId == word.id } ?: return null
-    return WordSeed(word.spelling, sense.meaning, sense.partOfSpeech, sense.acceptedForms, sense.examples)
+    val word = words.values.find { it.normalized == normalize(recommendation.spelling) }
+    val sense = word?.let { known -> senses.values.singleOrNull { it.wordId == known.id } }
+    // A paraphrased AI gloss does not establish a second sense for an already-known word.
+    return if (word != null && sense != null) WordSeed(word.spelling, sense.meaning, sense.partOfSpeech, sense.acceptedForms, sense.examples)
+        else recommendation.content
 }
 private fun Database.refresh(view: View): View = when (view) {
     is View.OperationResult -> View.OperationResult(operations[view.operation.id] ?: view.operation)

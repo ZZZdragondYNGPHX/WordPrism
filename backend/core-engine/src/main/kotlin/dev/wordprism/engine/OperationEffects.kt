@@ -10,7 +10,7 @@ internal fun Database.businessEffects(operationId: Id): List<BusinessEffect> {
         operations.values.filter { it.parentOperationId == parent }.forEach { if (ids.add(it.id)) pending.add(it.id) }
     }
     val fieldLabels = mapOf("notes" to "笔记", "tags" to "标签", "archived" to "归档状态", "meaning" to "释义", "examples" to "例句",
-        "acceptedForms" to "有效答案", "title" to "名称", "active" to "成员状态", "reason" to "归组依据", "suspended" to "学习暂停", "presetId" to "预设", "text" to "内容", "disputed" to "争议标记")
+        "acceptedForms" to "有效答案", "title" to "名称", "active" to "成员状态", "reason" to "归组依据", "suspended" to "学习暂停", "presetId" to "预设", "text" to "内容", "disputed" to "争议标记", "explanation" to "词源与助记讲解")
     return ids.flatMap { opId ->
         val op = operations.getValue(opId)
         undos[opId].orEmpty().flatMap { entry ->

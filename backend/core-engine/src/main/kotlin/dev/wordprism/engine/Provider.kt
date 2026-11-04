@@ -222,7 +222,8 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
         when (raw.text("status")) {
             "completed" -> if (raw["error"] != null && raw["error"] != JsonNull) tokens.problem(ErrorCode.INVALID_RESPONSE, "响应同时包含完成状态和错误")
             "incomplete" -> when ((raw["incomplete_details"] as? JsonObject)?.text("reason")) {
-                "max_output_tokens", "max_messages" -> tokens.problem(ErrorCode.TRUNCATED_RESPONSE, "生成内容被截断；输出上限包含推理 tokens")
+                "max_output_tokens", "max_messages" -> tokens.problem(ErrorCode.TRUNCATED_RESPONSE,
+                    "生成内容被额度截断，未保存不完整内容；输出上限包含推理 tokens，请提高输出上限或降低思维程度，保存后重试")
                 "content_filter" -> tokens.problem(ErrorCode.INVALID_RESPONSE, "服务商过滤了本次内容")
                 else -> tokens.problem(ErrorCode.INVALID_RESPONSE, "服务商未完成本次内容")
             }
@@ -295,5 +296,5 @@ private fun okio.BufferedSource.readAtMost(limit: Int): ByteArray {
     val passage: String? = null, val question: String? = null, val sourceSentence: String? = null,
 )
 @Serializable internal data class FeedbackProposal(val explanation: String, val targetUsage: String, val quotedAnswer: String)
-@Serializable internal data class ExplanationProposal(val explanation: String, val examples: List<String>)
+@Serializable internal data class ExplanationProposal(val content: ExplanationContent, val recommendations: List<RecommendationSeed> = emptyList())
 @Serializable internal data class AnalysisProposal(val patch: PolicyPatch, val actions: List<Command> = emptyList())

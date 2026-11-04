@@ -26,6 +26,7 @@ import app.wordprism.ui.dev.DevPanelScreen
 import app.wordprism.ui.intake.IntakeScreen
 import app.wordprism.ui.library.GroupScreen
 import app.wordprism.ui.library.LibraryScreen
+import app.wordprism.ui.library.WordScreen
 import app.wordprism.ui.overview.AdjustmentsScreen
 import app.wordprism.ui.overview.OverviewScreen
 import app.wordprism.ui.settings.ApiRoutingScreen
@@ -44,6 +45,7 @@ import kotlinx.serialization.Serializable
 @Serializable object SettingsRoute
 @Serializable data class StudyRoute(val sessionId: String)
 @Serializable data class GroupRoute(val groupId: String)
+@Serializable data class WordRoute(val wordId: String)
 @Serializable data class IntakeRoute(val prefill: String = "")
 @Serializable object AdjustmentsRoute
 @Serializable data class PresetRoute(val presetId: String? = null)
@@ -116,7 +118,7 @@ fun AppRoot() {
                         )
                     }
                     composable<LibraryRoute> {
-                        LibraryScreen(openGroup = { nav.navigate(GroupRoute(it)) }, openIntake = { nav.navigate(IntakeRoute(it)) }, openTasks = { nav.navigate(TasksRoute) })
+                        LibraryScreen(openGroup = { nav.navigate(GroupRoute(it)) }, openIntake = { nav.navigate(IntakeRoute(it)) }, openTasks = { nav.navigate(TasksRoute) }, openWord = { nav.navigate(WordRoute(it)) })
                     }
                     composable<OverviewRoute> {
                         OverviewScreen(openAdjustments = { nav.navigate(AdjustmentsRoute) }, openGroup = { nav.navigate(GroupRoute(it)) })
@@ -132,8 +134,10 @@ fun AppRoot() {
                         StudyScreen(e.toRoute<StudyRoute>().sessionId, onExit = { nav.popBackStack() }, openApi = { nav.navigate(ApiRoutingRoute) })
                     }
                     composable<GroupRoute> { e ->
-                        GroupScreen(e.toRoute<GroupRoute>().groupId, onBack = { nav.popBackStack() }, openApi = { nav.navigate(ApiRoutingRoute) })
+                        GroupScreen(e.toRoute<GroupRoute>().groupId, onBack = { nav.popBackStack() }, openApi = { nav.navigate(ApiRoutingRoute) }, openWord = { nav.navigate(WordRoute(it)) })
                     }
+                    composable<WordRoute> { e -> WordScreen(e.toRoute<WordRoute>().wordId, onBack = { nav.popBackStack() },
+                        openApi = { nav.navigate(ApiRoutingRoute) }, openGroup = { nav.navigate(GroupRoute(it)) }, openWord = { nav.navigate(WordRoute(it)) }) }
                     composable<IntakeRoute> { e ->
                         IntakeScreen(
                             prefill = e.toRoute<IntakeRoute>().prefill, onClose = { nav.popBackStack() },

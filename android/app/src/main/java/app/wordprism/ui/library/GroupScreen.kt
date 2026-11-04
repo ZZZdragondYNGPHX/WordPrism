@@ -100,7 +100,7 @@ class GroupViewModel(sdk: WordPrismSdk, private val saved: SavedStateHandle, pri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GroupScreen(groupId: String, onBack: () -> Unit, openApi: () -> Unit) {
+fun GroupScreen(groupId: String, onBack: () -> Unit, openApi: () -> Unit, openWord: (String) -> Unit) {
     val vm = wpViewModel(key = "group-$groupId") { sdk, s -> GroupViewModel(sdk, s, GroupId(groupId)) }
     CollectMessages(vm, LocalSnackbar.current)
     val group by vm.group.collectAsStateWithLifecycle()
@@ -151,6 +151,7 @@ fun GroupScreen(groupId: String, onBack: () -> Unit, openApi: () -> Unit) {
                     }
                     m.note?.let { Text("笔记：$it", style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 8.dp)) }
                     m.joinReason?.let { Text("归组理由：$it", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp)) }
+                    TextButton(onClick = { openWord(m.wordId.value) }) { Text("词源与助记") }
                 }
                 Spacer(Modifier.height(12.dp)); Hairline()
             }

@@ -5,5 +5,6 @@ application { mainClass.set("dev.wordprism.fixtures.FixturesKt") }
 tasks.named<JavaExec>("run") {
     args(rootProject.file("../docs/backend/fixtures").absolutePath)
     if (providers.gradleProperty("skipReferencePackages").isPresent) args("--skip-packages")
+    if (providers.gradleProperty("explanationReferencePackage").isPresent) args("--explanation-package")
     systemProperty("java.library.path", rootProject.file("memory-native/target/release").absolutePath)
 }

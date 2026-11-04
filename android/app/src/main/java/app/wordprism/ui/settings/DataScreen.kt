@@ -138,7 +138,7 @@ fun DataScreen(onBack: () -> Unit) {
             }
 
             SectionTitle("分享词组")
-            Text("只包含所选词组的词条、释义、例句和归组，不含学习进度、AI 调整记录和 API 配置。", style = MaterialTheme.typography.bodySmall, color = c.muted)
+            Text("包含所选词组的词条、释义、例句、归组、已保存讲解、词族候选和练习内容，不含学习进度、AI 调整记录和 API 配置。", style = MaterialTheme.typography.bodySmall, color = c.muted)
             OutlinedButton(onClick = { pickGroups = true }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 52.dp)) {
                 Text(if (selected.isEmpty()) "选择要导出的词组" else "已选 ${selected.size} 个词组，导出")
             }

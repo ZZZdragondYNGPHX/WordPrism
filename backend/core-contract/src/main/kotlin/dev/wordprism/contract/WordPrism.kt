@@ -78,6 +78,7 @@ import kotlinx.serialization.Serializable
     @Serializable @SerialName("library") data class Library(val search: String = "", val afterId: Id? = null, val limit: Int = 50) : Query
     @Serializable @SerialName("library_overview") data class LibrarySummary(val search: String = "", val relation: Relation? = null, val ungroupedOnly: Boolean = false) : Query
     @Serializable @SerialName("word") data class GetWord(val id: Id) : Query
+    @Serializable @SerialName("sense_explanation") data class GetExplanation(val senseId: Id) : Query
     @Serializable @SerialName("group") data class GetGroup(val id: Id) : Query
     @Serializable @SerialName("session") data class GetSession(val id: Id) : Query
     @Serializable @SerialName("activity") data class GetActivity(val id: Id) : Query
@@ -132,6 +133,12 @@ import kotlinx.serialization.Serializable
     @Serializable @SerialName("operations") data class Operations(val operations: List<Operation>) : View
     @Serializable @SerialName("operation_effects") data class OperationEffects(val effects: List<BusinessEffect>) : View
     @Serializable @SerialName("recommendations") data class Recommendations(val recommendations: List<Recommendation>) : View
+    @Serializable @SerialName("sense_explanation") data class Explanation(
+        val sense: Ref, val explanation: SenseExplanation?, val stale: Boolean,
+        val recommendations: List<Recommendation>, val operation: Operation? = null,
+        /** Related words remain readable after acceptance; recommendations contains only eligible candidates. */
+        val family: List<Recommendation> = emptyList(),
+    ) : View
     @Serializable @SerialName("settings") data class Settings(val settings: UserSettings, val policy: TrainingPolicy, val bindings: List<Binding>) : View
     @Serializable @SerialName("capabilities") data class Capabilities(val capabilities: List<Capability>) : View
     @Serializable @SerialName("policy_changes") data class PolicyChanges(val changes: List<PolicyChange>, val undoableIds: Set<Id> = emptySet()) : View
