@@ -67,6 +67,7 @@ import kotlinx.serialization.Serializable
     @Serializable @SerialName("set_call_policy") data class SetCallPolicy(val policy: CallPolicy) : Command
     @Serializable @SerialName("test_connection") data class TestConnection(val preset: Ref) : Command
     @Serializable @SerialName("cancel_operation") data class CancelOperation(val id: Id) : Command
+    /** Explicit retry captures the latest saved version of the same enabled preset; prior attempts stay unchanged. */
     @Serializable @SerialName("retry_operation") data class RetryOperation(val id: Id) : Command
     @Serializable @SerialName("undo_operation") data class UndoOperation(val id: Id) : Command
     @Serializable @SerialName("commit_import") data class CommitImport(val token: Id) : Command

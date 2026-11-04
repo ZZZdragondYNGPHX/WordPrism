@@ -77,15 +77,20 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
 
     private suspend fun <T> exchange(http: okhttp3.Request, timeoutSeconds: Int, operationId: Id? = null,
         metadata: Boolean = false, parse: (Response) -> T): T {
-        val call = client.newBuilder().callTimeout(timeoutSeconds.toLong(), TimeUnit.SECONDS).build().newCall(http)
+        // OkHttp defaults each I/O stage to 10 seconds independently of callTimeout.
+        // Apply the user's budget to every stage and retain one deadline for the whole request.
+        val timeout = timeoutSeconds.toLong()
+        val call = client.newBuilder().callTimeout(timeout, TimeUnit.SECONDS)
+            .connectTimeout(timeout, TimeUnit.SECONDS).readTimeout(timeout, TimeUnit.SECONDS)
+            .writeTimeout(timeout, TimeUnit.SECONDS).build().newCall(http)
         operationId?.let { calls[it] = call }
         fun failure(e: IOException): ProviderException {
             if (e is ProviderException) return e
             val fault = if (metadata) {
-                if (e is InterruptedIOException) Fault(ErrorCode.PROVIDER_TIMEOUT, "拉取模型超时，请重试", true)
+                if (e is InterruptedIOException) Fault(ErrorCode.PROVIDER_TIMEOUT, "拉取模型超时（上限 $timeoutSeconds 秒），请重试", true)
                 else Fault(ErrorCode.PROVIDER_UNAVAILABLE, "无法拉取模型，请检查网络和服务地址后重试", true)
             } else {
-                if (e is InterruptedIOException) Fault(ErrorCode.PROVIDER_TIMEOUT, "请求超时；服务商是否完成未知，请明确选择重试")
+                if (e is InterruptedIOException) Fault(ErrorCode.PROVIDER_TIMEOUT, "请求超时（上限 $timeoutSeconds 秒）；服务商是否完成未知，请明确选择重试")
                 else Fault(ErrorCode.OUTCOME_UNKNOWN, "连接中断；服务商是否完成未知，请明确选择重试")
             }
             return ProviderException(fault)

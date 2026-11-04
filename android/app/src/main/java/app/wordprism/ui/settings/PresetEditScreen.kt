@@ -234,7 +234,7 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("启用这个预设", style = MaterialTheme.typography.bodyLarge)
-                        Text(if (v.boundFeatures.isEmpty()) "没有功能使用它" else "被 ${v.boundFeatures.size} 项功能使用", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                        Text(if (v.boundFeatures.isEmpty()) "未单独绑定功能，可在调用控制中设为默认" else "被 ${v.boundFeatures.size} 项功能单独绑定", style = MaterialTheme.typography.bodySmall, color = c.muted)
                     }
                     Switch(v.enabled, vm::setEnabled)
                 }

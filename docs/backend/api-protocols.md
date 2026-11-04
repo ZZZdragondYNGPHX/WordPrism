@@ -1,6 +1,6 @@
 # LLM 协议接入
 
-产品：`v0.4` · 本地契约版本：`1` · 更新：2026-11-03。
+产品：`v0.4` · 本地契约版本：`1` · 更新：2026-11-04。
 
 已实现 Chat Completions 兼容接口和原生 OpenAI Responses 接口。两者由手机中的同一个 `OpenAiCompatibleProvider` 发起 HTTPS 请求，共用持久任务、功能绑定、凭证、额度、取消和用量记录。接口与数据定义见[本地后端契约](contract.md)，调用授权规则见[API 预设方案](../plan/api-presets.md)。
 
@@ -93,6 +93,10 @@ Responses JSON 模式的输入检查要求 `input` 消息包含 JSON 指令；�
 
 HTTP 错误保留状态码，以及核心白名单内的参数名、服务商 code/type；为 JSON 输入缺指令和思维程度不支持提供具体处理说明。服务商任意原始 message 不保存或回显，避免错误响应回显密钥或学习内容。未识别的内容使用稳定的本地错误。
 
+`timeoutSeconds` 同时配置连接、读取、写入及整次 HTTP 调用的超时，读取响应头和响应正文都受此配置约束。不能只设置 `callTimeout`：OkHttp 4.12.0 的各 I/O 阶段另有默认 10 秒上限，会让设置为 180 秒的推理提前失败。当前超时提示包含本次生效的秒数；模型目录复用相同实现。慢响应回归覆盖超过 10 秒仍成功，以及多个阶段合计超出总预算时失败。
+
+用户明确点击 `RetryOperation` 时，捕获原预设当前已保存的版本；因此修改超时、模型或思维程度后，应先保存，再重试原任务。过去尝试的 `Usage.preset` 与用量不改写。重试已排队后再编辑预设，也不会改动这次已经捕获的配置。同键重放不会重新捕获或额外发请求。超时或结果未知仍须手动重试，自动重试只适用于下述允许的错误。样例：[失败任务](fixtures/failed-operation.json)、[手动重试请求](fixtures/retry-operation.request.json)、[采用已保存新版的排队任务](fixtures/retry-uses-saved-preset.json)。
+
 每次尝试保留实际协议、预设版本、模型与已知用量。`output_tokens` 已包含 reasoning tokens，不再叠加子项；缺失、负数或畸形 token 数保留未知。即使生成被截断、拒绝或失败，服务商已提供的有效用量仍写入任务记录。取消或关闭后的结果是否可提交继续由核心的持久状态及版本校验决定。
 
 限流和服务不可用只按用户已有重试次数及备用预设执行，可以在两个协议之间切换；超时和未知结果不会触发这类自动切换。HTTP 重定向不转发凭证，OkHttp 不自行重试。请求上限 256 KiB，响应上限 2 MiB。凭证数组在发送后以及校验失败等退出路径均清零。
@@ -115,4 +119,6 @@ HTTP 错误保留状态码，以及核心白名单内的参数名、服务商 co
 
 思维程度及模型差异依据官方 [Reasoning models](https://developers.openai.com/api/docs/guides/reasoning)、[Create chat completion](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)与 Create response 参考。JSON 输入要求见 [Structured outputs / JSON mode](https://developers.openai.com/api/docs/guides/structured-outputs#json-mode)，HTTP 400 的实际响应将问题定位到 `input`。
 
-回归使用真实 OkHttp 与本地 `MockWebServer`，覆盖 HTTP 格式、错误与取消；任务执行器验证离线排队、同键重放、预设快照和跨协议备用重试，SQLite 与完整备份验证配置兼容。另按用户授权使用临时 key，对 OpenAI `gpt-6-luna` 真实验证了 Responses 默认/低思维程度、Chat 低思维程度和模型目录。真实调用从 Windows 宿主执行正式适配器与任务核心；Android 模拟器只验证本地界面与存储。具体用量和范围见[验证记录](validation.md)，未将合成服务或宿主测试当作手机真实网络证据。
+超时行为已核对所采用版本的 [OkHttp 4.12.0 源码](https://github.com/square/okhttp/blob/parent-4.12.0/okhttp/src/main/kotlin/okhttp3/OkHttpClient.kt)，未增加依赖。按用户截图的 `gpt-6-luna / MAX / 8000 / 180 秒` 配置，修复前的完整 AI 添加在约 11.4 秒超时，修复后约 12.5 秒成功并写入两个词与一个组；具体宿主和设备证据见[验证记录](validation.md)。
+
+回归使用真实 OkHttp 与本地 `MockWebServer`，覆盖 HTTP 格式、错误与取消；任务执行器验证离线排队、同键重放、预设快照和跨协议备用重试，SQLite 与完整备份验证配置兼容。另按用户授权使用临时 key，对 OpenAI `gpt-6-luna` 真实验证了 Responses 默认/低思维程度、Chat 低思维程度和模型目录。test.5 在 Windows 宿主与正式 Android APK 内均完成 `MAX / 8000 / 180 秒` 的实际 AI 添加；API 35 x86_64 模拟器约 15.3 秒保存两个词与一个组，强停重开后仍保留，真实目录返回 130 个模型。具体用量和范围见[验证记录](validation.md)，这些证据不代表物理手机、其他模型或长期业务质量已验证。

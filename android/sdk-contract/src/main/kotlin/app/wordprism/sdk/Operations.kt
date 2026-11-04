@@ -90,6 +90,7 @@ interface OperationsApi {
     /** Active and recently finished operations, newest first. */
     fun observeRecent(): Flow<List<Operation>>
     suspend fun cancel(id: OperationId): SdkResult<Operation>
+    /** A user retry captures the same preset's current saved configuration; earlier attempts keep their versions. */
     suspend fun retry(id: OperationId, request: ClientRequestId): SdkResult<Operation>
     suspend fun undo(id: OperationId, request: ClientRequestId): SdkResult<UndoOutcome>
 }

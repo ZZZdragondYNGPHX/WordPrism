@@ -3,6 +3,7 @@ package dev.wordprism.engine
 import dev.wordprism.contract.*
 import dev.wordprism.memory.NativeMemoryKernel
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.*
 import okhttp3.mockwebserver.MockResponse
@@ -81,6 +82,50 @@ class ProviderTaskTest {
             val sent = server.takeRequest()
             assertEquals("/v1/responses", sent.path); assertEquals(json("""{"effort":"high"}"""), json(sent.body.readUtf8()).jsonObject["reasoning"])
             assertEquals(1, server.requestCount)
+        }
+    }
+
+    @Test fun `whole call timeout does not retry automatically and explicit retry uses the saved preset version`() = runBlocking {
+        MockWebServer().use { server ->
+            val h = HttpHarness(server); val initial = h.preset(ApiProtocols.OPENAI_RESPONSES)
+            val original = initial.copy(version = 2, timeoutSeconds = 5)
+            h.command(Command.SavePreset(original, initial.version))
+            h.command(Command.BindPreset(Binding(Feature.WORD_INTAKE, original.id)))
+            val settings = h.store.read().settings
+            h.command(Command.SetSettings(settings.copy(maxRetries = 2), settings.version))
+            val op = (h.command(Command.SubmitIntake("linear")) as View.OperationResult).operation
+            // Both waits fit individually, but their sum exceeds the configured total deadline.
+            server.enqueue(MockResponse().setBody(nativeSuccess()).setHeadersDelay(3, TimeUnit.SECONDS).setBodyDelay(3, TimeUnit.SECONDS))
+            h.core.tasks.run(op.id)
+            val failed = h.store.read()
+            assertEquals(OperationStatus.FAILED, failed.operations.getValue(op.id).status)
+            assertEquals(ErrorCode.PROVIDER_TIMEOUT, failed.operations.getValue(op.id).fault?.code)
+            assertTrue(failed.words.isEmpty()); assertNull(failed.usage.values.single().inputTokens)
+            h.core.tasks.runPending(true)
+            assertEquals(1, server.requestCount)
+
+            val saved = original.copy(version = 3, timeoutSeconds = 180, maxOutputTokens = 8000, reasoningEffort = ReasoningEffort.MAX)
+            h.command(Command.SavePreset(saved, original.version))
+            val retry = Command.RetryOperation(op.id)
+            val queued = h.command(retry, "retry-with-saved-config") as View.OperationResult
+            assertEquals(saved, queued.operation.preset)
+            // An edit after this explicit retry cannot alter the newly captured attempt.
+            h.command(Command.SavePreset(saved.copy(reasoningEffort = ReasoningEffort.LOW), saved.version))
+            h.command(retry, "retry-with-saved-config")
+            assertEquals(saved, h.store.read().operations.getValue(op.id).preset)
+            server.enqueue(MockResponse().setBody(nativeSuccess()))
+            h.core.tasks.run(op.id)
+            val after = h.store.read()
+            assertEquals(OperationStatus.SUCCEEDED, after.operations.getValue(op.id).status)
+            assertEquals(1, after.words.size)
+            assertEquals(listOf(original, saved), after.usage.values.sortedBy { it.attempt }.map { it.preset })
+            assertEquals(failed.usage.values.single(), after.usage.getValue(failed.usage.keys.single()))
+            server.takeRequest()
+            val sent = json(server.takeRequest().body.readUtf8()).jsonObject
+            assertEquals(json("""{"effort":"max"}"""), sent["reasoning"])
+            assertEquals(json("8000"), sent["max_output_tokens"])
+            h.command(retry, "retry-with-saved-config"); h.core.tasks.run(op.id)
+            assertEquals(2, server.requestCount)
         }
     }
 

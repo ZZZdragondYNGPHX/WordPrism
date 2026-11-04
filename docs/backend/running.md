@@ -88,6 +88,10 @@ adb -s emulator-5556 shell am start -n app.wordprism/.MainActivity
 
 预设的“思维程度”可使用模型默认或显式档位，修改后先保存再测试。服务地址兼容 API 根地址与完整端点；具体映射、旧数据兼容和可分享样例见[API 接入](api-protocols.md#思维程度)。
 
+AI 添加比连接测试需要更长时间。test.5 修复了读取阶段仍在 10 秒提前超时的问题；如果旧任务已失败，修改超时等参数并保存后，在该任务点击“重试”即可采用已保存版本。每次尝试仍分别记录来源与已知用量，见[超时与重试](api-protocols.md#失败取消与用量)。
+
+AI 添加页的明确按钮点击会提交当前可见文本，清除输入法保留的候选状态；键盘回车仍用于输入，不会自动发起 API 请求。该行为与学习页一致，保持原有 Compose 控件和任务反馈。
+
 新增的模型选择器 Compose 仪器测试使用合成列表，不查询供应商。可在 `android/` 执行 `:app:assembleDebugAndroidTest`，安装 debug APK 和 `app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk` 后，只对指定设备运行：
 
 ```powershell

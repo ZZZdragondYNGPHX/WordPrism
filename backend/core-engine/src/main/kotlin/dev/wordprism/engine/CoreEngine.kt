@@ -422,8 +422,10 @@ class CoreEngine(
                 val operation = db.operations[command.id].found("操作")
                 requireBusiness(operation.status in setOf(OperationStatus.FAILED, OperationStatus.NEEDS_CONFIGURATION, OperationStatus.RESTORED_PENDING), "当前任务不可重试")
                 requireBusiness(!operation.automatic || db.settings.automaticAnalysis || operation.feature != Feature.LEARNING_ANALYSIS, "请先启用自动分析，或单独发起手动分析", ErrorCode.DISABLED)
+                // This explicit user action captures the current version of the same saved preset.
+                // Earlier attempts keep their immutable Usage snapshots; queued/running jobs are unchanged.
                 val result = operation.copy(status = OperationStatus.QUEUED, automationEpoch = db.settings.automationEpoch, fault = null, updatedAtMs = now,
-                    preset = operation.preset?.takeIf { db.presets[it.id]?.enabled == true }, retryable = false)
+                    preset = operation.preset?.let { db.presets[it.id] }?.takeIf { it.enabled }, retryable = false)
                 db.operations[operation.id] = result
                 db.jobs[operation.id]?.let { db.jobs[operation.id] = it.copy(notBeforeMs = 0, retryCycleStartAttempt = operation.attempt) }
                 View.OperationResult(result)

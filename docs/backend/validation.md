@@ -2,30 +2,31 @@
 
 记录日期：2026-11-04 · 产品：`v0.4` · 执行环境：Windows，独立 API 35 x86_64 Android 模拟器。
 
-Claude 的 Compose 前端已经通过 `sdk-codex` 接入真实本机核心，支持原生 Responses、模型目录与思维程度。本轮修复用户实际遇到的 HTTP 400，并通过 OpenAI 真实连接验证、相关 JVM 回归、debug/release 构建、Lint、契约及 APK 检查。下文分别记录真实服务、合成响应、Android 模拟器和未验证范围。
+Claude 的 Compose 前端已经通过 `sdk-codex` 接入真实本机核心，支持原生 Responses、模型目录与思维程度。test.5 修复连接测试成功但实际 AI 添加超时、手动重试仍用旧预设，以及输入法候选状态阻挡明确提交的问题。Windows 宿主和正式 Android APK 均已成功调用 OpenAI 完成实际添加；相关 JVM 回归、debug/release 构建、Lint、契约及 APK 检查通过。下文分别记录真实服务、合成响应、Android 模拟器和未验证范围，保留早期版本的历史证据。
 
 ## 测试与构建
 
 | 检查 | 实际结果 | 覆盖 |
 | --- | --- | --- |
-| `:core-engine:test` | 77 tests，0 failures / errors / skipped | 业务、学习历史、每日分析与撤销；两协议 HTTP、模型目录、思维程度、端点规范化、JSON 输入、旧请求身份、旧行和备份兼容 |
+| `:core-engine:test` | 79 tests，0 failures / errors / skipped | 业务、学习历史、每日分析与撤销；两协议 HTTP、模型目录、思维程度、端点规范化、JSON 输入、旧请求身份、旧行和备份兼容；新增慢响应预算与保存后重试 |
 | `:platform-jvm:test` | 4 tests，全部通过 | 真实 SQLite 持久化、恢复及数据版本 |
 | `:memory-core:test` | 1 test，通过 | 真实 Rust JNI 调度/拟合/评估边界 |
-| `android :sdk-codex:test` | 18 tests，全部通过 | 8 个门面测试；10 个真实 `CoreEngine + SQLite + Rust JNI` 集成测试，新增思维程度映射、版本、离线快照、清除及重开验证 |
+| `android :sdk-codex:test` | 19 tests，全部通过 | 8 个门面测试；11 个真实 `CoreEngine + SQLite + Rust JNI` 集成测试，新增修改预设后重开重试、保留旧用量与重复请求验证 |
 | `android :app:testDebugUnitTest` | 6 tests，全部通过 | 模型拉取重复点击、取消、旧响应、离开页面、凭证清理和明确重试 |
 | `ModelPickerTest` | 2 tests，通过 | 实际 Compose：60 项合成列表中的搜索和准确选择、无匹配结果、关闭保留手动输入 |
 | `AndroidCoreTest` | 5 tests，通过 | Room、JNI 调度与本机拟合、Keystore、Room 1→2、应用平台与 WorkManager |
 | `ProcessRestartProbeTest` | 写入、真实 force-stop、读取两段均通过 | 跨新 PID 保留已提交状态，不以重建对象代替进程终止 |
-| 一次性真实 API 探针 | 1 test，通过；3 个生成请求、1 个模型目录请求 | Windows 宿主上的正式 `CoreEngine / TaskRunner / OpenAiCompatibleProvider`；具体协议和用量见下文 |
+| 一次性真实 AI 添加探针 | 修复前复现超时；修复后 1 test 通过 | Windows 宿主上的正式 `CoreEngine / TaskRunner / OpenAiCompatibleProvider`；同配置添加成功、实际写入和同键重放 |
+| 正式 APK 的真实 API | 1 次添加成功、1 次模型目录成功 | API 35 x86_64 模拟器直连 OpenAI；两个词与一个组，130 个模型，强停重开不重发 |
 | 后端 Maven 发布 | 五模块发布成功 | `core-contract / memory-core / core-engine / platform-jvm / platform-android` |
 | Android 构建 | `assembleDebug / assembleRelease` 通过 | 可安装 debug 与 unsigned release；release 不包含模拟业务类 |
 | `lintDebug` | 0 errors，3 warnings | 目标 API、低 API 忽略 localeConfig、依赖 catalog 提醒 |
-| 契约校验脚本 | 12 schemas、32 messages、7 个参考包模块通过 | 同源 JSON Schema、26 个响应、4 个命令请求及 2 个模型目录请求夹具、两个正式包 |
+| 契约校验脚本 | 12 schemas、34 messages、7 个参考包模块通过 | 同源 JSON Schema、27 个响应、5 个命令请求及 2 个模型目录请求夹具、两个正式包 |
 | 最终 APK 校验脚本 | debug / release 均通过 | 两个 ABI 的 6 个原生库、ELF/ZIP 16 KiB 对齐、249 个组件许可、源码附件、字体摘要 |
 
-当前常规 JVM 测试集共 106 个。本轮实际执行核心 77 个、SQLite 平台 4 个、前端门面及集成 18 个、页面状态 6 个，共 105 个；未修改的 `memory-core` 1 个沿用此前结果。真实 API 探针单独执行、单独计数，不属于常规离线测试集。标准 XML 位于各模块的 `build/test-results/`；真实调用报告单独保存在 `backend/build/reports/live-api-test4/`。
+当前常规 JVM 测试集共 109 个。本轮实际执行核心 79 个、SQLite 平台 4 个、前端门面及集成 19 个、页面状态 6 个，共 108 个；未修改的 `memory-core` 1 个沿用此前结果。真实 API 探针单独执行、单独计数，不属于常规离线测试集。标准 XML 位于各模块的 `build/test-results/`；本轮宿主真实调用报告分别保存在 `backend/build/reports/live-api-test5-before/`、`live-api-test5-after/`，test.4 连接测试报告保留在 `live-api-test4/`。
 
-Android 平台的 5 个 instrumentation 测试及独立进程探针在早期集成执行，模型选择器的 2 个 Compose 仪器测试在 test.3 执行，本轮未重复。本轮操作实际 APK 的思维程度表单，覆盖升级、选择、放弃编辑、保存、真实 force-stop 和原数据比对。Android 首次构建暴露一个门面泛型返回值无法推断的问题；显式指定 `invalid<ApiPreset>` 后，SDK、页面测试、两个 APK 构建及 Lint 相关复测全部通过。
+Android 平台的 5 个 instrumentation 测试及独立进程探针在早期集成执行，模型选择器的 2 个 Compose 仪器测试在 test.3 执行，本轮未重复。test.5 在正式 APK 中操作真实预设、模型目录、功能绑定和 AI 添加，执行实际 force-stop 并比对旧记录及新增内容。界面自检发现输入法 composition 阻挡明确提交后，修复、重新构建两个 APK、执行 Lint，并用相同输入路径完成真实调用和重开验证。test.4 的门面泛型编译问题及其修复、复测是此前结果。
 
 运行命令与依赖版本集中维护在[构建与接入](running.md)。测试报告、APK、模拟器截图和临时数据库位于已忽略的 `build/`，不提交个人数据或构建缓存。
 
@@ -53,7 +54,11 @@ Responses 新增覆盖：推理项在前、多段文本、SDK 便利属性不作
 
 升级自检发现新增默认字段改变旧 `SavePreset` 摘要，回归先以 test.3 的实际命令格式和摘要复现 `IDEMPOTENCY_CONFLICT`。修复为省略默认值后，旧键重放保持数据库不变，同键更改显式档位仍拒绝；相关测试和完整核心回归通过。
 
+test.5 新增两个真实 HTTP 回归先在旧实现失败，修复后通过。慢响应测试并行覆盖 Chat、Responses、模型目录的响应头及正文六条路径：延迟 11 秒、预算 15 秒，均成功，防止隐含 10 秒默认值回归。总预算测试分别等待响应头 3 秒、正文 3 秒，预算 5 秒，必须失败；即使允许自动重试也不重发未知结果。保存新版预设后明确重试采用 `MAX / 8000 / 180 秒`，重试排队后再编辑不会改变已捕获版本，旧用量保留且同键不增加请求。SDK 集成进一步覆盖超时替身、保存、SQLite 重开、重试、再重开的全过程。
+
 ## 真实 API 诊断与验证
+
+### test.4：Responses HTTP 400
 
 用户提供手机截图与临时测试 key 后，先按原版请求向 `https://api.openai.com/v1/responses` 调用 `gpt-6-luna`，真实返回 HTTP 400：`invalid_request_error`、`param = input`，指出 `input` 必须含有 JSON 指令才能使用 `text.format = json_object`。此前只有 `instructions` 包含该指令；这是本次已复现的请求格式问题，不能归因于密钥。该失败响应未提供 token 用量。
 
@@ -69,6 +74,21 @@ Responses 新增覆盖：推理项在前、多段文本、SDK 便利属性不作
 三个成功生成请求共 336 输入 / 83 输出 tokens；输出统计包含供应商报告的推理用量，不重复叠加。测试将完整 `/v1/responses` 地址交给正式适配器，验证正确规范化和跨协议路径。临时 key 仅经进程环境和内存凭证传入，不写入源码、固定测试夹具、设备或 APK；测试完成后已告知用户可撤销，无后续真实调用。
 
 这是 Windows 宿主上的 OpenAI 网络证据，内容仅为连接测试；不能代替 Android 手机网络、所有档位、其他供应商或实际 AI 学习业务质量验证。回归中的模拟服务器单独覆盖失败、取消和状态恢复。
+
+### test.5：连接成功但实际添加超时
+
+按用户截图保持 `https://api.openai.com/v1`、Responses、`gpt-6-luna`、`MAX`、8000 输出 tokens 和 180 秒上限，正式核心提交 `complement compliment`。核对 OkHttp 4.12.0 源码后确认，原实现只设置整次 `callTimeout`，读取阶段仍受默认 10 秒约束。另确认手动重试保留了旧任务的预设快照，导致保存更长超时后也可能继续使用旧值。修复和重试契约见[协议说明](api-protocols.md#失败取消与用量)。
+
+| 执行位置与阶段 | 实际结果 | 耗时 | 输入 / 输出 tokens |
+| --- | --- | --- | --- |
+| Windows 宿主，修复前 | `FAILED / PROVIDER_TIMEOUT`，未写入词或组 | 11,423 ms | 未知，失败响应未提供 |
+| Windows 宿主，修复后 | `SUCCEEDED`，新增 2 词、1 组、2 个成员关系 | 12,501 ms | 274 / 1247 |
+| API 35 x86_64 模拟器，最终 APK | `SUCCEEDED`，新增 2 词、1 组、2 个成员关系 | 15,263 ms | 1084 / 1500 |
+| 同一模拟器，GET `/models` | 130 个模型，搜索命中 `gpt-6-luna` | 未单独计时 | 无生成 token 用量 |
+
+宿主使用空测试库，模拟器使用包含既有词组的库，因此上下文与用量不同。成功生成共 1358 输入 / 2747 输出 tokens；修复前超时请求的供应商实际用量仍未知，不能按零计。宿主探针还验证同键重放和再次运行已完成任务均不新增 API 请求。模拟器中只产生一条 `WORD_INTAKE` 用量，任务 `attempt = 1`，配置快照与用户截图一致。
+
+真实响应包含两个正确拼写的词、非空释义与例句，以及对应组关系。此单个样本证明完整请求、解析和本地保存可以工作，不证明所有词条、评分、分析或长期学习质量。测试只使用公开词汇和合成旧词库。宿主 key 仅经临时进程环境传入；模拟器用正式 Keystore 保存，结束后删除加密凭证文件及引用、清除临时功能绑定，未写入源码、夹具或 APK。真实 API 测试已经结束，可撤销本轮临时 key。
 
 ## Android 应用实际流程
 
@@ -119,14 +139,28 @@ Responses 新增覆盖：推理项在前、多段文本、SDK 便利属性不作
 
 可安装 APK 为 25,209,310 bytes，SHA-256 `b2739f5ff7d2be1e05e9b32d53c9b5214e0fd28e6748d2da6b5366018bec4cdf`。打包前发现增量 ZIP 留有约 3.8 MB 未引用空间，删除该生成 APK 后重新执行打包，体积恢复正常；最终内容、16 KiB 对齐和同一 debug 证书的 v2 签名再次验证通过。分发入口为 [v0.4.0-test.4 Release](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/tag/v0.4.0-test.4)。
 
+### AI 添加超时、明确提交与覆盖升级
+
+在同一模拟器正常重启恢复 Wi-Fi 后，从 test.4 覆盖升级至 `versionCode = 5`、`versionName = 0.4.0-test.5`，没有清空或卸载应用。新建独立测试预设、保存截图中的参数与临时凭证，拉取到真实模型列表并搜索命中 `gpt-6-luna`；只为 AI 添加设置临时绑定，自动分析保持关闭。
+
+实际输入 `complement compliment` 并隐藏键盘后，发现 `compliment` 仍带输入法 composition，原按钮条件静默阻止提交，数据库确认尚无添加任务。沿用学习页已有实现，在明确按钮点击时捕获可见文本、清除 composition 和焦点后提交；键盘回车仍不直接触发 API。重新构建、覆盖安装最终 APK，再次手动输入形成相同候选状态，点击一次后显示“进行中”，随后变为“词条与归组已保存”。
+
+打开实际词组可见两个词的释义和例句。`Usage.startedAtMs / endedAtMs` 差为 15,263 ms，超过旧的 10 秒限制；正式 Room 中共 5 个词、2 个组、1 条用量，新增任务为 `SUCCEEDED`。随后真正 `am force-stop` 并冷启动，PID `3047 → 3379`；逐条比对词、义项、组、成员、作答、会话、用量及操作的完整存储记录，强停前后完全相同。启动前已有的 3 个词、4 条作答、1 个暂停会话和 2 个业务操作的身份、版本及捕获字段也保持不变。重新打开词库和词组显示同样内容，无重复生成请求。
+
+结束后通过预设页面删除测试密钥并保存，恢复 AI 添加未绑定状态。数据库凭证引用为 0，加密凭证目录为空，用量仍为 1 条。保留公开测试词组用于本地检查。证据位于 `backend/build/reports/app-ui/`：`intake5-live-model-search.png`、`intake5-submit-stalled.png`、`intake5-retyped-before-submit.png`、`intake5-final-request-running.png`、`intake5-final-result.png`、`intake5-reopened-group.png`、`intake5-live-evidence.json`、`intake5-restart-validation.json` 与各阶段状态及 UI 树。
+
+按 `microinteractions` 八项行为诊断，修复后的明确提交为 10/10（8/8）：入口和状态可见、规则与学习页一致、点击进入真实任务反馈、结果与撤销可追溯、草稿减少重复输入、输入法候选不再成为隐含阻挡、初次可按标签完成；无未通过的行为项。仅沿用现有 Compose 控件，无布局或动效改造。该行为自检未测量 100 ms 反馈阈值，也未验证中文输入法候选或 TalkBack 朗读。
+
+最终 APK 为 25,209,310 bytes，SHA-256 `423e041a406028855549734f69116bd40c9a8e5d683b6933e166aca28bca60c3`。两种 APK 的内容、两个 ABI、16 KiB 对齐、许可和字体摘要检查通过，可安装 APK 的 v2 签名证书与前版一致。分发入口为 [v0.4.0-test.5 Release](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/tag/v0.4.0-test.5)，附件包括 APK、示例内容包及 `SHA256SUMS.txt`。
+
 早期 [Claude 前端验证](../frontend/validation-2026-11-03.md)记录的是模拟后端与模拟包格式，保留其历史含义，不用于证明本次真实存储或模型调用。
 
 ## 证据边界与限制
 
-- **真实 API 范围有限**：仅 OpenAI `gpt-6-luna` 的宿主连接测试和模型目录；未验证其他供应商、所有思维档位、真实 AI 添加/评分/分析的质量，或手机上的成功 API 调用。用量为服务商响应数字，没有核对账单。
+- **真实 API 范围有限**：OpenAI `gpt-6-luna` 的宿主连接测试、模型目录及单个实际添加样本；Android 模拟器已验证模型目录与同一添加样本。未验证其他供应商、所有思维档位、真实评分/分析或广泛内容质量，也没有物理手机上的成功 API 调用证据。用量为服务商响应数字，没有核对账单；超时请求的未知用量仍保留未知。
 - **没有物理手机或 arm64 运行证据**。arm64 库已构建并检查，但模拟器为 x86_64；minSdk 声明也不是 API 26 实机验证。
 - 没有长期学习效果、真实个人参数收益、目标规模性能或功耗证据。资料库的 10,000 词 / 100,000 作答限制是保护边界，不是已经达成的性能指标；当前事务仍读取、解码资料库快照。
 - 内容包冲突明确拒绝，需修正来源后重新导入；没有逐项交互合并。批量任务暂不提供分数进度。
 - Android 仍受系统后台调度约束；计时心跳丢失后的未确认尾段不补算。文件提供方与本机数据库不能跨系统原子提交，具体导出重试语义见[契约](contract.md)。
-- 既有 Compose 仪器测试覆盖模型选择器；本轮思维程度通过 adb/UIAutomator 操作真实 APK 验证。未验证中文输入法输入、TalkBack 朗读、横屏或平板，未进行真机延迟或性能测量。保留前端已有的无障碍与动效实现。
+- 既有 Compose 仪器测试覆盖模型选择器；本轮真实模型目录、AI 添加及重开通过 adb/UIAutomator 操作正式 APK 验证。未验证中文输入法输入、TalkBack 朗读、横屏或平板，未进行真机延迟或性能测量。保留前端已有的无障碍与动效实现。
 - Debug APK 可安装；release 尚未签名或上架。GitHub 源码推送不等同于应用发行。

@@ -17,6 +17,40 @@ class ProviderTest {
         ApiPreset(Id("preset"), name = "Loopback test", baseUrl = server.url("/v1").toString(), model = "test", protocol = protocol), "Return JSON", json("{}"))
     private val chatSuccess = json("""{"choices":[{"finish_reason":"stop","message":{"content":"{\"ok\":true}"}}],"usage":{"prompt_tokens":7,"completion_tokens":3}}""").jsonObject
     private val responsesSuccess = json("""{"status":"completed","error":null,"output":[{"type":"message","role":"assistant","status":"completed","content":[{"type":"output_text","text":"{\"ok\":true}"}]}],"usage":{"input_tokens":7,"output_tokens":3}}""").jsonObject
+    @Test fun `configured timeout permits slow headers and bodies beyond the HTTP client default`() = runBlocking {
+        // A real 11-second read wait catches the otherwise hidden OkHttp 10-second default.
+        // Each case has its own server and client so both protocols and model metadata run concurrently.
+        val cases = listOf(ApiProtocols.OPENAI_CHAT_COMPLETIONS, ApiProtocols.OPENAI_RESPONSES, "models")
+            .flatMap { protocol -> listOf(protocol to "headers", protocol to "body") }
+        cases.map { (protocol, stage) -> async {
+            MockWebServer().use { server ->
+                val body = when (protocol) {
+                    ApiProtocols.OPENAI_CHAT_COMPLETIONS -> chatSuccess.toString()
+                    ApiProtocols.OPENAI_RESPONSES -> responsesSuccess.toString()
+                    else -> """{"data":[{"id":"slow-model"}]}"""
+                }
+                val response = MockResponse().setBody(body)
+                if (stage == "headers") response.setHeadersDelay(11, TimeUnit.SECONDS)
+                else response.setBodyDelay(11, TimeUnit.SECONDS)
+                server.enqueue(response)
+                val secret = UUID.randomUUID().toString().toCharArray()
+                val provider = OpenAiCompatibleProvider(true)
+                withTimeout(20_000) {
+                    if (protocol == "models") {
+                        val models = provider.listModels(ModelCatalogRequest(server.url("/v1").toString(), timeoutSeconds = 15), secret)
+                        assertEquals(listOf("slow-model"), models.map { it.id })
+                    } else {
+                        val request = request(server, protocol).let { it.copy(preset = it.preset.copy(timeoutSeconds = 15)) }
+                        val result = provider.generate(request, secret)
+                        assertEquals(json("""{"ok":true}"""), result.content)
+                        assertEquals(7L, result.inputTokens)
+                    }
+                }
+                assertTrue(secret.all { it == '\u0000' }); assertEquals(1, server.requestCount)
+            }
+        } }.awaitAll()
+        Unit
+    }
     @Test fun `actual HTTP adapter sends selected model and captures supplied usage`() = runBlocking {
         MockWebServer().use { server ->
             server.enqueue(MockResponse().setBody(chatSuccess.toString()))

@@ -33,6 +33,8 @@
 | `operations` | `Operations`、`GetOperation`、`CancelOperation`、`RetryOperation`、`UndoOperation` | 显示真实终态与动作，不根据页面动画猜测任务结果 |
 | 答案草稿 | `SaveDraft`、`GetDraft` | 持久版本化草稿；AI 添加的纯界面草稿继续使用前端 DataStore |
 
+`operations.retry` 捕获原预设当前保存的版本；页面应展示返回的 `presetVersion`，不沿用旧文案。旧尝试的来源和用量保留，失败后修改配置、保存、重试的同源样例见[API 接入](../backend/api-protocols.md#失败取消与用量)。
+
 ## 原 G1–G14 的处理结果
 
 此表保留前端联调问题的编号，当前完整字段仍以核心类型为准。
@@ -60,6 +62,6 @@ Chat Completions 与原生 Responses 通过相同预设页面配置。`observeAd
 
 ## 验证
 
-`sdk-codex` 已执行 18 个 JVM 测试：8 个门面映射测试，以及 10 个使用真实 `CoreEngine + SQLite + Rust JNI` 的集成测试。后者覆盖 SQLite 重开后的作答幂等、理解步骤、原子编辑/撤销、调用额度、正式备份流、统一总览与保留后续学习的撤销、持久拼写选择、关闭自动分析后的迟到结果，以及 Responses 协议标签、独立绑定、离线任务重开和模型目录选择保存。模型拉取的页面状态另有 6 个单元测试，模型选择器另有 2 个实际 Android Compose 仪器测试；使用合成目录，不代表真实供应商列表。
+`sdk-codex` 已执行 19 个 JVM 测试：8 个门面映射测试，以及 11 个使用真实 `CoreEngine + SQLite + Rust JNI` 的集成测试。后者覆盖 SQLite 重开后的作答幂等、理解步骤、原子编辑/撤销、调用额度、正式备份流、统一总览与保留后续学习的撤销、持久拼写选择、关闭自动分析后的迟到结果，以及 Responses 协议标签、独立绑定、离线任务重开、模型目录选择保存和保存新版预设后重开重试。模型拉取的页面状态另有 6 个单元测试，模型选择器另有 2 个实际 Android Compose 仪器测试；这些自动化用合成目录，真实供应商的 Android 验证另见下段。
 
-实际 Android 应用也已在 API 35 x86_64 模拟器完成正式包导入、学习、强停恢复、总览、SAF 导出和完整替换恢复。详细记录与最终 APK 检查见[后端与集成验证](../backend/validation.md)。[Claude 的早期验证](validation-2026-11-03.md)保留为模拟前端阶段记录，不能作为真实 API 或核心验证。
+实际 Android 应用也已在 API 35 x86_64 模拟器完成正式包导入、学习、强停恢复、总览、SAF 导出和完整替换恢复。test.5 进一步完成 OpenAI 真实模型目录、`complement / compliment` 添加与重开后的实际词组展示；修复明确点击添加被输入法 composition 阻挡的问题，沿用学习页的可见文本提交方式。详细记录与最终 APK 检查见[后端与集成验证](../backend/validation.md)。[Claude 的早期验证](validation-2026-11-03.md)保留为模拟前端阶段记录，不能作为真实 API 或核心验证。

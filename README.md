@@ -12,7 +12,7 @@
 
 应用要求 Android 8.0 / API 26 以上，打包 `arm64-v8a` 与 `x86_64`。Debug APK 可直接安装，release 当前为未签名构建。首次启动是空词库，可在“设置 → 导入与导出”导入[三个示例词的正式内容包](docs/backend/packages/example-content.wordprism)，离线开始学习。AI 功能需要在 API 预设中填写自己的连接与凭证；连接测试也会调用供应商。
 
-可直接下载 [v0.4.0-test.4 测试版 APK](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/tag/v0.4.0-test.4)，包含原生 Responses、模型列表拉取与思维程度，并修复 Responses 连接测试的 JSON 输入错误。可覆盖安装上一测试版。仓库为私有，需要登录有访问权的 GitHub 账号。在预设中输入地址与密钥后，点击“拉取模型”，搜索、选择思维程度并保存；也可继续手动填写模型。
+可直接下载 [v0.4.0-test.5 测试版 APK](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/tag/v0.4.0-test.5)，修复 AI 添加被默认 10 秒读取超时截断、重试仍使用旧预设，以及输入法候选状态下点击添加无响应的问题。可覆盖安装上一测试版。仓库为私有，需要登录有访问权的 GitHub 账号。在预设中输入地址与密钥后，点击“拉取模型”，搜索、选择思维程度并保存；也可继续手动填写模型。旧任务失败时，先保存修改后的预设，再在任务中点击“重试”。
 
 ## 已实现
 
@@ -31,4 +31,4 @@
 - [方案索引](docs/plan/index.md)：已确认需求、产品模块和职责边界。
 - [第三方源码与许可](backend/third-party/wordprism-notices/README.md)：随应用打包的组件记录、许可与必需源码附件。
 
-模型业务回归使用脚本响应和本地 HTTP 服务；另已通过宿主上的正式适配器与任务执行器，对 OpenAI `gpt-6-luna` 完成真实 Responses / Chat 连接及模型目录验证。真实服务证据限于连接请求，尚无真实 AI 学习任务、物理手机成功运行、arm64 运行或长期效果证据。当前存储事务仍读取资料库快照，大规模响应时间和内存尚待设备测量。具体限制见[验证记录](docs/backend/validation.md#证据边界与限制)。
+模型业务回归使用脚本响应和本地 HTTP 服务；另已对 OpenAI `gpt-6-luna` 完成宿主真实连接、模型目录和 AI 添加验证。在 API 35 x86_64 Android 模拟器中，正式 APK 也已拉取真实模型目录，并以 `MAX / 8000 tokens / 180 秒` 成功添加 `complement / compliment`，强停重开后内容与学习历史保留。尚无物理手机、arm64 运行或长期质量证据；其他模型、评分和自动分析的真实服务质量也未全面验证。当前存储事务仍读取资料库快照，大规模响应时间和内存尚待设备测量。具体限制见[验证记录](docs/backend/validation.md#证据边界与限制)。

@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
@@ -97,6 +98,7 @@ fun IntakeScreen(prefill: String, onClose: () -> Unit, openGroup: (String) -> Un
     val st by vm.state.collectAsStateWithLifecycle()
     val submitting by vm.submitting.collectAsStateWithLifecycle()
     val c = Wp.colors
+    val focusManager = LocalFocusManager.current
 
     var value by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue("")) }
     var loaded by rememberSaveable { mutableStateOf(false) }
@@ -153,7 +155,13 @@ fun IntakeScreen(prefill: String, onClose: () -> Unit, openGroup: (String) -> Un
                     ApiDisclosure(req, onConfigure = openApi)
                     Spacer(Modifier.height(8.dp))
                     Button(
-                        onClick = { if (value.composition == null) vm.submit(value.text) },
+                        onClick = {
+                            // An explicit click commits the visible text, just as on the study screen.
+                            // IMEs can retain composition even after the keyboard has been hidden.
+                            val text = value.text
+                            value = value.copy(composition = null); focusManager.clearFocus()
+                            vm.submit(text)
+                        },
                         enabled = !submitting && value.text.isNotBlank(),
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                     ) { Icon(Icons.Outlined.AutoAwesome, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(if (submitting) "正在提交…" else "交给 AI 整理") }

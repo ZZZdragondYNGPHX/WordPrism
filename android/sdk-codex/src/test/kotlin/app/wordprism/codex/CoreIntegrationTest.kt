@@ -102,6 +102,39 @@ class CoreIntegrationTest {
         private fun <T> ok(result: SdkResult<T>): T { if (result is SdkResult.Err) fail(result.error.toString()); return (result as SdkResult.Ok).value }
     }
 
+    @Test fun retryAfterPresetEditAndReopenUsesSavedConfigurationAndRetainsPriorUsage() = runBlocking {
+        Harness().use { h ->
+            val presetId = h.configure()
+            val op = ok(h.sdk.intake.submit(IntakeRequest("complement compliment"), ClientRequestId("intake-before-timeout")))
+            h.provider.response = { throw dev.wordprism.engine.ProviderException(dev.wordprism.contract.Fault(
+                dev.wordprism.contract.ErrorCode.PROVIDER_TIMEOUT, "Synthetic timeout with unknown provider outcome")) }
+            h.core.tasks.run(CId(op.value))
+            val priorUsage = h.store.read().usage.values.single()
+            val preset = h.sdk.presets.observePresets().first().single { it.id == presetId }
+            val edited = ok(h.sdk.presets.savePreset(PresetDraft(id = preset.id, expectedVersion = preset.version, name = preset.name,
+                adapterId = ApiProtocols.OPENAI_RESPONSES, baseUrl = preset.baseUrl, model = preset.model,
+                maxOutputTokens = 8000, timeoutSeconds = 180, reasoningEffort = "MAX"), ClientRequestId("edit-for-retry")))
+            h.restart()
+            val retryKey = ClientRequestId("retry-after-edit")
+            val queued = ok(h.sdk.operations.retry(op, retryKey))
+            assertEquals(edited.version, queued.presetVersion)
+            assertEquals(queued.id, ok(h.sdk.operations.retry(op, retryKey)).id)
+            h.provider.response = { ProviderResponse(Contract.json.parseToJsonElement(
+                """{"words":[{"spelling":"complement","meaning":"补充"},{"spelling":"compliment","meaning":"赞美"}],"reason":"Synthetic retry result"}"""), 9, 20) }
+            h.core.tasks.run(CId(op.value))
+            h.restart()
+            val state = h.store.read()
+            assertEquals(priorUsage, state.usage.getValue(priorUsage.id))
+            val latest = state.usage.values.single { it.id != priorUsage.id }.preset
+            assertEquals(180, latest.timeoutSeconds); assertEquals(8000, latest.maxOutputTokens)
+            assertEquals(ReasoningEffort.MAX, latest.reasoningEffort); assertEquals(ApiProtocols.OPENAI_RESPONSES, latest.protocol)
+            assertEquals(OperationStatus.Succeeded, h.sdk.operations.observe(op).filterNotNull().first().status)
+            assertEquals(2, state.words.size)
+            ok(h.sdk.operations.retry(op, retryKey)); h.core.tasks.run(CId(op.value))
+            assertEquals(2, h.provider.requests.size)
+        }
+    }
+
     @Test fun modelDiscoveryAndSelectionSurviveReopenWithoutPersistingCatalogRequests() = runBlocking {
         Harness().use { h ->
             assertNull(h.core.recover().fault) // Match AndroidWordPrism.open before inspecting a new empty store.

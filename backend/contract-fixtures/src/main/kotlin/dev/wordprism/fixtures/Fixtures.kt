@@ -26,7 +26,12 @@ fun main(args: Array<String>) {
         spellingChoices = listOf(SpellingChoice("lienar", "linear", "合成示例：请确认原始拼写")))))
     samples["business-effects"] = Reply(6, View.OperationEffects(listOf(BusinessEffect(operation.id, "update_word", "fixture-word", "linear · 笔记", "notes",
         kotlinx.serialization.json.JsonPrimitive(""), kotlinx.serialization.json.JsonPrimitive("强调与 liner 的区别")))))
-    samples["failed-operation"] = Reply(5, View.OperationResult(operation.copy(status = OperationStatus.FAILED, retryable = true, fault = Fault(ErrorCode.PROVIDER_TIMEOUT, "服务商结果未知；需明确重试"))))
+    val timeoutPreset = ApiPreset(Id("fixture-timeout-preset"), name = "重试配置示例", baseUrl = "https://example.invalid/v1",
+        model = "example-model", protocol = ApiProtocols.OPENAI_RESPONSES, timeoutSeconds = 30)
+    samples["failed-operation"] = Reply(5, View.OperationResult(operation.copy(status = OperationStatus.FAILED, attempt = 1,
+        preset = timeoutPreset, retryable = true, fault = Fault(ErrorCode.PROVIDER_TIMEOUT, "请求超时（上限 30 秒）；服务商是否完成未知，请明确选择重试"))))
+    samples["retry-uses-saved-preset"] = Reply(6, View.OperationResult(operation.copy(attempt = 1,
+        preset = timeoutPreset.copy(version = 2, timeoutSeconds = 180, maxOutputTokens = 8000, reasoningEffort = ReasoningEffort.MAX))))
     val word = Word(Id("fixture-word"), spelling = "linear", normalized = "linear")
     val sense = Sense(Id("fixture-sense"), word.id, meaning = "线性的", acceptedForms = listOf("linear"))
     val target = LearningTarget(Id("fixture-target"), sense.id, Ability.RECALL)
@@ -62,6 +67,7 @@ fun main(args: Array<String>) {
     File(output, "save-reasoning-preset.request.json").writeText(Contract.json.encodeToString(Request("fixture-reasoning-key", Command.SavePreset(reasoningPreset))) + "\n")
     File(output, "reset-reasoning-preset.request.json").writeText(Contract.json.encodeToString(Request("fixture-reasoning-default-key",
         Command.SavePreset(reasoningPreset.copy(reasoningEffort = null), expectedVersion = 1, preserveAdvancedSettings = true))) + "\n")
+    File(output, "retry-operation.request.json").writeText(Contract.json.encodeToString(Request("fixture-retry-key", Command.RetryOperation(operation.id))) + "\n")
     val catalogRequests = mapOf(
         "unsaved-models" to ModelCatalogRequest("https://api.openai.com/v1", ApiProtocols.OPENAI_RESPONSES),
         "saved-models" to ModelCatalogRequest("https://api.openai.com/v1", ApiProtocols.OPENAI_RESPONSES, credentialPreset = Ref(responsesPreset.id, responsesPreset.version)),
@@ -73,5 +79,5 @@ fun main(args: Array<String>) {
     }
     writeSchemas(File(output.parentFile, "schemas"))
     if ("--skip-packages" !in args) kotlinx.coroutines.runBlocking { writeReferencePackages(File(output.parentFile, "packages")) }
-    println("Validated ${samples.size} typed response fixtures, four command requests and ${catalogRequests.size} model catalog requests in ${output.absolutePath}")
+    println("Validated ${samples.size} typed response fixtures, five command requests and ${catalogRequests.size} model catalog requests in ${output.absolutePath}")
 }
