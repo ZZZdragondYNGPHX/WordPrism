@@ -243,7 +243,7 @@ fun WordScreen(wordId: String, onBack: () -> Unit, openApi: () -> Unit, openGrou
                         else -> "让 AI 补充讲解"
                     })
                 }
-                Text("已保存的讲解会供 AI 分析和后续练习使用。自动补充遵循你的自动生成设置。", style = MaterialTheme.typography.bodySmall,
+                Text("已保存的讲解会供 AI 分析和后续练习使用。自动补充可在 AI 调整中控制。", style = MaterialTheme.typography.bodySmall,
                     color = c.muted, modifier = Modifier.padding(top = 10.dp))
             }
         }

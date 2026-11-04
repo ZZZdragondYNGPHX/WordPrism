@@ -54,13 +54,15 @@ JSON 使用 `type` 判别、枚举原名和字符串 ID。进程内 Kotlin 客�
 
 明确执行 `RetryOperation` 会捕获同一预设最新保存的配置，保留各次尝试的历史版本与用量；运行中或已排队的请求不随预设编辑变化。具体超时、重试规则与前后状态样例见[LLM 协议接入](api-protocols.md#失败取消与用量)。
 
-每日分析由学习日及证据序号去重；暂停会话不等于结束当天。关闭自动分析会使在途自动结果失去提交资格，手动动作依据本次授权执行。调整只能使用能力目录内的动作，并遵守用户锁定、预算与调用设置；不能编辑真实作答、凭证或自动接纳额外推荐词。
+每日分析由学习日及证据序号去重；暂停会话不等于结束当天。关闭自动分析会使在途自动结果失去提交资格，手动动作依据本次授权执行。分析 AI 可使用 `generate_activity` 把补题作为子任务，原有题目不被替换；能力锁、预设和用户指定的总请求上限仍然适用。旧 `automaticRequestsPerDay`、`preGenerationMaxPerDay` 和 `preGenerateLimit` 保留用于读取历史数据，不再限制调用或作为 AI 可调整项目。调整只能使用能力目录内的动作；不能编辑真实作答、凭证或自动接纳额外推荐词。调用规则见[API 方案](../plan/api-presets.md#调用由用户控制)。
 
 ## 学习、反馈与撤销
 
 作答带 `currentPresentationId` 与题目 `Ref`。同一展示以另一请求键重复提交仍只记一次；内容不同则冲突。`SessionState.feedback` 与 `GetPresentation` 保留已经提交的对应版本，页面退出、重开或强制停止后可恢复反馈，再由 `NextActivity` 明确前进。
 
-`FAMILIARITY` 和 `CONTRAST` 是理解步骤；曝光、提示、跳过和争议单独保存。提交前 `ActivityCard` 不暴露标准答案。开放表达先保存原文，AI 反馈绑定 `answerId + version`，旧版本反馈不套用到新答案。AI 用法分类为 `good`、`misused`、`acceptable_unnatural`、`equally_valid`、`uncertain`；未知结果明确失败，表达汇总由核心计算，与记忆证据分开。
+`FAMILIARITY` 和 `CONTRAST` 是理解步骤；曝光、提示、跳过和争议单独保存。提交前 `ActivityCard` 不暴露标准答案。开放表达先保存原文，AI 反馈绑定 `answerId + version`，旧版本反馈不套用到新答案。新反馈包含整体评价、目标词与搭配、语法与结构、自然度与语气、意图表达四个分项，以及 AI 优化句和改动说明；分项引用须是原句的精确片段。`GetOperationFeedback` 按已完成任务返回对应的原始答案版本与反馈，供前进后的任务记录查看，旧反馈没有新增字段时仍可读取。完整字段见[合成反馈样例](fixtures/writing-feedback.json)。
+
+AI 另保留目标词用法分类 `good`、`misused`、`acceptable_unnatural`、`equally_valid`、`uncertain`，用于表达汇总；未知分类或无效分项明确失败。AI 反馈不直接更改记忆评分，与记忆证据分开。
 
 计时由 `SetTimer(STUDY / WAITING / BACKGROUND / PAUSED)` 驱动。Compose 当前每 15 秒报告前台状态；单段超过 90 秒的未确认时长不继续累计，冷启动不补算消失后的尾段。阅读不以点击密度估算。
 

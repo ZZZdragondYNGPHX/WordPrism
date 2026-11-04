@@ -373,7 +373,7 @@ private fun HintCard(h: Hint) {
 // ==================================================================== feedback
 
 @Composable
-private fun FeedbackPanel(
+internal fun FeedbackPanel(
     fb: Feedback, act: ActivityView, review: Operation?, busy: Boolean, onContinue: () -> Unit, onHard: (Boolean) -> Unit,
     onRevise: () -> Unit, onRetryReview: (OperationId) -> Unit, openApi: () -> Unit,
 ) {
@@ -383,11 +383,7 @@ private fun FeedbackPanel(
         Verdict.Incorrect -> Icons.Outlined.Cancel to c.negative
         Verdict.PendingReview -> Icons.Outlined.HourglassTop to c.action
         Verdict.Practice -> Icons.Outlined.School to c.caution
-        Verdict.Reviewed -> when (fb.aiReview?.usage) {
-            "good", "equally_valid" -> Icons.Outlined.CheckCircle to c.positive
-            "misused" -> Icons.Outlined.ErrorOutline to c.negative
-            else -> Icons.Outlined.Info to c.caution
-        }
+        Verdict.Reviewed -> Icons.Outlined.Info to c.action
         else -> Icons.Outlined.Done to c.muted
     }
     Column(
@@ -435,10 +431,20 @@ private fun FeedbackPanel(
 }
 
 @Composable
-private fun AiReviewBlock(r: AiReview) {
+internal fun AiReviewBlock(r: AiReview) {
     val c = Wp.colors
     val tone = when (r.usage) { "good", "equally_valid" -> c.positive; "misused" -> c.negative; else -> c.caution }
     Column(Modifier.padding(top = 10.dp)) {
+        r.summary?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.ink) }
+        r.dimensions.forEach { dimension ->
+            Column(Modifier.padding(top = 12.dp)) {
+                Text(dimension.label, style = MaterialTheme.typography.labelLarge, color = c.action)
+                Text(buildAnnotatedString {
+                    dimension.quote?.let { withStyle(SpanStyle(fontFamily = WpType.english.fontFamily, fontWeight = FontWeight.SemiBold)) { append("“$it” ") } }
+                    append(dimension.comment)
+                }, style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 3.dp))
+            }
+        }
         r.points.forEach { p ->
             Row(Modifier.padding(top = 8.dp)) {
                 Box(Modifier.padding(top = 9.dp).size(4.dp).background(if (p.aboutTarget) tone else c.muted, RoundedCornerShape(50)))
@@ -450,7 +456,13 @@ private fun AiReviewBlock(r: AiReview) {
                 }, style = MaterialTheme.typography.bodyMedium, color = c.ink)
             }
         }
-        r.suggestion?.let { Text("参考：$it", style = WpType.english.copy(fontSize = WpType.english.fontSize * 0.9f), color = c.ink, modifier = Modifier.padding(top = 10.dp)) }
+        r.suggestion?.let {
+            Column(Modifier.fillMaxWidth().padding(top = 14.dp).background(c.sunk, RoundedCornerShape(14.dp)).padding(14.dp)) {
+                Text("AI 优化版", style = MaterialTheme.typography.labelLarge, color = c.action)
+                Text(it, style = WpType.english.copy(fontSize = WpType.english.fontSize * 0.9f), color = c.ink, modifier = Modifier.padding(top = 5.dp))
+                r.optimizationNotes?.let { notes -> Text(notes, style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 8.dp)) }
+            }
+        }
         SourceNote(r.source, Modifier.padding(top = 6.dp))
     }
 }

@@ -17,6 +17,8 @@
 
 协议 ID 与支持目录由 [`ApiProtocols.kt`](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ApiProtocols.kt) 统一维护。`Query.Protocols` 返回完整目录，预设校验和生成样例复用同一来源。前端的选项、说明以及已保存预设的协议名称均读取该目录。
 
+输出上限和超时可以分别留空。[保存样例](fixtures/save-unlimited-preset.request.json)中 `maxOutputTokens: null` 表示请求不发送输出额度参数，由服务商及模型的默认值和限制决定；这不是无限模型上下文或无限计费额度。`timeoutSeconds: null` 关闭应用的 HTTP 连接、读写和整次调用计时器，模型目录也使用该设置；网络、服务商或 Android 后台调度仍可能中断任务，用户仍可取消。有限输出额度接受正整数；有限超时接受 5–2,147,483 秒（底层 HTTP 客户端支持的数值范围）。历史数值预设保持原值；留空后的新配置需要保存，重试时捕获保存后的版本。请求 256 KiB、响应 2 MiB 的数据大小限制仍生效。
+
 ## 思维程度
 
 唯一类型是核心 `ReasoningEffort`，字段为 `ApiPreset.reasoningEffort`。`Query.Protocols → ProtocolInfo.reasoningEfforts` 提供适配器支持发送的档位，前端只映射显示标签。该目录不代表当前模型支持全部档位，也不从 `/models` 的 ID 猜测能力。
@@ -93,7 +95,7 @@ Responses JSON 模式的输入检查要求 `input` 消息包含 JSON 指令；�
 
 HTTP 错误保留状态码，以及核心白名单内的参数名、服务商 code/type；为 JSON 输入缺指令和思维程度不支持提供具体处理说明。服务商任意原始 message 不保存或回显，避免错误响应回显密钥或学习内容。未识别的内容使用稳定的本地错误。
 
-`timeoutSeconds` 同时配置连接、读取、写入及整次 HTTP 调用的超时，读取响应头和响应正文都受此配置约束。不能只设置 `callTimeout`：OkHttp 4.12.0 的各 I/O 阶段另有默认 10 秒上限，会让设置为 180 秒的推理提前失败。当前超时提示包含本次生效的秒数；模型目录复用相同实现。慢响应回归覆盖超过 10 秒仍成功，以及多个阶段合计超出总预算时失败。
+`timeoutSeconds` 同时配置连接、读取、写入及整次 HTTP 调用的超时；空值显式禁用这四项应用计时器。不能只设置 `callTimeout`：OkHttp 4.12.0 的各 I/O 阶段另有默认 10 秒上限，会让设置为 180 秒的推理提前失败。有限超时提示包含本次生效的秒数；模型目录复用相同实现。慢响应回归覆盖超过 10 秒仍成功，以及多个阶段合计超出总预算时失败。
 
 用户明确点击 `RetryOperation` 时，捕获原预设当前已保存的版本；因此修改超时、模型或思维程度后，应先保存，再重试原任务。过去尝试的 `Usage.preset` 与用量不改写。重试已排队后再编辑预设，也不会改动这次已经捕获的配置。同键重放不会重新捕获或额外发请求。超时或结果未知仍须手动重试，自动重试只适用于下述允许的错误。样例：[失败任务](fixtures/failed-operation.json)、[手动重试请求](fixtures/retry-operation.request.json)、[采用已保存新版的排队任务](fixtures/retry-uses-saved-preset.json)。
 

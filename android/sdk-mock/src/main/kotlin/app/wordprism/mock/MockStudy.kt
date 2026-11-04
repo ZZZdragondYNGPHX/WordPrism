@@ -261,9 +261,21 @@ internal class MockStudy(private val c: MockCore, private val analysis: () -> Mo
                     listOf(ReviewPoint(partner, "这里写成了 $partner，题目要求使用 $target", true)), MockLexicon.get(target)?.example, aiSrc(d))
                 else -> AiReview("misused", "没有用到目标词", listOf(ReviewPoint(null, "句子里没有找到 $target", true)), MockLexicon.get(target)?.example, aiSrc(d))
             }
-            val fb = prev.copy(verdict = Verdict.Reviewed, headline = review.usageLabel, aiReview = review, pendingOperationId = null)
+            val richReview = review.copy(
+                summary = "这是模拟反馈，展示分项评价与优化句的样式。",
+                dimensions = listOf(
+                    ReviewDimension("目标词与搭配", review.points.firstOrNull()?.comment.orEmpty()),
+                    ReviewDimension("语法与结构", "检查主谓一致和句子结构。"),
+                    ReviewDimension("自然度与语气", "可以结合上下文调整表达。"),
+                    ReviewDimension("意图表达", "对照题目意图检查信息是否完整。"),
+                ),
+                suggestion = review.suggestion ?: text,
+                optimizationNotes = "这是用于界面演示的模拟建议。",
+                points = emptyList(),
+            )
+            val fb = prev.copy(verdict = Verdict.Reviewed, headline = "AI 表达反馈", aiReview = richReview, pendingOperationId = null)
             with(c) {
-                d.copy(sessions = d.sessions + (sid to s.copy(feedback = s.feedback + (aid to fb))))
+                d.copy(sessions = d.sessions + (sid to s.copy(feedback = s.feedback + (aid to fb))), writingFeedbackByOperation = d.writingFeedbackByOperation + (opId to fb))
                     .updateOp(opId) { it.copy(status = OperationStatus.Succeeded, actions = emptySet(), resultSummary = review.usageLabel) }
             } to Unit
         }

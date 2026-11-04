@@ -5,10 +5,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import android.content.Context
 import dev.wordprism.contract.*
 import dev.wordprism.engine.CoreEngine
+import dev.wordprism.engine.LlmProvider
+import dev.wordprism.engine.ProviderRequest
+import dev.wordprism.engine.ProviderResponse
 import dev.wordprism.memory.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.*
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -17,6 +21,51 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class AndroidCoreTest {
     private val context get() = ApplicationProvider.getApplicationContext<Context>()
+    @Test fun analysisAddsPracticeAndRoomKeepsItAfterReopen() = runBlocking<Unit> {
+        val name = "practice-${UUID.randomUUID()}.db"
+        val presetId = Id("practice-preset-${UUID.randomUUID()}")
+        val credentials = KeystoreCredentials(context)
+        val provider = object : LlmProvider {
+            override suspend fun generate(request: ProviderRequest, secret: CharArray): ProviderResponse {
+                secret.fill('\u0000')
+                val data = request.data.jsonObject
+                val type = data.getValue("request").jsonObject.getValue("type").jsonPrimitive.content
+                val result = if (type == "analyze_learning") {
+                    val targetId = data.getValue("targets").jsonArray.first().jsonObject.getValue("id").jsonPrimitive.content
+                    """{"patch":{"values":{},"reason":"合成分析"},"actions":[{"type":"generate_activity","targetId":"$targetId","kind":"WRITING"}]}"""
+                } else """{"prompt":"Use the word in a sentence.","acceptedAnswers":[],"explanation":"合成练习"}"""
+                return ProviderResponse(Contract.json.parseToJsonElement(result))
+            }
+            override suspend fun listModels(request: ModelCatalogRequest, secret: CharArray): List<ApiModel> { secret.fill('\u0000'); return emptyList() }
+            override fun cancel(operationId: Id) = Unit
+        }
+        val store = RoomStateStore(WordPrismDatabase.open(context, name))
+        val core = CoreEngine(store, credentials, NativeMemoryKernel(), provider = provider)
+        assertNull(core.recover().fault)
+        val preset = ApiPreset(presetId, name = "synthetic", baseUrl = "https://example.invalid/v1", model = "synthetic")
+        assertNull(core.execute(Request("preset", Command.SavePreset(preset))).fault)
+        assertNull(core.setCredential(presetId, UUID.randomUUID().toString().toCharArray()).fault)
+        assertNull(core.execute(Request("binding", Command.BindPreset(Binding(Feature.LEARNING_ANALYSIS, presetId)))).fault)
+        assertNull(core.execute(Request("practice-binding", Command.BindPreset(Binding(Feature.PRACTICE_GENERATION, presetId)))).fault)
+        assertNull(core.execute(Request("word", Command.SaveWords(listOf(WordSeed("linear", "线性的"))))).fault)
+        val parent = (core.execute(Request("analysis", Command.AnalyzeLearning(true))).value as View.OperationResult).operation
+        core.tasks.run(parent.id)
+        val parentResult = (core.query(Query.GetOperation(parent.id)).value as View.OperationResult).operation
+        assertEquals(OperationStatus.SUCCEEDED, parentResult.status)
+        val childId = parentResult.resultIds.single()
+        core.tasks.run(childId)
+        val child = (core.query(Query.GetOperation(childId)).value as View.OperationResult).operation
+        assertEquals(OperationStatus.SUCCEEDED, child.status)
+        val activityId = child.resultIds.single()
+        assertNull(core.deleteCredential(presetId).fault)
+        store.close()
+        val reopened = RoomStateStore(WordPrismDatabase.open(context, name))
+        val saved = reopened.read()
+        assertFalse(saved.settings.automaticGeneration)
+        assertEquals("Use the word in a sentence.", saved.activities.getValue(activityId).prompt)
+        assertEquals(parent.id, saved.operations.getValue(childId).parentOperationId)
+        reopened.close(); context.deleteDatabase(WordPrismDatabase.file(context, name).absolutePath)
+    }
     @Test fun roomNativeMemoryAndProcessReopen() = runBlocking<Unit> {
         val name = "test-${UUID.randomUUID()}.db"
         val store = RoomStateStore(WordPrismDatabase.open(context, name))

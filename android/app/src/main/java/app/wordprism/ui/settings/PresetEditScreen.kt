@@ -114,7 +114,7 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
         if (!initialized && v != null) {
             name = v.name; adapterId = v.adapterId; baseUrl = v.baseUrl; model = v.model
             reasoningEffort = v.reasoningEffort
-            maxTokens = v.maxOutputTokens?.toString().orEmpty(); timeout = v.timeoutSeconds.toString(); initialized = true
+            maxTokens = v.maxOutputTokens?.toString().orEmpty(); timeout = v.timeoutSeconds?.toString().orEmpty(); initialized = true
         }
     }
     LaunchedEffect(adapters, adapterId) {
@@ -122,6 +122,8 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
         if (baseUrl.isBlank()) adapters.firstOrNull { it.id == adapterId }?.defaultBaseUrl?.let { baseUrl = it }
     }
     fun fe(k: String) = err?.fieldErrors?.get(k)
+    val tokenError = if (maxTokens.isNotEmpty() && (maxTokens.toIntOrNull() ?: 0) < 1) "请输入有效正整数" else null
+    val timeoutError = if (timeout.isNotEmpty() && (timeout.toIntOrNull() ?: 0) !in 5..2_147_483) "请输入 5–2147483 秒" else null
 
     Column(Modifier.fillMaxSize().imePadding()) {
         WpTopBar(if (savedId == null) "新建 API 预设" else "编辑预设", onBack = onBack)
@@ -149,10 +151,10 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = {
                     modelPicker = false
-                    vm.models.fetch(ModelCatalogDraft(baseUrl, adapterId, timeout.toIntOrNull() ?: 0,
+                    vm.models.fetch(ModelCatalogDraft(baseUrl, adapterId, timeout.toIntOrNull(),
                         presetId = savedId?.takeUnless { removeSecret }?.let(::PresetId), expectedVersion = p?.version),
                         secret.takeIf { it.isNotEmpty() }?.toCharArray())
-                }, enabled = !loadingModels && !saving && initialized && baseUrl.isNotBlank()) {
+                }, enabled = !loadingModels && !saving && initialized && baseUrl.isNotBlank() && timeoutError == null) {
                     if (loadingModels) { CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
                     Text(if (loadingModels) "正在拉取…" else if (modelState is ModelCatalogState.Ready) "重新拉取" else "拉取模型")
                 }
@@ -198,10 +200,11 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                 TextButton(onClick = { resetModels(); removeSecret = !removeSecret }) { Text(if (removeSecret) "保留已保存的密钥" else "删除已保存的密钥") }
             }
             Row {
-                Field("输出上限（tokens）", maxTokens, { maxTokens = it.filter(Char::isDigit) }, fe("maxOutputTokens"), keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
+                Field("输出上限（tokens）", maxTokens, { maxTokens = it.filter(Char::isDigit) }, tokenError ?: fe("maxOutputTokens"), placeholder = "留空不限制", keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
                 Spacer(Modifier.width(12.dp))
-                Field("超时（秒）", timeout, { resetModels(); timeout = it.filter(Char::isDigit) }, fe("timeoutSeconds"), keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
+                Field("超时（秒）", timeout, { resetModels(); timeout = it.filter(Char::isDigit) }, timeoutError ?: fe("timeoutSeconds"), placeholder = "留空不限制", keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
             }
+            Text("留空时不设置输出上限或超时；服务商、模型或系统仍可能限制输出或中断任务。", style = MaterialTheme.typography.bodySmall, color = c.muted)
             err?.takeIf { it.fieldErrors.isEmpty() }?.let { ErrorNotice(it, Modifier.padding(top = 8.dp)) }
 
             Spacer(Modifier.height(16.dp))
@@ -210,12 +213,12 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                     resetModels()
                     vm.save(PresetDraft(
                         id = savedId?.let(::PresetId), expectedVersion = p?.version, name = name, adapterId = adapterId, baseUrl = baseUrl, model = model,
-                        maxOutputTokens = maxTokens.toIntOrNull(), timeoutSeconds = timeout.toIntOrNull() ?: 0,
+                        maxOutputTokens = maxTokens.toIntOrNull(), timeoutSeconds = timeout.toIntOrNull(),
                         credential = when { secret.isNotEmpty() -> secret; removeSecret -> ""; else -> null },
                         reasoningEffort = reasoningEffort,
                     )) { secret = ""; removeSecret = false }
                 },
-                enabled = !saving && initialized, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                enabled = !saving && initialized && tokenError == null && timeoutError == null, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             ) { Text(if (saving) "正在保存…" else "保存") }
             Text("保存只检查格式，不会联网。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp))
 

@@ -246,6 +246,7 @@ internal class MockInsights(private val c: MockCore) : OverviewApi, AdaptationAp
             Capability("plan.focus", "重点辨析", "近期反复混淆的词对优先安排", s.focus.joinToString().ifEmpty { "无" }, null, false, "plan.focus" in d.locks, true),
             Capability("mix.reading", "短文理解占比", "混合训练中 AI 短文题的比例", pct(s.readingShare), "0–40%", false, "mix.reading" in d.locks, true),
             Capability("mix.production", "造句与改写占比", "主动输出练习的比例", pct(s.productionShare), "0–30%", false, "mix.production" in d.locks, true),
+            Capability("generate_activity", "分析后补充题库", "学习分析根据学习情况生成练习", if ("generate_activity" in d.locks) "已锁定" else "由 AI 分析后决定补充", null, false, "generate_activity" in d.locks, true),
             Capability("schedule.retention", "目标保持率", "记忆算法安排复习时追求的保持率", pct(s.targetRetention), "80–95%", true, "schedule.retention" in d.locks, true),
             Capability("user.recommend_click", "额外词需要你点击加入", "你明确要求的规则，AI 不能更改", "始终", null, false, true, false),
             Capability("user.budget", "每日时间预算", "由你决定，AI 只在预算内安排", "${s.budgetMinutes} 分钟", null, false, true, false),

@@ -37,6 +37,7 @@
 | U25 | 提供从 API 服务商拉取模型的功能 | [API 预设](api-presets.md)、[拉取模型接口与样例](../backend/api-protocols.md#拉取模型) |
 | U26 | API 预设补充思维程度 | [思维程度](../backend/api-protocols.md#思维程度)、核心 `ApiPreset.reasoningEffort` |
 | U27 | 参考单词详情图片丰富词根词缀、词源故事、词族和英英释义，并融入现有 AI 体系 | [词源与助记](ai-intake.md#词源与助记)、[类型化讲解接口](../backend/explanations.md) |
+| U28 | 学习分析 AI 负责补充题库，在 AI 可调整项目中控制，不另设预生成开关或补题上限 | [API 调用规则](api-presets.md#调用由用户控制) |
 
 ## 方向决策状态
 

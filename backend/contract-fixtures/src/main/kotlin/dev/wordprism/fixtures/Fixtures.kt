@@ -70,6 +70,16 @@ fun main(args: Array<String>) {
         listOf(Binding(Feature.WORD_INTAKE, responsesPreset.id))))
     val reasoningPreset = responsesPreset.copy(id = Id("fixture-reasoning-preset"), name = "思维程度示例", reasoningEffort = ReasoningEffort.HIGH)
     samples["reasoning-preset"] = Reply(10, View.Presets(listOf(PresetView(reasoningPreset, hasCredential = false)), emptyList()))
+    val writingAnswer = Answer(Id("fixture-writing-answer"), 1, Id("fixture-session"), Id("fixture-activity"), 1,
+        target.id, input = AnswerInput("The graph is linear.", requestFeedback = true), atMs = at,
+        verdict = Verdict.UNGRADED, gradeSource = GradeSource.UNGRADED, affectsSchedule = false, policyVersion = 1, delayed = false, newContext = true)
+    val writingFeedback = Feedback(Id("fixture-writing-feedback"), writingAnswer.id, 1, "句意清楚。", GradeSource.AI, "good", "is linear",
+        Provenance("synthetic_example", atMs = at), listOf(
+            WritingFeedbackDimension("target_word", "目标词用法贴合语境。", "is linear"),
+            WritingFeedbackDimension("grammar", "句子结构完整。"),
+            WritingFeedbackDimension("naturalness", "表达自然。"),
+            WritingFeedbackDimension("intent", "表达了线性关系。")), "The relationship is linear.", "用 relationship 突出关系。")
+    samples["writing-feedback"] = Reply(11, View.Feedbacks(writingAnswer, listOf(writingFeedback)))
     samples.forEach { (name, value) ->
         val json = Contract.json.encodeToString(value)
         check(Contract.json.decodeFromString<Reply>(json) == value)
@@ -78,6 +88,8 @@ fun main(args: Array<String>) {
     File(output, "submit-intake.request.json").writeText(Contract.json.encodeToString(Request("fixture-intake-key", Command.SubmitIntake("linear / liner"))) + "\n")
     File(output, "save-responses-preset.request.json").writeText(Contract.json.encodeToString(Request("fixture-responses-key", Command.SavePreset(responsesPreset))) + "\n")
     File(output, "save-reasoning-preset.request.json").writeText(Contract.json.encodeToString(Request("fixture-reasoning-key", Command.SavePreset(reasoningPreset))) + "\n")
+    File(output, "save-unlimited-preset.request.json").writeText(Contract.json.encodeToString(Request("fixture-unlimited-key",
+        Command.SavePreset(responsesPreset.copy(timeoutSeconds = null, maxOutputTokens = null)))) + "\n")
     File(output, "reset-reasoning-preset.request.json").writeText(Contract.json.encodeToString(Request("fixture-reasoning-default-key",
         Command.SavePreset(reasoningPreset.copy(reasoningEffort = null), expectedVersion = 1, preserveAdvancedSettings = true))) + "\n")
     File(output, "retry-operation.request.json").writeText(Contract.json.encodeToString(Request("fixture-retry-key", Command.RetryOperation(operation.id))) + "\n")
@@ -95,5 +107,5 @@ fun main(args: Array<String>) {
     writeSchemas(File(output.parentFile, "schemas"))
     if ("--skip-packages" !in args) kotlinx.coroutines.runBlocking { writeReferencePackages(File(output.parentFile, "packages")) }
     if ("--explanation-package" in args) kotlinx.coroutines.runBlocking { writeExplanationPackage(File(output.parentFile, "packages")) }
-    println("Validated ${samples.size} typed response fixtures, seven command requests and ${catalogRequests.size} model catalog requests in ${output.absolutePath}")
+    println("Validated ${samples.size} typed response fixtures, eight command requests and ${catalogRequests.size} model catalog requests in ${output.absolutePath}")
 }

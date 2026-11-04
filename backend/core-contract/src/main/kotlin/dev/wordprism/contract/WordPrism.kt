@@ -88,6 +88,7 @@ import kotlinx.serialization.Serializable
     @Serializable @SerialName("snapshot") data class Snapshot(val id: Id) : Query
     @Serializable @SerialName("evidence") data class Evidence(val afterSequence: Long = 0, val limit: Int = 50, val targetId: Id? = null) : Query
     @Serializable @SerialName("feedback") data class GetFeedback(val answerId: Id, val answerVersion: Long? = null) : Query
+    @Serializable @SerialName("operation_feedback") data class GetOperationFeedback(val operationId: Id) : Query
     @Serializable @SerialName("operation") data class GetOperation(val id: Id) : Query
     @Serializable @SerialName("operation_effects") data class OperationEffects(val id: Id) : Query
     @Serializable @SerialName("operations") data class Operations(val limit: Int = 50) : Query

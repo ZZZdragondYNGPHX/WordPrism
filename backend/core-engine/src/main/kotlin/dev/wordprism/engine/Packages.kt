@@ -306,7 +306,7 @@ fun validateDatabase(db: Database, memory: dev.wordprism.memory.MemoryKernel) {
         (op.undoneBy == null || op.undoneBy in db.operations) && (op.snapshotId == null || op.snapshotId in db.snapshots) }, "操作记录引用无效")
     valid(db.schedules.all { (id, state) -> id in db.targets && state.targetId == id && state.algorithm == "fsrs-6/fsrs-rs-6.6.2" &&
         (state.memory?.let { it.stability.isFinite() && it.stability > 0 && it.difficulty in 1f..10f } != false) }, "不支持或损坏的记忆状态")
-    valid(db.lastAnalyzedSequence in 0..db.sequence && db.settings.version > 0 && db.settings.budgetMinutes in 1..240 && db.settings.automaticRequestsPerDay in 0..100, "统计覆盖或用户预算无效")
+    valid(db.lastAnalyzedSequence in 0..db.sequence && db.settings.version > 0 && db.settings.budgetMinutes in 1..240, "统计覆盖或用户预算无效")
     valid(db.policyVersions[db.policy.version] == db.policy && db.policyVersions.all { (version, policy) -> version == policy.version }, "当前策略版本无效")
     valid(db.presetVersions.all { (key, preset) -> key == "${preset.id.value}:${preset.version}" } &&
         db.presets.all { (id, preset) -> id == preset.id && db.presetVersions["${id.value}:${preset.version}"] == preset }, "预设版本无效")

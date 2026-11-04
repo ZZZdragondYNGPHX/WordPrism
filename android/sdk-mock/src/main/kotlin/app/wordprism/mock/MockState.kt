@@ -19,6 +19,7 @@ internal data class MockDb(
     val days: Map<String, MDay> = emptyMap(),
     val sessions: Map<String, MSession> = emptyMap(),
     val answers: List<MAnswer> = emptyList(),
+    val writingFeedbackByOperation: Map<String, Feedback> = emptyMap(),
     val settings: MSettings = MSettings(),
     val changeSets: List<ChangeSet> = emptyList(),
     val presets: Map<String, MPreset> = emptyMap(),
@@ -154,7 +155,7 @@ internal data class MPreset(
     val baseUrl: String,
     val model: String,
     val maxOutputTokens: Int?,
-    val timeoutSeconds: Int,
+    val timeoutSeconds: Int?,
     /** Mock stand-in for Keystore-backed storage: only stores presence + last 4 chars. */
     val credentialHint: String?,
     val enabled: Boolean = true,

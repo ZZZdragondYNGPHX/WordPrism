@@ -253,7 +253,13 @@ data class AiReview(
     val points: List<ReviewPoint>,
     val suggestion: String?,
     val source: ContentSource,
+    val summary: String? = null,
+    val dimensions: List<ReviewDimension> = emptyList(),
+    val optimizationNotes: String? = null,
 )
+
+@Serializable
+data class ReviewDimension(val label: String, val comment: String, val quote: String? = null)
 
 @Serializable
 data class ReviewPoint(val quote: String?, val comment: String, val aboutTarget: Boolean)

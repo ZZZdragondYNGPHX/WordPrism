@@ -88,7 +88,7 @@ fun AdjustmentsScreen(onBack: () -> Unit, openApi: () -> Unit) {
         val st = s
         if (st == null) { Loading(); return@Column }
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter).navigationBarsPadding().padding(bottom = 32.dp)) {
-            Text("AI 会读取学习总览，在你的时间预算内调整明天学多少、重点练什么和训练比例，也可以微调记忆算法。每次改动都能看到依据并撤销。", style = MaterialTheme.typography.bodyMedium, color = c.muted)
+            Text("AI 会读取学习总览，调整学习计划，并根据学习情况补充题库。新题会作为单独任务生成，可以查看进度。", style = MaterialTheme.typography.bodyMedium, color = c.muted)
 
             // ------------------------------------------------------ mode
             Spacer(Modifier.height(20.dp))

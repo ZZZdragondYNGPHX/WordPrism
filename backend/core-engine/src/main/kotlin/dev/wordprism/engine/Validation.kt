@@ -8,10 +8,10 @@ internal fun validateTrainingPolicy(db: Database, value: TrainingPolicy, budgetL
     requireBusiness(value.mix.keys.none { it in introductionKinds } && value.mix.values.all { it in 0..100 } && value.mix.values.sum() > 0, "题型比例无效")
     requireBusiness((value.focusTargets + value.suspendedTargets).all { it in db.targets }, "目标不存在")
     requireBusiness(value.hintPolicy in setOf("on_request", "after_attempt") && value.passageWords in 30..300 && value.reuseAfterDays in 0..365 &&
-        value.backgroundDifficulty in setOf("simple", "intermediate", "advanced") && value.preGenerateLimit in 0..10, "训练策略无效")
+        value.backgroundDifficulty in setOf("simple", "intermediate", "advanced"), "训练策略无效")
 }
 
 internal fun validateCallSettings(db: Database, value: UserSettings) {
-    requireBusiness(value.maxRetries in 0..3 && (value.dailyRequestLimit == null || value.dailyRequestLimit in 0..1000) && value.preGenerationMaxPerDay in 0..10, "调用控制范围无效")
+    requireBusiness(value.maxRetries in 0..3 && (value.dailyRequestLimit == null || value.dailyRequestLimit in 0..1000), "调用控制范围无效")
     requireBusiness(listOfNotNull(value.defaultPresetId, value.fallbackPresetId).all { it in db.presets }, "默认或备用预设不存在", ErrorCode.PRESET_MISSING)
 }

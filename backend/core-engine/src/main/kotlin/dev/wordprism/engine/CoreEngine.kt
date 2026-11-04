@@ -103,6 +103,12 @@ class CoreEngine(
                 View.Evidence(page, page.mapNotNull { db.activityVersions["${it.activityId.value}:${it.activityVersion}"] }.distinctBy { it.id to it.version }, page.lastOrNull()?.sequence?.takeIf { answers.size > query.limit })
             }
             is Query.GetFeedback -> (if (query.answerVersion == null) db.answers[query.answerId] else db.answerVersions["${query.answerId.value}:${query.answerVersion}"]).found("答案版本").let { a -> View.Feedbacks(a, db.feedback.values.filter { it.answerId == a.id && it.answerVersion == a.version }, db.answerView(a)) }
+            is Query.GetOperationFeedback -> {
+                val op = db.operations[query.operationId].found("操作")
+                val feedback = op.resultIds.firstNotNullOfOrNull { db.feedback[it] }.found("反馈")
+                val answer = db.answerVersions["${feedback.answerId.value}:${feedback.answerVersion}"].found("答案版本")
+                View.Feedbacks(answer, listOf(feedback), db.answerView(answer).copy(feedback = listOf(feedback)))
+            }
             is Query.GetOperation -> View.OperationResult(db.operations[query.id].found("操作"))
             is Query.OperationEffects -> { db.operations[query.id].found("操作"); View.OperationEffects(db.businessEffects(query.id)) }
             is Query.Operations -> { requireBusiness(query.limit in 1..200, "分页数量须为 1–200"); View.Operations(db.operations.values.sortedByDescending { it.createdAtMs }.take(query.limit)) }
@@ -310,12 +316,6 @@ class CoreEngine(
             is Command.RequestRecommendations -> View.OperationResult(db.queue(command, Feature.WORD_RECOMMENDATION, now))
             is Command.AcceptRecommendations -> acceptRecommendations(db, command, now)
             is Command.GenerateActivity -> {
-                if (actor == Actor.AI) {
-                    requireBusiness(db.settings.automaticGeneration && db.policy.preGenerateLimit > 0, "未授权自动生成", ErrorCode.DISABLED)
-                    val day = db.day(now)
-                    requireBusiness(db.operations.values.count { it.automatic && it.feature == Feature.PRACTICE_GENERATION && it.createdAtMs >= day.opensAtMs && it.status != OperationStatus.CANCELLED } < db.policy.preGenerateLimit,
-                        "已达到当前预生成数量上限", ErrorCode.BUDGET_EXCEEDED)
-                }
                 View.OperationResult(db.queue(command, Feature.PRACTICE_GENERATION, now, actor == Actor.AI))
             }
             is Command.ExplainSense -> {
@@ -472,11 +472,20 @@ class CoreEngine(
         requireBusiness(db.settings.version == command.expectedVersion, "设置已修改", ErrorCode.VERSION_CONFLICT)
         val value = command.settings
         ZoneId.of(value.zoneId)
-        requireBusiness(value.budgetMinutes in 1..240 && value.automaticRequestsPerDay in 0..100 && value.lockedCapabilities.all { locked -> db.capabilities().any { it.id == locked } }, "用户设置无效")
+        requireBusiness(value.budgetMinutes in 1..240 && value.lockedCapabilities.all { locked -> locked == "preGenerateLimit" || db.capabilities().any { it.id == locked } }, "用户设置无效")
         validateCallSettings(db, value)
-        val authorityChanged = value.automaticAnalysis != db.settings.automaticAnalysis || value.automaticGeneration != db.settings.automaticGeneration
-        db.settings = value.copy(version = db.settings.version + 1, automationEpoch = db.settings.automationEpoch + if (authorityChanged) 1 else 0)
-        if (authorityChanged) db.operations.values.filter { it.automatic && it.status !in terminalStatuses }.forEach { op ->
+        val previous = db.settings
+        val analysisDisabled = previous.automaticAnalysis && !value.automaticAnalysis
+        val newlyLocked = value.lockedCapabilities - previous.lockedCapabilities
+        db.settings = value.copy(version = previous.version + 1, automationEpoch = previous.automationEpoch)
+        db.operations.values.filter { op ->
+            val parent = op.parentOperationId?.let { db.operations[it] }
+            val stoppedAnalysis = analysisDisabled && (op.feature == Feature.LEARNING_ANALYSIS || parent?.feature == Feature.LEARNING_ANALYSIS && parent.automatic)
+            val stoppedExplanation = op.feature == Feature.EXPLANATION &&
+                (previous.automaticGeneration && !value.automaticGeneration || "explain_sense" in newlyLocked)
+            val stoppedPractice = op.feature == Feature.PRACTICE_GENERATION && "generate_activity" in newlyLocked
+            op.automatic && op.status !in terminalStatuses && (stoppedAnalysis || stoppedExplanation || stoppedPractice)
+        }.forEach { op ->
             db.operations[op.id] = op.copy(status = OperationStatus.CANCELLED, fault = Fault(ErrorCode.DISABLED, "自动调用授权已变化"), updatedAtMs = now)
         }
         if (db.policy.plannedMinutes > value.budgetMinutes) {
@@ -490,12 +499,7 @@ class CoreEngine(
     private fun setCallPolicy(db: Database, value: CallPolicy, now: Long): View {
         requireBusiness(db.settings.version == value.settingsVersion && db.policy.version == value.policyVersion, "调用设置已变化", ErrorCode.VERSION_CONFLICT)
         setSettings(db, Command.SetSettings(db.settings.copy(defaultPresetId = value.defaultPresetId, fallbackPresetId = value.fallbackPresetId,
-            dailyRequestLimit = value.dailyRequestLimit, maxRetries = value.maxRetries, automaticGeneration = value.automaticGeneration,
-            preGenerationMaxPerDay = value.preGenerationMaxPerDay), value.settingsVersion), now)
-        val limit = if (value.automaticGeneration) value.preGenerationMaxPerDay else 0
-        if (db.policy.preGenerateLimit != limit) {
-            db.policy = db.policy.copy(version = db.policy.version + 1, preGenerateLimit = limit); db.policyVersions[db.policy.version] = db.policy
-        }
+            dailyRequestLimit = value.dailyRequestLimit, maxRetries = value.maxRetries), value.settingsVersion), now)
         return View.CallPolicy(db.callPolicy())
     }
 

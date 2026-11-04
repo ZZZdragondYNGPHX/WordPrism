@@ -2,7 +2,6 @@ package app.wordprism.ui.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -11,7 +10,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.SavedStateHandle
@@ -75,13 +73,7 @@ fun ApiRoutingScreen(onBack: () -> Unit, openPreset: (String?) -> Unit) {
 
             if (pol != null) {
                 SectionTitle("调用控制")
-                Row(Modifier.fillMaxWidth().toggleable(pol.pregenerationEnabled, role = Role.Switch) { vm.setPolicy(pol.copy(pregenerationEnabled = it)) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("提前生成练习", style = MaterialTheme.typography.bodyLarge)
-                        Text("开启后会在额度内自动调用 API 准备新题，每天最多 ${pol.pregenerationMaxPerDay} 题", style = MaterialTheme.typography.bodySmall, color = c.muted)
-                    }
-                    Switch(pol.pregenerationEnabled, null)
-                }
+                Text("学习分析会根据学习情况补充题库；可在“AI 调整”中锁定此项。", style = MaterialTheme.typography.bodySmall, color = c.muted)
                 NumberSetting("每日请求上限", pol.dailyRequestLimit?.toString().orEmpty(), "留空表示不限制。到达上限后，新的 AI 操作会提示额度用完") {
                     vm.setPolicy(pol.copy(dailyRequestLimit = it.toIntOrNull()))
                 }

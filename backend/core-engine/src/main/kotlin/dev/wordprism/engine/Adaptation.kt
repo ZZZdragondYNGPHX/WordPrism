@@ -50,7 +50,6 @@ private val policySpecs = linkedMapOf(
     "passageWords" to PolicySpec("新短文目标词数", "integer", "30..300"),
     "backgroundDifficulty" to PolicySpec("新生成语境的背景词难度", "string", "simple, intermediate, advanced"),
     "reuseAfterDays" to PolicySpec("已见 AI 题目再次使用的间隔", "integer", "0..365"),
-    "preGenerateLimit" to PolicySpec("已授权预生成任务数上限", "integer", "0..10; requires user.automaticGeneration"),
 )
 private val actionCapabilities = listOf(
         Capability("fit_memory", "在本机拟合并评估真实学习历史", "action", JsonNull, "bounded data/time, held-out validation", affectsSchedule = true),
@@ -58,12 +57,12 @@ private val actionCapabilities = listOf(
         Capability("update_sense", "修正义项和例句", "action", JsonNull, "Ref version; immutable content versions preserved"),
         Capability("change_membership", "修正归组关系", "action", JsonNull, "Ref version; undoable"),
         Capability("rename_group", "修正词组名称", "action", JsonNull, "Ref version; undoable"),
-        Capability("edit_word", "原子修正备注和指定义项", "action", JsonNull, "Ref versions; immutable history preserved"),
-        Capability("edit_memberships", "原子修正成员关系", "action", JsonNull, "Ref version; ambiguous senses require explicit selection"),
+        Capability("edit_word", "修改词条备注和释义", "action", JsonNull, "Ref versions; immutable history preserved"),
+        Capability("edit_memberships", "修改词组成员", "action", JsonNull, "Ref version; ambiguous senses require explicit selection"),
         Capability("dispute_activity", "标记争议题并排除受影响评分", "action", JsonNull, "Ref version; replay actual history", affectsSchedule = true),
         Capability("bind_preset", "调整未被用户锁定的功能预设", "action", JsonNull, "only unlocked feature bindings; existing enabled preset"),
-        Capability("generate_activity", "在用户授权范围内生成练习", "action", JsonNull, "automaticGeneration; shared request budget"),
-        Capability("explain_sense", "为薄弱义项补充词根、词源、助记、用法和词族候选；已保存内容供后续练习使用", "action", JsonNull,
+        Capability("generate_activity", "分析后补充题库", "action", JsonNull, "分析后按调用额度生成练习；锁定后不自动补充"),
+        Capability("explain_sense", "为薄弱单词补充讲解", "action", JsonNull,
             "Ref version; automaticGeneration; shared request budget; extra words require user acceptance; reading never counts as mastery", version = 2),
 )
 internal val aiActionTypes: Set<String> = actionCapabilities.map { it.id }.toSet()
@@ -72,7 +71,8 @@ internal fun Database.capabilities(): List<Capability> {
     val values = Contract.json.encodeToJsonElement(policy).jsonObject
     return policySpecs.map { (key, spec) -> Capability(key, spec.description, spec.type, values.getValue(key), spec.constraint,
         affectsSchedule = spec.scheduling, userLocked = key in settings.lockedCapabilities) } +
-        actionCapabilities.map { capability -> capability.copy(userLocked = capability.id in settings.lockedCapabilities) }
+        actionCapabilities.map { capability -> capability.copy(userLocked = capability.id in settings.lockedCapabilities ||
+            capability.id == "explain_sense" && !settings.automaticGeneration) }
 }
 
 internal fun Database.applyPatch(patch: PolicyPatch, expectedVersion: Long, actor: Actor, operationId: Id,
@@ -89,7 +89,6 @@ internal fun Database.applyPatch(patch: PolicyPatch, expectedVersion: Long, acto
     val next = try { Contract.json.decodeFromJsonElement<TrainingPolicy>(JsonObject(raw + patch.values)).copy(version = policy.version + 1) }
         catch (_: Exception) { fail(ErrorCode.VALIDATION, "策略值类型无效") }
     validateTrainingPolicy(this, next, settings.budgetMinutes)
-    requireBusiness(next.preGenerateLimit <= settings.preGenerationMaxPerDay && (next.preGenerateLimit == 0 || settings.automaticGeneration), "未启用自动生成或范围无效", ErrorCode.DISABLED)
     try { memory.validate(next.weights) } catch (_: IllegalArgumentException) { fail(ErrorCode.VALIDATION, "算法参数无效") }
     if (next.weights != policy.weights) {
         val evaluation = evaluationId?.let { evaluations[it] }.found("参数评估")

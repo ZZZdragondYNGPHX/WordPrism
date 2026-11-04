@@ -148,6 +148,90 @@ class CoreIntegrationTest {
         }
     }
 
+    @Test fun practiceAndExplanationControlsRemainIndependentOfApiSettings() = runBlocking {
+        Harness().use { h ->
+            h.configure(); h.seed()
+            fun List<Capability>.byId(id: String) = single { it.id == id }
+            var capabilities = h.sdk.adaptation.observeCapabilities().first()
+            assertFalse(capabilities.byId("generate_activity").lockedByUser)
+            assertEquals("分析后补充题库", capabilities.byId("generate_activity").label)
+            assertTrue(capabilities.byId("explain_sense").lockedByUser)
+            assertTrue(capabilities.none { it.id == "preGenerateLimit" })
+            ok(h.sdk.adaptation.setCapabilityLock("explain_sense", false))
+            assertTrue(h.store.read().settings.automaticGeneration)
+            val policy = h.sdk.presets.observeCallPolicy().first()
+            ok(h.sdk.presets.setCallPolicy(policy.copy(dailyRequestLimit = 8)))
+            assertTrue(h.store.read().settings.automaticGeneration)
+            ok(h.sdk.adaptation.setCapabilityLock("generate_activity", true))
+            h.restart()
+            capabilities = h.sdk.adaptation.observeCapabilities().first()
+            assertTrue(capabilities.byId("generate_activity").lockedByUser)
+            assertFalse(capabilities.byId("explain_sense").lockedByUser)
+            assertEquals(8, h.store.read().settings.dailyRequestLimit)
+            ok(h.sdk.adaptation.setCapabilityLock("explain_sense", true))
+            assertFalse(h.store.read().settings.automaticGeneration)
+        }
+    }
+
+    @Test fun unlimitedPresetAndWritingReviewSurviveReopenAndAnswerRevision() = runBlocking {
+        Harness().use { h ->
+            val presetId = h.configure(); h.seed()
+            val preset = h.sdk.presets.observePresets().first().single { it.id == presetId }
+            ok(h.sdk.presets.savePreset(PresetDraft(id = preset.id, expectedVersion = preset.version, name = preset.name,
+                adapterId = preset.adapterId, baseUrl = preset.baseUrl, model = preset.model,
+                maxOutputTokens = null, timeoutSeconds = null), ClientRequestId("unlimited-preset")))
+            h.restart()
+            val restored = h.sdk.presets.observePresets().first().single { it.id == presetId }
+            assertNull(restored.timeoutSeconds); assertNull(restored.maxOutputTokens)
+            h.provider.response = { ProviderResponse(Contract.json.parseToJsonElement("""{"prompt":"用 linear 造句","explanation":"练习表达"}""")) }
+            val target = h.store.read().targets.values.first { it.ability == dev.wordprism.contract.Ability.EXPRESSION }
+            val generation = h.command(Command.GenerateActivity(target.id, dev.wordprism.contract.ActivityKind.WRITING)) as View.OperationResult
+            h.core.tasks.run(generation.operation.id)
+            val db = h.store.read()
+            h.command(Command.ApplyPolicy(dev.wordprism.contract.PolicyPatch(mapOf(
+                "mix" to buildJsonObject { put("WRITING", 100) },
+                "suspendedTargets" to JsonArray(db.targets.keys.filter { it != target.id }.map { JsonPrimitive(it.value) }),
+            ), "合成测试：造句"), db.policy.version))
+            val session = h.scoredSession(); val activity = h.state(session).current!!
+            val initial = ok(h.sdk.study.submitAnswer(session, activity.id, Answer.Text("The graph is linear."), ClientRequestId("writing-answer")))
+            val firstOp = initial.pendingOperationId!!
+            h.provider.response = { ProviderResponse(Contract.json.parseToJsonElement("""{
+                "explanation":"句意清楚。","targetUsage":"good","quotedAnswer":"is linear",
+                "dimensions":[{"dimension":"target_word","comment":"用词贴合语境。","quote":"is linear"},
+                  {"dimension":"grammar","comment":"结构完整。","quote":null},
+                  {"dimension":"naturalness","comment":"表达自然。","quote":null},
+                  {"dimension":"intent","comment":"表达了线性关系。","quote":null}],
+                "optimizedSentence":"The relationship is linear.","optimizationNotes":"用 relationship 突出关系。"
+            }""")) }
+            h.core.tasks.run(CId(firstOp.value)); h.restart()
+            val shown = h.state(session).feedback!!
+            assertEquals(4, shown.aiReview!!.dimensions.size)
+            assertEquals("The relationship is linear.", shown.aiReview!!.suggestion)
+            assertEquals("目标词与搭配", shown.aiReview!!.dimensions.first().label)
+            ok(h.sdk.study.reviseAnswer(session, activity.id))
+            val revised = ok(h.sdk.study.submitAnswer(session, activity.id, Answer.Text("This graph is linear."), ClientRequestId("writing-revision")))
+            h.core.tasks.run(CId(revised.pendingOperationId!!.value)); h.restart()
+            val oldResult = ok(h.sdk.operations.getWritingFeedback(firstOp))
+            val newResult = ok(h.sdk.operations.getWritingFeedback(revised.pendingOperationId!!))
+            assertEquals("The graph is linear.", oldResult.answerText); assertEquals(1, oldResult.answerVersion)
+            assertEquals("This graph is linear.", newResult.answerText); assertEquals(2, newResult.answerVersion)
+            assertEquals("The relationship is linear.", oldResult.aiReview!!.suggestion)
+            assertEquals("用 relationship 突出关系。", newResult.aiReview!!.optimizationNotes)
+            assertTrue(h.store.read().schedules.values.all { it.reviews == 0 })
+            val doc = DocumentRef("content://test/writing-backup", "writing.wordprism", null)
+            ok(h.sdk.dataTransfer.export(ExportRequest(PackagePurpose.FullBackup), doc, ClientRequestId("writing-export")))
+            Harness().use { restoredHarness ->
+                restoredHarness.documents.files[doc.uri] = h.documents.files.getValue(doc.uri)
+                val preview = ok(restoredHarness.sdk.dataTransfer.previewImport(doc))
+                ok(restoredHarness.sdk.dataTransfer.commitImport(preview.previewId, ClientRequestId("writing-restore")))
+                val restoredPreset = restoredHarness.sdk.presets.observePresets().first().single { it.id == presetId }
+                assertNull(restoredPreset.maxOutputTokens); assertNull(restoredPreset.timeoutSeconds)
+                assertEquals(oldResult.answerText, ok(restoredHarness.sdk.operations.getWritingFeedback(firstOp)).answerText)
+                assertEquals(newResult.aiReview!!.dimensions, ok(restoredHarness.sdk.operations.getWritingFeedback(revised.pendingOperationId!!)).aiReview!!.dimensions)
+            }
+        }
+    }
+
     @Test fun explanationReadAndFamilyAcceptanceUsePersistedCoreAcrossReopen() = runBlocking {
         Harness().use { h ->
             h.configure(); h.seed()

@@ -7,6 +7,15 @@ import kotlinx.serialization.json.*
 import org.junit.jupiter.api.Test
 
 class AiWorkflowTest {
+    private fun richFeedback(usage: String = "good", quote: String = "is linear") = json("""{
+        "explanation":"整体表达清楚。","targetUsage":"$usage","quotedAnswer":"is linear",
+        "dimensions":[
+            {"dimension":"target_word","comment":"目标词贴合语境。","quote":"$quote"},
+            {"dimension":"grammar","comment":"结构完整。","quote":null},
+            {"dimension":"naturalness","comment":"表达自然。","quote":null},
+            {"dimension":"intent","comment":"说明了线性关系。","quote":null}
+        ],"optimizedSentence":"The relationship is linear.","optimizationNotes":"用 relationship 明确表达关系。"
+    }""")
     @Test fun `intake repeats reuse words and senses and extra words stay recommendations`() = runBlocking {
         val h = Harness(); h.configure(false)
         h.provider.response = { ProviderResponse(json("""{"words":[{"spelling":"linear","meaning":"线性的"},{"spelling":"liner","meaning":"衬里"}],"newGroup":{"title":"linear / liner","relation":"LOOK_ALIKE","purpose":"词形辨析"},"reason":"用户明确易混","recommendations":[{"spelling":"linen","reason":"可以进一步对比","content":{"spelling":"linen","meaning":"亚麻布"}}]}""")) }
@@ -76,26 +85,42 @@ class AiWorkflowTest {
         val card = h.question(); val answer = h.answer(card, AnswerInput("The graph is linear."))
         assertFalse(answer.answer.affectsSchedule)
         val entered = CompletableDeferred<Unit>(); val release = CompletableDeferred<Unit>()
-        h.provider.response = { entered.complete(Unit); release.await(); ProviderResponse(json("""{"explanation":"Correct use","targetUsage":"appropriate","quotedAnswer":"is linear"}""")) }
+        h.provider.response = { entered.complete(Unit); release.await(); ProviderResponse(richFeedback("appropriate")) }
         val evaluation = h.command(Command.EvaluateResponse(Ref(answer.answer.id, 1))) as View.OperationResult
         val task = launch { h.core.tasks.run(evaluation.operation.id) }; entered.await()
         h.command(Command.ReviseAnswer(Ref(answer.answer.id, 1), "The relationship is linear.")); release.complete(Unit); task.join()
         assertEquals(1L, h.store.read().feedback.values.single().answerVersion)
+        val historical = h.core.query(Query.GetOperationFeedback(evaluation.operation.id)).value as View.Feedbacks
+        assertEquals("The graph is linear.", historical.answer.input.text)
+        assertEquals(4, historical.feedback.single().dimensions.size)
+        assertEquals("The relationship is linear.", historical.feedback.single().optimizedSentence)
         assertTrue((h.core.query(Query.GetFeedback(answer.answer.id)).value as View.Feedbacks).feedback.isEmpty())
         assertEquals(2, h.store.read().answerVersions.size); assertEquals(0, h.store.read().schedules.values.sumOf { it.reviews })
         assertEquals(0, (h.core.query(Query.Overview()).value as View.Snapshot).snapshot.details.expressionUsage.opportunities)
-        h.provider.response = { ProviderResponse(json("""{"explanation":"Valid usage","targetUsage":"good","quotedAnswer":"is linear"}""")) }
+        h.provider.response = { ProviderResponse(richFeedback()) }
         val current = h.command(Command.EvaluateResponse(Ref(answer.answer.id, 2))) as View.OperationResult
         h.core.tasks.run(current.operation.id)
+        assertEquals("The relationship is linear.", ((h.core.query(Query.GetOperationFeedback(current.operation.id)).value as View.Feedbacks).answer.input.text))
+        val prompt = h.provider.requests.last()
+        assertContains(prompt.system, "naturalness"); assertContains(prompt.system, "optimizedSentence")
+        assertEquals("The relationship is linear.", prompt.data.jsonObject.getValue("answer").jsonObject.getValue("input").jsonObject.getValue("text").jsonPrimitive.content)
         val overview = (h.core.query(Query.Overview()).value as View.Snapshot).snapshot
         assertEquals(Metric(1, 1), overview.details.expressionUsage)
         assertEquals(0, overview.delayedRecall.opportunities)
         val replay = h.command(Command.EvaluateResponse(Ref(answer.answer.id, 2))) as View.OperationResult
         assertEquals(current.operation.id, replay.operation.id)
         h.command(Command.ReviseAnswer(Ref(answer.answer.id, 2), "This graph is linear."))
-        h.provider.response = { ProviderResponse(json("""{"explanation":"Malformed category","targetUsage":"anything","quotedAnswer":"is linear"}""")) }
+        h.provider.response = { ProviderResponse(richFeedback("anything")) }
         val malformed = h.command(Command.EvaluateResponse(Ref(answer.answer.id, 3))) as View.OperationResult
         h.core.tasks.run(malformed.operation.id)
         assertEquals(ErrorCode.INVALID_RESPONSE, h.store.read().operations.getValue(malformed.operation.id).fault?.code)
+        h.command(Command.ReviseAnswer(Ref(answer.answer.id, 3), "This graph is linear."))
+        h.provider.response = { ProviderResponse(richFeedback(quote = "invented quote")) }
+        val badQuote = h.command(Command.EvaluateResponse(Ref(answer.answer.id, 4))) as View.OperationResult
+        h.core.tasks.run(badQuote.operation.id)
+        assertEquals(ErrorCode.INVALID_RESPONSE, h.store.read().operations.getValue(badQuote.operation.id).fault?.code)
+        assertNull((h.core.query(Query.GetOperationFeedback(badQuote.operation.id))).value)
+        val legacy = Contract.json.decodeFromString<Feedback>("""{"id":"old","answerId":"a","answerVersion":1,"explanation":"旧反馈","source":"AI","targetUsage":"good","quotedAnswer":"linear"}""")
+        assertTrue(legacy.dimensions.isEmpty()); assertNull(legacy.optimizedSentence)
     }
 }

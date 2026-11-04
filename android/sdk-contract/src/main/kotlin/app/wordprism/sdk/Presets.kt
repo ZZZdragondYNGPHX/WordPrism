@@ -23,7 +23,7 @@ data class ApiPreset(
     val baseUrl: String,
     val model: String,
     val maxOutputTokens: Int?,
-    val timeoutSeconds: Int,
+    val timeoutSeconds: Int?,
     /** Never the secret itself. */
     val credential: CredentialState,
     val enabled: Boolean,
@@ -51,7 +51,7 @@ data class PresetDraft(
     val baseUrl: String,
     val model: String,
     val maxOutputTokens: Int?,
-    val timeoutSeconds: Int,
+    val timeoutSeconds: Int?,
     val credential: String? = null,
     /** null means provider default, not an explicit request to disable reasoning. */
     val reasoningEffort: String? = null,
@@ -62,7 +62,7 @@ data class PresetDraft(
 data class ModelCatalogDraft(
     val baseUrl: String,
     val adapterId: String,
-    val timeoutSeconds: Int,
+    val timeoutSeconds: Int?,
     val presetId: PresetId? = null,
     val expectedVersion: Int? = null,
 )
@@ -83,6 +83,7 @@ data class FeatureBinding(
 @Serializable
 data class CallPolicy(
     val defaultPresetId: PresetId?,
+    /** Legacy fields retained for saved mock data and older clients; practice follows analysis. */
     val pregenerationEnabled: Boolean,
     val pregenerationMaxPerDay: Int,
     val dailyRequestLimit: Int?,

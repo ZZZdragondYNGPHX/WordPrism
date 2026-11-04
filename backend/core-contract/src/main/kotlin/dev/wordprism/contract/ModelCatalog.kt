@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class ModelCatalogRequest(
     val baseUrl: String,
     val protocol: String = ApiProtocols.OPENAI_CHAT_COMPLETIONS,
-    val timeoutSeconds: Int = 45,
+    val timeoutSeconds: Int? = 45,
     /** Used only when no explicit secret is supplied; must still match the saved version and service root. */
     val credentialPreset: Ref? = null,
     val contractVersion: Int = Contract.VERSION,

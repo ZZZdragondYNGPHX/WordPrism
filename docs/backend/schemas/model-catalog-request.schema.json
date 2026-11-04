@@ -17,7 +17,14 @@
                     "type": "string"
                 },
                 "timeoutSeconds": {
-                    "type": "integer"
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 },
                 "credentialPreset": {
                     "anyOf": [

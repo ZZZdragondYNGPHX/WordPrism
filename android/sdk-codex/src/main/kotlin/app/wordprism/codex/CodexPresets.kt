@@ -53,7 +53,7 @@ class CodexPresets(private val b: CodexBridge) : PresetsApi {
         }
         // Only submitted fields determine this command, so an idempotent replay stays identical.
         val preset = CPreset(id, version + 1, draft.name.trim(), draft.baseUrl.trim(), draft.model.trim(), draft.adapterId,
-            timeoutSeconds = draft.timeoutSeconds, maxOutputTokens = draft.maxOutputTokens ?: 2048, reasoningEffort = reasoningEffort)
+            timeoutSeconds = draft.timeoutSeconds, maxOutputTokens = draft.maxOutputTokens, reasoningEffort = reasoningEffort)
         val saved = b.exec(request, Command.SavePreset(preset, version, preserveAdvancedSettings = true)) { it }
         if (saved is SdkResult.Err) return@safely saved
         draft.credential?.let { secret ->
@@ -112,8 +112,7 @@ class CodexPresets(private val b: CodexBridge) : PresetsApi {
     override suspend fun setCallPolicy(policy: CallPolicy): SdkResult<CallPolicy> = safely {
         val current = (b.view(Query.CallPolicy) as View.CallPolicy).policy
         val value = current.copy(defaultPresetId = policy.defaultPresetId?.value?.let(::CId), fallbackPresetId = policy.fallbackPresetId?.value?.let(::CId),
-            dailyRequestLimit = policy.dailyRequestLimit, maxRetries = policy.maxRetries, automaticGeneration = policy.pregenerationEnabled,
-            preGenerationMaxPerDay = policy.pregenerationMaxPerDay, settingsVersion = policy.settingsVersion.takeIf { it > 0 } ?: current.settingsVersion,
+            dailyRequestLimit = policy.dailyRequestLimit, maxRetries = policy.maxRetries, settingsVersion = policy.settingsVersion.takeIf { it > 0 } ?: current.settingsVersion,
             policyVersion = policy.policyVersion.takeIf { it > 0 } ?: current.policyVersion)
         b.exec(requestId(), Command.SetCallPolicy(value)) { (it as? View.CallPolicy)?.policy?.map() }
     }

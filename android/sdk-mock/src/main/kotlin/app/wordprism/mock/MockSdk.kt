@@ -33,6 +33,8 @@ class MockSdk(
     override val operations: OperationsApi = object : OperationsApi {
         override fun observe(id: OperationId) = core.db.map { it.operations[id.value] }.distinctUntilChanged()
         override fun observeRecent() = core.db.map { d -> d.operations.values.sortedByDescending { it.createdAt }.take(30) }.distinctUntilChanged()
+        override suspend fun getWritingFeedback(id: OperationId): SdkResult<Feedback> = core.db.value.writingFeedbackByOperation[id.value]?.let { SdkResult.Ok(it) }
+            ?: SdkResult.Err(SdkError(ErrorCode.NotFound, "未找到此任务的反馈", false))
         override suspend fun cancel(id: OperationId) = core.cancel(id)
         override suspend fun retry(id: OperationId, request: ClientRequestId): SdkResult<Operation> {
             val op = core.db.value.operations[id.value] ?: return SdkResult.Err(SdkError(ErrorCode.NotFound, "任务不存在", false))

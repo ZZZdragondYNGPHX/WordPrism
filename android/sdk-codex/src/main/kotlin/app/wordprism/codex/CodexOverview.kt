@@ -114,11 +114,21 @@ class CodexAdaptation(private val b: CodexBridge) : AdaptationApi {
     }
     override suspend fun undoChangeSet(id: ChangeSetId, request: ClientRequestId) = CodexOperations(b).undo(OperationId(id.value), request)
     override fun observeCapabilities(): Flow<List<Capability>> = b.live {
-        (b.view(Query.Capabilities) as View.Capabilities).capabilities.map { c -> Capability(c.id, c.description, c.description,
-            if (c.valueType == "action") "可按需执行" else formatValue(c.id, c.current), c.constraint, c.affectsSchedule, c.userLocked, true) }
+        (b.view(Query.Capabilities) as View.Capabilities).capabilities.map { c ->
+            val current = when {
+                c.valueType != "action" -> formatValue(c.id, c.current)
+                c.userLocked -> "已锁定"
+                c.id in setOf("generate_activity", "explain_sense") -> "由 AI 分析后决定补充"
+                else -> "AI 可按需执行"
+            }
+            val range = c.constraint.takeIf { c.valueType in setOf("integer", "number") && c.id != "plannedMinutes" }?.replace("..", "–")
+            Capability(c.id, c.description, c.description, current, range, c.affectsSchedule, c.userLocked, true)
+        }
     }
     override suspend fun setCapabilityLock(capabilityId: String, locked: Boolean): SdkResult<Unit> = safely {
         val s = (b.view(Query.Settings) as View.Settings).settings
-        b.exec(requestId(), Command.SetSettings(s.copy(lockedCapabilities = if (locked) s.lockedCapabilities + capabilityId else s.lockedCapabilities - capabilityId), s.version)) { Unit }
+        b.exec(requestId(), Command.SetSettings(s.copy(
+            lockedCapabilities = if (locked) s.lockedCapabilities + capabilityId else s.lockedCapabilities - capabilityId,
+            automaticGeneration = if (capabilityId == "explain_sense") !locked else s.automaticGeneration), s.version)) { Unit }
     }
 }

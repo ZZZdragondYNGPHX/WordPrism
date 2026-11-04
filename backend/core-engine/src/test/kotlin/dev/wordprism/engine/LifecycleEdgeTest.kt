@@ -50,10 +50,8 @@ class LifecycleEdgeTest {
 
     @Test fun `undoing analysis cancels its generated child and fences a late response`() = runBlocking {
         val h = Harness(); h.configure(); h.seed(); h.answer()
-        val settings = h.store.read().settings
-        h.command(Command.SetSettings(settings.copy(automaticGeneration = true), settings.version))
         val target = h.store.read().targets.values.first()
-        h.provider.response = { ProviderResponse(json("""{"patch":{"values":{"preGenerateLimit":1},"reason":"practice next context"},"actions":[{"type":"generate_activity","targetId":"${target.id.value}","kind":"PASSAGE"}]}""")) }
+        h.provider.response = { ProviderResponse(json("""{"patch":{"values":{},"reason":"practice next context"},"actions":[{"type":"generate_activity","targetId":"${target.id.value}","kind":"PASSAGE"}]}""")) }
         val parent = h.finishDay()!!; h.core.tasks.run(parent.id)
         val child = h.store.read().operations.values.single { it.parentOperationId == parent.id }
         assertEquals(Actor.AI, child.actor)
@@ -64,7 +62,7 @@ class LifecycleEdgeTest {
         h.command(Command.UndoOperation(parent.id)); release.complete(Unit); running.join()
         val state = h.store.read()
         assertEquals(OperationStatus.CANCELLED, state.operations[child.id]!!.status)
-        assertEquals(before, state.activities); assertEquals(0, state.policy.preGenerateLimit)
+        assertEquals(before, state.activities)
         assertEquals(9L, state.usage.values.single { it.operationId == child.id }.outputTokens)
     }
 

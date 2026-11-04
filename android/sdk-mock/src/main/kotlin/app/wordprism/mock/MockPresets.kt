@@ -31,8 +31,8 @@ internal class MockPresets(private val c: MockCore, private val insights: MockIn
             if (draft.name.isBlank()) put("name", "请填写名称")
             if (!draft.baseUrl.matches(Regex("https://[^\\s/]+(/\\S*)?"))) put("baseUrl", "需要以 https:// 开头的完整地址")
             if (draft.model.isBlank()) put("model", "请填写模型标识")
-            if (draft.timeoutSeconds !in 5..300) put("timeoutSeconds", "超时范围 5–300 秒")
-            if (draft.maxOutputTokens != null && draft.maxOutputTokens !in 64..64000) put("maxOutputTokens", "输出上限范围 64–64000")
+            if (draft.timeoutSeconds?.let { it !in 5..2_147_483 } == true) put("timeoutSeconds", "超时须留空或为 5–2147483 秒")
+            if (draft.maxOutputTokens?.let { it < 1 } == true) put("maxOutputTokens", "输出上限须留空或为正整数")
             if (adapters.none { it.id == draft.adapterId }) put("adapterId", "请选择接口协议")
         }
         if (errors.isNotEmpty()) return SdkResult.Err(SdkError(ErrorCode.Validation, "有 ${errors.size} 项需要修改", false, errors))

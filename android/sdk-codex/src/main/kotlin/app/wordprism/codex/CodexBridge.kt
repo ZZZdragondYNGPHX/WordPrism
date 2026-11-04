@@ -197,6 +197,9 @@ class CodexOperations(private val b: CodexBridge) : OperationsApi {
         b.live(Query.Operations(limit = 30)) { v -> (v as? View.Operations)?.operations?.map { it.toSdk() }?.sortedByDescending { it.createdAt } }
             .map { it.orEmpty() }
 
+    override suspend fun getWritingFeedback(id: OperationId): SdkResult<Feedback> =
+        b.ask(Query.GetOperationFeedback(id.toCodex())) { (it as? View.Feedbacks)?.details?.let(CodexStudy(b)::mapFeedback) }
+
     override suspend fun cancel(id: OperationId): SdkResult<Operation> =
         b.exec(requestId(), Command.CancelOperation(id.toCodex())) { opView(it) }
 

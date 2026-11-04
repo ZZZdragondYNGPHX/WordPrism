@@ -89,6 +89,8 @@ interface OperationsApi {
     fun observe(id: OperationId): Flow<Operation?>
     /** Active and recently finished operations, newest first. */
     fun observeRecent(): Flow<List<Operation>>
+    /** Read the answer version and review produced by a completed writing-feedback task. */
+    suspend fun getWritingFeedback(id: OperationId): SdkResult<Feedback>
     suspend fun cancel(id: OperationId): SdkResult<Operation>
     /** A user retry captures the same preset's current saved configuration; earlier attempts keep their versions. */
     suspend fun retry(id: OperationId, request: ClientRequestId): SdkResult<Operation>

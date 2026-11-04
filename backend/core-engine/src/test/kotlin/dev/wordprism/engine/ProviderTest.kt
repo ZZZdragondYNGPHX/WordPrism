@@ -21,8 +21,8 @@ class ProviderTest {
         // A real 11-second read wait catches the otherwise hidden OkHttp 10-second default.
         // Each case has its own server and client so both protocols and model metadata run concurrently.
         val cases = listOf(ApiProtocols.OPENAI_CHAT_COMPLETIONS, ApiProtocols.OPENAI_RESPONSES, "models")
-            .flatMap { protocol -> listOf(protocol to "headers", protocol to "body") }
-        cases.map { (protocol, stage) -> async {
+            .flatMap { protocol -> listOf("headers", "body").flatMap { stage -> listOf(15, null).map { timeout -> Triple(protocol, stage, timeout) } } }
+        cases.map { (protocol, stage, timeout) -> async {
             MockWebServer().use { server ->
                 val body = when (protocol) {
                     ApiProtocols.OPENAI_CHAT_COMPLETIONS -> chatSuccess.toString()
@@ -37,10 +37,10 @@ class ProviderTest {
                 val provider = OpenAiCompatibleProvider(true)
                 withTimeout(20_000) {
                     if (protocol == "models") {
-                        val models = provider.listModels(ModelCatalogRequest(server.url("/v1").toString(), timeoutSeconds = 15), secret)
+                        val models = provider.listModels(ModelCatalogRequest(server.url("/v1").toString(), timeoutSeconds = timeout), secret)
                         assertEquals(listOf("slow-model"), models.map { it.id })
                     } else {
-                        val request = request(server, protocol).let { it.copy(preset = it.preset.copy(timeoutSeconds = 15)) }
+                        val request = request(server, protocol).let { it.copy(preset = it.preset.copy(timeoutSeconds = timeout)) }
                         val result = provider.generate(request, secret)
                         assertEquals(json("""{"ok":true}"""), result.content)
                         assertEquals(7L, result.inputTokens)
@@ -50,6 +50,34 @@ class ProviderTest {
             }
         } }.awaitAll()
         Unit
+    }
+    @Test fun `unlimited output omits provider token parameters and large finite values remain supported`() = runBlocking {
+        MockWebServer().use { server ->
+            val provider = OpenAiCompatibleProvider(true)
+            for ((protocol, response) in listOf(ApiProtocols.OPENAI_CHAT_COMPLETIONS to chatSuccess, ApiProtocols.OPENAI_RESPONSES to responsesSuccess)) {
+                for (effort in listOf(null, ReasoningEffort.HIGH)) {
+                    server.enqueue(MockResponse().setBody(response.toString()))
+                    val unlimited = request(server, protocol).let { it.copy(preset = it.preset.copy(timeoutSeconds = null, maxOutputTokens = null, reasoningEffort = effort)) }
+                    provider.generate(unlimited, UUID.randomUUID().toString().toCharArray())
+                    val body = json(server.takeRequest().body.readUtf8()).jsonObject
+                    assertTrue(listOf("max_tokens", "max_completion_tokens", "max_output_tokens").none(body::containsKey))
+                }
+                server.enqueue(MockResponse().setBody(response.toString()))
+                val finite = request(server, protocol).let { it.copy(preset = it.preset.copy(timeoutSeconds = 600, maxOutputTokens = 200_000)) }
+                provider.generate(finite, UUID.randomUUID().toString().toCharArray())
+                val body = json(server.takeRequest().body.readUtf8()).jsonObject
+                assertEquals(json("200000"), body[if (protocol == ApiProtocols.OPENAI_RESPONSES) "max_output_tokens" else "max_tokens"])
+            }
+        }
+    }
+    @Test fun `unlimited timeout still allows cancelling a stalled HTTP request`() = runBlocking {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
+            val unlimited = request(server).let { it.copy(preset = it.preset.copy(timeoutSeconds = null, maxOutputTokens = null)) }
+            val job = launch { OpenAiCompatibleProvider(true).generate(unlimited, UUID.randomUUID().toString().toCharArray()) }
+            withTimeout(5_000) { while (server.requestCount == 0) delay(10); job.cancelAndJoin() }
+            assertTrue(job.isCancelled); assertEquals(1, server.requestCount)
+        }
     }
     @Test fun `actual HTTP adapter sends selected model and captures supplied usage`() = runBlocking {
         MockWebServer().use { server ->

@@ -111,7 +111,14 @@ object Contract {
     val id: Id, val answerId: Id, val answerVersion: Long, val explanation: String,
     val source: GradeSource, val targetUsage: String = "", val quotedAnswer: String = "",
     val provenance: Provenance = Provenance(),
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val dimensions: List<WritingFeedbackDimension> = emptyList(),
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val optimizedSentence: String? = null,
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val optimizationNotes: String? = null,
 )
+@Serializable data class WritingFeedbackDimension(val dimension: String, val comment: String, val quote: String? = null)
 @Serializable data class Draft(val key: String, val text: String, val version: Long, val atMs: Long)
 @Serializable data class Session(
     val id: Id, val dayId: Id, val planId: Id, val policyVersion: Long,
@@ -146,14 +153,18 @@ object Contract {
     val focusTargets: Set<Id> = emptySet(), val suspendedTargets: Set<Id> = emptySet(),
     val hintPolicy: String = "on_request", val passageWords: Int = 80,
     val backgroundDifficulty: String = "simple", val reuseAfterDays: Int = 7,
+    /** Retained for older saved policies; practice generation no longer reads this field. */
     val preGenerateLimit: Int = 0,
 )
 @Serializable data class UserSettings(
     val version: Long = 1, val zoneId: String = "UTC", val budgetMinutes: Int = 30,
+    /** automaticGeneration preserves the earlier automatic-explanation preference. */
     val automaticAnalysis: Boolean = true, val automaticGeneration: Boolean = false,
     val automationEpoch: Long = 0, val lockedCapabilities: Set<String> = emptySet(),
+    /** Retained for older data; the user-selected dailyRequestLimit is the request limit. */
     val automaticRequestsPerDay: Int = 2,
     val defaultPresetId: Id? = null, val fallbackPresetId: Id? = null,
+    /** preGenerationMaxPerDay is retained for older data and is no longer enforced. */
     val dailyRequestLimit: Int? = null, val maxRetries: Int = 0, val preGenerationMaxPerDay: Int = 10,
 )
 @Serializable data class Metric(val successes: Int, val opportunities: Int, val observed: Boolean = true) {
@@ -197,7 +208,8 @@ object Contract {
 @Serializable data class ApiPreset(
     val id: Id, val version: Long = 1, val name: String, val baseUrl: String, val model: String,
     val protocol: String = ApiProtocols.OPENAI_CHAT_COMPLETIONS, val enabled: Boolean = true,
-    val timeoutSeconds: Int = 45, val maxOutputTokens: Int = 2048,
+    /** null disables the application's timeout or omits the provider output limit, respectively. */
+    val timeoutSeconds: Int? = 45, val maxOutputTokens: Int? = 2048,
     val jsonMode: Boolean = true, val temperature: Float? = null,
     /** null keeps the provider's default and the legacy serialized request identity; NONE is explicit. */
     @OptIn(ExperimentalSerializationApi::class)

@@ -288,6 +288,32 @@
                 },
                 "provenance": {
                     "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                },
+                "dimensions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.WritingFeedbackDimension"
+                    }
+                },
+                "optimizedSentence": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "optimizationNotes": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -350,6 +376,32 @@
                 }
             },
             "required": [],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.WritingFeedbackDimension": {
+            "type": "object",
+            "properties": {
+                "dimension": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "quote": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "dimension",
+                "comment"
+            ],
             "additionalProperties": false
         },
         "dev.wordprism.contract.DifficultyMark": {

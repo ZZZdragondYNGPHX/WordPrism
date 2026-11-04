@@ -8,6 +8,11 @@ import kotlinx.serialization.json.*
 internal val pendingStatuses = setOf(OperationStatus.QUEUED, OperationStatus.WAITING_NETWORK, OperationStatus.NEEDS_CONFIGURATION)
 internal val terminalStatuses = setOf(OperationStatus.SUCCEEDED, OperationStatus.FAILED, OperationStatus.CANCELLED, OperationStatus.SUPERSEDED)
 internal fun sha256(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+private fun Database.automaticAllowed(op: Operation) = when (op.feature) {
+    Feature.LEARNING_ANALYSIS -> settings.automaticAnalysis
+    Feature.PRACTICE_GENERATION, null -> true
+    else -> settings.automaticGeneration
+}
 
 internal fun Database.callPreview(feature: Feature, requiresApi: Boolean = true): CallPreview {
     val preset = (bindings[feature]?.presetId ?: settings.defaultPresetId)?.let { presets[it] }?.takeIf { it.enabled }
@@ -104,8 +109,8 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
         val job = db.jobs[id].found("任务数据"); val now = engine.now()
         fun wait(status: OperationStatus, fault: Fault): Prepared? { db.operations[id] = op.copy(status = status, fault = fault, retryable = fault.retryable || status == OperationStatus.NEEDS_CONFIGURATION, updatedAtMs = now); return null }
         if (job.notBeforeMs > now) return null
-        if (op.automatic && (op.automationEpoch != db.settings.automationEpoch || op.feature == Feature.LEARNING_ANALYSIS && !db.settings.automaticAnalysis ||
-            op.feature != Feature.LEARNING_ANALYSIS && op.feature != null && !db.settings.automaticGeneration)) return wait(OperationStatus.CANCELLED, Fault(ErrorCode.DISABLED, "自动调用已关闭"))
+        if (op.automatic && (op.automationEpoch != db.settings.automationEpoch || !db.automaticAllowed(op)))
+            return wait(OperationStatus.CANCELLED, Fault(ErrorCode.DISABLED, "自动调用已关闭或原分析已撤销"))
         val capability = Contract.json.encodeToJsonElement<Command>(job.command).jsonObject.getValue("type").jsonPrimitive.content
         if (op.actor == Actor.AI && capability in db.settings.lockedCapabilities) return wait(OperationStatus.CANCELLED, Fault(ErrorCode.DISABLED, "此业务动作已由用户锁定"))
         if (op.feature != null && !online) return wait(OperationStatus.WAITING_NETWORK, Fault(ErrorCode.OFFLINE, "等待网络", true))
@@ -119,14 +124,6 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
             }
         }
         var running = op.copy(status = OperationStatus.RUNNING, updatedAtMs = now, preset = preset, attempt = op.attempt + 1, fault = null)
-        if (op.automatic && op.feature != null) {
-            val day = db.day(now)
-            val spent = db.usage.values.count { it.automatic && it.startedAtMs >= day.opensAtMs && it.startedAtMs < day.closesAtMs }
-            if (spent >= db.settings.automaticRequestsPerDay) return wait(OperationStatus.FAILED, Fault(ErrorCode.BUDGET_EXCEEDED, "当日自动调用额度已用完", true))
-            if (op.feature == Feature.PRACTICE_GENERATION && db.usage.values.count { it.automatic && it.feature == Feature.PRACTICE_GENERATION && it.startedAtMs in day.opensAtMs until day.closesAtMs } >= db.policy.preGenerateLimit) {
-                return wait(OperationStatus.FAILED, Fault(ErrorCode.BUDGET_EXCEEDED, "当前预生成数量上限已用完", true))
-            }
-        }
         val coversAutomatic = op.automatic || db.days.values.any { it.automaticOperationId == op.id }
         if (op.feature == Feature.LEARNING_ANALYSIS && coversAutomatic && op.executionDayId == null) {
             val day = db.day(now)
@@ -151,7 +148,7 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
         db.operations[prepared.operation.id]?.status == OperationStatus.RUNNING && db.jobs[prepared.operation.id]?.lease == prepared.job.lease
     private fun validateCommit(db: Database, prepared: Prepared) {
         val op = prepared.operation
-        requireBusiness(!op.automatic || op.automationEpoch == db.settings.automationEpoch && (if (op.feature == Feature.LEARNING_ANALYSIS) db.settings.automaticAnalysis else db.settings.automaticGeneration || op.feature == null), "自动任务已失效", ErrorCode.DISABLED)
+        requireBusiness(!op.automatic || op.automationEpoch == db.settings.automationEpoch && db.automaticAllowed(op), "自动任务已失效", ErrorCode.DISABLED)
         val capability = Contract.json.encodeToJsonElement<Command>(prepared.job.command).jsonObject.getValue("type").jsonPrimitive.content
         requireBusiness(op.actor != Actor.AI || capability !in db.settings.lockedCapabilities, "此业务动作已由用户锁定", ErrorCode.DISABLED)
         prepared.job.expectedEntities.filterKeys { !it.startsWith("answer:") }.forEach { (key, version) -> requireBusiness(db.version(key) == version, "生成期间原内容已修改", ErrorCode.VERSION_CONFLICT) }
@@ -223,11 +220,19 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
                     put("learningEvidence", Contract.json.encodeToJsonElement(evidence))
                     put("evidenceActivities", Contract.json.encodeToJsonElement(evidence.mapNotNull { db.activityVersions["${it.activityId.value}:${it.activityVersion}"] }.distinctBy { it.id to it.version }))
                 }
-                is Command.EvaluateResponse -> { val answer = db.answers[command.answer.id].found("答案"); put("answer", Contract.json.encodeToJsonElement(answer)); put("activity", Contract.json.encodeToJsonElement(db.activities[answer.activityId])) }
+                is Command.EvaluateResponse -> {
+                    val answer = db.answers[command.answer.id].found("答案")
+                    put("answer", Contract.json.encodeToJsonElement(answer))
+                    put("activity", Contract.json.encodeToJsonElement(db.activityVersions["${answer.activityId.value}:${answer.activityVersion}"]))
+                    val target = db.targets[answer.targetId]
+                    val sense = target?.let { db.senses[it.senseId] }
+                    put("targetSense", Contract.json.encodeToJsonElement(sense?.copy(explanation = null)))
+                    put("targetWord", Contract.json.encodeToJsonElement(sense?.let { db.words[it.wordId] }))
+                }
                 is Command.AnalyzeLearning -> {
                     put("snapshot", Contract.json.encodeToJsonElement(db.snapshots[op.snapshotId])); put("capabilities", Contract.json.encodeToJsonElement(db.capabilities()))
                     val evidence = db.answers.values.sortedByDescending { it.sequence }.take(20)
-                    put("policy", Contract.json.encodeToJsonElement(db.policy)); put("evidence", Contract.json.encodeToJsonElement(evidence))
+                    put("policy", JsonObject(Contract.json.encodeToJsonElement(db.policy).jsonObject - "preGenerateLimit")); put("evidence", Contract.json.encodeToJsonElement(evidence))
                     val targets = (evidence.mapNotNull { db.targets[it.targetId] } + db.policy.focusTargets.mapNotNull { db.targets[it] } + db.targets.values.filter { db.activeTarget(it) }).distinctBy { it.id }.take(30)
                     val senses = targets.mapNotNull { db.senses[it.senseId] }.distinctBy { it.id }.take(20)
                     val groups = targets.mapNotNull { it.groupId?.let(db.groups::get) }.distinctBy { it.id }
@@ -248,7 +253,8 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
                     put("groups", Contract.json.encodeToJsonElement(groups))
                     put("activities", Contract.json.encodeToJsonElement(evidence.mapNotNull { db.activityVersions["${it.activityId.value}:${it.activityVersion}"] }.distinctBy { it.id to it.version }.take(10)))
                     put("recentChanges", Contract.json.encodeToJsonElement(db.changes.values.sortedByDescending { it.atMs }.take(5)))
-                    put("userSettings", Contract.json.encodeToJsonElement(db.settings)); put("bindings", Contract.json.encodeToJsonElement(db.bindings.values.toList()))
+                    put("userSettings", JsonObject(Contract.json.encodeToJsonElement(db.settings).jsonObject - setOf("automaticRequestsPerDay", "preGenerationMaxPerDay")))
+                    put("bindings", Contract.json.encodeToJsonElement(db.bindings.values.toList()))
                     put("availablePresets", Contract.json.encodeToJsonElement(db.presets.values.filter { it.enabled }))
                     put("actionSchema", aiActionSchema)
                 }
@@ -259,9 +265,9 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
             is Command.SubmitIntake, is Command.AcceptRecommendations -> "Schema: {words:[{spelling,meaning,partOfSpeech,acceptedForms:[],examples:[]}],groupId:null|suppliedID,newGroup:null|{title,relation:LOOK_ALIKE|SYNONYM|WORD_FAMILY|SOUND_ALIKE|PERSONAL,purpose},candidates:[{groupId,reason}],reason,recommendations:[{spelling,reason,groupId:null|suppliedID,content:null}],corrections:[{original,suggested:{spelling,meaning,partOfSpeech,acceptedForms:[],examples:[]},reason}]}. Only explicitly requested words go in words, retaining exact input spellings. For suspected misspellings, put the corrected alternative in corrections; never silently replace the original. Corrections require user choice. Extra words only in recommendations. Group ambiguity goes in candidates. Reuse existing senses."
             is Command.RequestRecommendations -> "Schema: {recommendations:[{spelling,reason,groupId:null|suppliedID,content:null|{spelling,meaning,partOfSpeech,acceptedForms:[],examples:[]}}]}. At most 10."
             is Command.GenerateActivity -> "Schema: {prompt,passage:null|string,question:null|string,sourceSentence:null|string,choices:[{id,text,senseId:null}],acceptedAnswers:[string],explanation}. For PASSAGE, supply separate passage and question, at least two choices, accepted choice IDs. Follow generationConstraints for length and background vocabulary. Open writing/rewriting has no standard answer. Objective tasks need sufficient constraints and all valid answers. studyExplanation is previously saved learning support, not verified dictionary evidence. Use its meaning/use contrasts in a NEW context; never test a mnemonic story as history or treat it as a factual grading rule. Do not reveal the answer in the question."
-            is Command.EvaluateResponse -> "Schema: {explanation,targetUsage:good|misused|acceptable_unnatural|equally_valid|uncertain,quotedAnswer}. Quote an exact substring of the submitted answer. Separate target word usage from unrelated grammar; use uncertain when evidence is insufficient. This feedback never directly rates FSRS."
+            is Command.EvaluateResponse -> "Schema: {explanation,targetUsage:good|misused|acceptable_unnatural|equally_valid|uncertain,quotedAnswer,dimensions:[{dimension:target_word|grammar|naturalness|intent,comment,quote:null|string}],optimizedSentence,optimizationNotes}. Give a brief overall assessment in Chinese. Include each of the four dimensions exactly once: target word meaning and collocation; grammar and sentence structure; idiomatic naturalness and register; how well the sentence conveys the exercise's intended meaning. Give concrete, constructive Chinese comments, noting strengths as well as improvements. Quote an exact substring of the submitted answer in quotedAnswer and in each non-null quote; use null when no specific quote helps. Separate target word use from unrelated grammar, acknowledge valid alternatives, and use uncertain if context is insufficient. Provide a natural English optimized sentence that preserves the learner's intended meaning and satisfies the exercise when possible; do not add unsupported facts. If the original is already good, retain it or offer a clearly optional refinement. Explain the main changes briefly in Chinese. Do not give an overall numeric grade. This feedback never directly rates FSRS."
             is Command.ExplainSense -> "Schema: {content:{explanation,englishDefinition:null|string,wordParts:[{form,kind:PREFIX|ROOT|SUFFIX|STEM,meaning,note}],etymology:null|{explanation,uncertainty},mnemonic:null|{story,cue},usageNotes:[string],examples:[string]},recommendations:[{spelling,reason,groupId:null,content:null|{spelling,meaning,partOfSpeech,acceptedForms:[],examples:[]}}]}. Produce a compact study card, not an essay: about 500-800 Chinese characters total plus short English text. Main explanation, etymology and mnemonic each at most 120 Chinese characters; English definition at most 25 words; exactly 2 short examples and at most 2 usage notes. Use learningEvidence to address a specific confusion when present. Include only confident linguistic parts (usually 0-3); leave wordParts empty for doubtful decompositions. Distinguish historical etymology from a fictional mnemonic. When history is uncertain, say so briefly or use null and continue; do not enumerate speculative origins, research alternatives or invent citations. A mnemonic is a memory association, never a historical claim. Offer 0-3 useful word-family candidates with one-line relationship, short meaning and at most one example each; resemblance alone does not establish a shared origin. groupId must be null. Never include the original word or insert candidates into a group. Keep the complete JSON compact enough for the supplied output budget, which also includes reasoning tokens."
-            is Command.AnalyzeLearning -> "Schema: {patch:{values:{capabilityId:value},reason,evidenceIds:[suppliedID]},actions:[]}. Keep current settings with empty values when appropriate. Optimize delayed recall and new-context memory quality within user budget. Available action types use the local Command schema: fit_memory, update_word, update_sense, change_membership, dispute_activity, bind_preset, generate_activity, explain_sense. Use explanations availability/staleness and actual weak-sense evidence to request explain_sense when useful and authorized; reuse current support instead of repeatedly regenerating it. Reading or generating support is never evidence of mastery. Never alter real answers, accept extra recommended words, credentials, user locks or user budgets. Algorithm weights require local evaluation; request fit_memory with applyIfBetter:true instead of inventing weights."
+            is Command.AnalyzeLearning -> "Schema: {patch:{values:{capabilityId:value},reason,evidenceIds:[suppliedID]},actions:[]}. Keep current settings with empty values when appropriate. Optimize delayed recall and new-context memory quality within user budget. Available action types use the local Command schema: fit_memory, update_word, update_sense, change_membership, dispute_activity, bind_preset, generate_activity, explain_sense. After analysis, use generate_activity to add useful, varied exercises for supplied active targets and enabled exercise kinds, unless that capability is locked or no suitable target exists. Choose what to generate from the learning evidence; existing user request limits apply. Do not suggest locked actions. Use explanations availability/staleness and actual weak-sense evidence to request explain_sense only when automaticGeneration is enabled and the capability is not locked; reuse current support instead of repeatedly regenerating it. Reading or generating support is never evidence of mastery. Never alter real answers, accept extra recommended words, credentials, user locks or user budgets. Algorithm weights require local evaluation; request fit_memory with applyIfBetter:true instead of inventing weights."
             else -> "Schema: {ok:true}. This is a user-requested connection test."
         }
         return ProviderRequest(op.id, op.preset!!, common + schema, data)
@@ -282,7 +288,7 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
     private fun applyResponse(db: Database, prepared: Prepared, response: JsonElement) {
         val op = prepared.operation; val now = engine.now(); val command = prepared.job.command
         val source = Provenance("ai", op.id, op.preset?.id, op.preset?.version, op.preset?.model, now)
-        val before = db.captureLibrary(); val results = mutableListOf<Id>(); var undoable = false
+        val before = db.captureLibrary(); val results = mutableListOf<Id>(); var undoable = false; var analysisSummary: String? = null
         when (command) {
             is Command.SubmitIntake, is Command.AcceptRecommendations -> {
                 val proposal = Contract.json.decodeFromJsonElement<IntakeProposal>(response)
@@ -363,7 +369,16 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
                 requireBusiness(proposal.quotedAnswer.isNotBlank() && proposal.quotedAnswer in original.input.text && proposal.explanation.length <= 16000, "反馈引用不属于原答案", ErrorCode.INVALID_RESPONSE)
                 val targetUsage = if (proposal.targetUsage == "appropriate") "good" else proposal.targetUsage
                 requireBusiness(targetUsage in setOf("good", "misused", "acceptable_unnatural", "equally_valid", "uncertain"), "反馈用法分类无效", ErrorCode.INVALID_RESPONSE)
-                val feedback = Feedback(id(), original.id, original.version, proposal.explanation, GradeSource.AI, targetUsage, proposal.quotedAnswer, source)
+                val dimensions = proposal.dimensions
+                requireBusiness(proposal.explanation.isNotBlank() && dimensions.size == 4 &&
+                    dimensions.map { it.dimension }.toSet() == setOf("target_word", "grammar", "naturalness", "intent") &&
+                    dimensions.all { dimension -> dimension.comment.isNotBlank() && dimension.comment.length <= 4000 &&
+                        (dimension.quote?.let { it.isNotBlank() && it in original.input.text } != false) } &&
+                    proposal.optimizedSentence.isNotBlank() && proposal.optimizedSentence.length <= 4000 &&
+                    proposal.optimizationNotes.isNotBlank() && proposal.optimizationNotes.length <= 4000,
+                    "反馈分项、引用或优化内容无效", ErrorCode.INVALID_RESPONSE)
+                val feedback = Feedback(id(), original.id, original.version, proposal.explanation, GradeSource.AI, targetUsage, proposal.quotedAnswer, source,
+                    dimensions, proposal.optimizedSentence, proposal.optimizationNotes)
                 db.feedback[feedback.id] = feedback; results += feedback.id
             }
             is Command.ExplainSense -> {
@@ -382,7 +397,6 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
                 val proposal = Contract.json.decodeFromJsonElement<AnalysisProposal>(response)
                 val change = db.applyPatch(proposal.patch, op.policyVersion, Actor.AI, op.id, op.snapshotId, now, engine.memory)
                 change?.let { results += it.id; undoable = true }
-                requireBusiness(proposal.actions.size <= 10, "自动调整动作过多", ErrorCode.INVALID_RESPONSE)
                 proposal.actions.forEach { action ->
                     val result = engine.applyCommand(db, action, Actor.AI, now)
                     if (result is View.OperationResult) {
@@ -391,6 +405,8 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
                     }
                 }
                 if (proposal.actions.isNotEmpty()) undoable = true
+                val generatedCount = proposal.actions.count { it is Command.GenerateActivity }
+                analysisSummary = proposal.patch.reason + if (generatedCount > 0) "；已安排 $generatedCount 项补题任务" else "；本次未安排补题"
                 db.lastAnalyzedSequence = maxOf(db.lastAnalyzedSequence, op.throughSequence)
             }
             is Command.TestConnection -> requireBusiness(response is JsonObject && response["ok"]?.jsonPrimitive?.booleanOrNull == true, "连接成功但测试响应无效", ErrorCode.INVALID_RESPONSE)
@@ -398,9 +414,10 @@ class TaskRunner(private val engine: CoreEngine, private val provider: LlmProvid
         }
         if (command !is Command.AnalyzeLearning) db.recordLibraryUndo(op.id, before)
         db.operations[op.id] = op.copy(status = OperationStatus.SUCCEEDED, resultIds = results.distinct(), undoable = undoable, updatedAtMs = now,
-            summary = when (command) { is Command.AnalyzeLearning -> Contract.json.decodeFromJsonElement<AnalysisProposal>(response).patch.reason
+            summary = when (command) { is Command.AnalyzeLearning -> analysisSummary.orEmpty()
                 is Command.SubmitIntake, is Command.AcceptRecommendations -> "词条与归组已保存"
                 is Command.EvaluateResponse -> "表达反馈已保存，未直接修改记忆评分"
+                is Command.GenerateActivity -> "新题已加入题库"
                 is Command.ExplainSense -> "词源与助记讲解已保存，可离线查看；词族候选由你选择加入"
                 is Command.TestConnection -> "连接测试成功"; else -> "任务已完成" },
             effects = if (command is Command.SubmitIntake || command is Command.AcceptRecommendations) db.intakeEffects(before, results, Contract.json.decodeFromJsonElement<IntakeProposal>(response).reason) else op.effects)

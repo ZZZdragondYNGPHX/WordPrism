@@ -108,8 +108,13 @@ class CodexStudy(private val b: CodexBridge) : StudyApi {
             v.feedback.lastOrNull { it.source != CGrade.AI }?.explanation, v.correctChoiceId, a.input.selectedChoiceId, v.acceptedAnswers,
             null, a.affectsSchedule && a.valid,
             when { !a.valid -> "此题不参与当前复习安排"; practice -> "使用了提示或看过答案，不计作独立回忆"; a.gradeSource != CGrade.OBJECTIVE -> "不直接改变记忆评分"; a.input.skipped -> "不记为遗忘"; else -> "已按本机记忆算法更新" },
-            ai?.let { AiReview(it.targetUsage, when (it.targetUsage) { "good" -> "用法良好"; "misused" -> "目标词误用"; "acceptable_unnatural" -> "用法可接受，可更自然"; "equally_valid" -> "同样合理的表达"; else -> "AI 评价" },
-                listOf(ReviewPoint(it.quotedAnswer, it.explanation, true)), null, it.provenance.toSdk()) },
+            ai?.let { review -> AiReview(review.targetUsage, when (review.targetUsage) { "good" -> "用法良好"; "misused" -> "目标词误用"; "acceptable_unnatural" -> "用法可接受，可更自然"; "equally_valid" -> "同样合理的表达"; else -> "AI 评价" },
+                if (review.dimensions.isEmpty()) listOf(ReviewPoint(review.quotedAnswer, review.explanation, true)) else emptyList(),
+                review.optimizedSentence, review.provenance.toSdk(),
+                summary = review.explanation.takeIf { review.dimensions.isNotEmpty() },
+                dimensions = review.dimensions.map { dimension -> ReviewDimension(when (dimension.dimension) {
+                    "target_word" -> "目标词与搭配"; "grammar" -> "语法与结构"; "naturalness" -> "自然度与语气"; "intent" -> "意图表达"; else -> dimension.dimension
+                }, dimension.comment, dimension.quote) }, optimizationNotes = review.optimizationNotes) },
             v.pendingOperationId?.value?.let(::OperationId), v.canMarkDifficult, v.markedDifficult, v.canRevise)
     }
     override suspend fun submitAnswer(session: SessionId, activity: ActivityId, answer: Answer, request: ClientRequestId): SdkResult<Feedback> = safely {

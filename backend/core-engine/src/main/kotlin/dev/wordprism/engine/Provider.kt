@@ -24,12 +24,12 @@ interface LlmProvider {
     fun cancel(operationId: Id)
 }
 
-internal fun validateConnection(baseUrl: String, protocol: String, timeoutSeconds: Int, allowLocalHttp: Boolean = false): HttpUrl {
+internal fun validateConnection(baseUrl: String, protocol: String, timeoutSeconds: Int?, allowLocalHttp: Boolean = false): HttpUrl {
     val url = baseUrl.toHttpUrlOrNull() ?: fail(ErrorCode.VALIDATION, "API 地址无效")
     requireBusiness(url.isHttps || allowLocalHttp && url.host in setOf("localhost", "127.0.0.1", "::1"), "API 必须使用 HTTPS")
     requireBusiness(url.toUri().rawUserInfo == null && url.query == null && url.fragment == null, "地址不能包含凭证、查询或片段")
     requireBusiness(ApiProtocols.supported.any { it.id == protocol }, "暂不支持此协议", ErrorCode.UNSUPPORTED_VERSION)
-    requireBusiness(timeoutSeconds in 5..180, "超时范围为 5–180 秒")
+    requireBusiness(timeoutSeconds == null || timeoutSeconds in 5..2_147_483, "超时须留空或设置为 5–2147483 秒")
     // Users often paste a complete endpoint from provider docs. Strip only a known terminal
     // endpoint, preserving the origin and custom path prefix for both inference and /models.
     val path = url.encodedPath.trimEnd('/')
@@ -41,7 +41,7 @@ internal fun validateConnection(baseUrl: String, protocol: String, timeoutSecond
 internal fun validatePreset(preset: ApiPreset, allowLocalHttp: Boolean = false): HttpUrl {
     val root = validateConnection(preset.baseUrl, preset.protocol, preset.timeoutSeconds, allowLocalHttp)
     requireBusiness(preset.name.isNotBlank() && preset.name.length <= 120 && preset.model.isNotBlank() && preset.model.length <= 200, "预设名称或模型无效")
-    requireBusiness(preset.maxOutputTokens in 64..16384 && (preset.temperature?.let { it.isFinite() && it in 0f..2f } != false), "预设参数超出支持范围")
+    requireBusiness(preset.maxOutputTokens?.let { it >= 1 } != false && (preset.temperature?.let { it.isFinite() && it in 0f..2f } != false), "输出上限须留空或为正整数，温度须在 0–2 之间")
     requireBusiness(preset.reasoningEffort == null || preset.reasoningEffort in ApiProtocols.supported.first { it.id == preset.protocol }.reasoningEfforts,
         "此协议不支持该思维程度")
     return root
@@ -75,11 +75,11 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
         exchange(http, request.timeoutSeconds, metadata = true, parse = ::parseModels)
     } finally { secret.fill('\u0000') }
 
-    private suspend fun <T> exchange(http: okhttp3.Request, timeoutSeconds: Int, operationId: Id? = null,
+    private suspend fun <T> exchange(http: okhttp3.Request, timeoutSeconds: Int?, operationId: Id? = null,
         metadata: Boolean = false, parse: (Response) -> T): T {
         // OkHttp defaults each I/O stage to 10 seconds independently of callTimeout.
         // Apply the user's budget to every stage and retain one deadline for the whole request.
-        val timeout = timeoutSeconds.toLong()
+        val timeout = timeoutSeconds?.toLong() ?: 0L
         val call = client.newBuilder().callTimeout(timeout, TimeUnit.SECONDS)
             .connectTimeout(timeout, TimeUnit.SECONDS).readTimeout(timeout, TimeUnit.SECONDS)
             .writeTimeout(timeout, TimeUnit.SECONDS).build().newCall(http)
@@ -87,10 +87,10 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
         fun failure(e: IOException): ProviderException {
             if (e is ProviderException) return e
             val fault = if (metadata) {
-                if (e is InterruptedIOException) Fault(ErrorCode.PROVIDER_TIMEOUT, "拉取模型超时（上限 $timeoutSeconds 秒），请重试", true)
+                if (e is InterruptedIOException) Fault(ErrorCode.PROVIDER_TIMEOUT, timeoutSeconds?.let { "拉取模型超时（上限 $it 秒），请重试" } ?: "拉取模型连接超时，请重试", true)
                 else Fault(ErrorCode.PROVIDER_UNAVAILABLE, "无法拉取模型，请检查网络和服务地址后重试", true)
             } else {
-                if (e is InterruptedIOException) Fault(ErrorCode.PROVIDER_TIMEOUT, "请求超时（上限 $timeoutSeconds 秒）；服务商是否完成未知，请明确选择重试")
+                if (e is InterruptedIOException) Fault(ErrorCode.PROVIDER_TIMEOUT, timeoutSeconds?.let { "请求超时（上限 $it 秒）；服务商是否完成未知，请明确选择重试" } ?: "连接超时；服务商是否完成未知，请明确选择重试")
                 else Fault(ErrorCode.OUTCOME_UNKNOWN, "连接中断；服务商是否完成未知，请明确选择重试")
             }
             return ProviderException(fault)
@@ -119,7 +119,7 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
         preset.temperature?.let { put("temperature", it) }
         when (preset.protocol) {
             ApiProtocols.OPENAI_RESPONSES -> {
-                put("max_output_tokens", preset.maxOutputTokens)
+                preset.maxOutputTokens?.let { put("max_output_tokens", it) }
                 preset.reasoningEffort?.let { effort -> putJsonObject("reasoning") { put("effort", effort.name.lowercase()) } }
                 put("store", false)
                 put("instructions", request.system)
@@ -129,7 +129,7 @@ class OpenAiCompatibleProvider(private val allowLocalHttp: Boolean = false) : Ll
             }
             else -> {
                 // Explicit effort opts into the reasoning-capable limit; legacy presets keep their wire format.
-                put(if (preset.reasoningEffort == null) "max_tokens" else "max_completion_tokens", preset.maxOutputTokens)
+                preset.maxOutputTokens?.let { put(if (preset.reasoningEffort == null) "max_tokens" else "max_completion_tokens", it) }
                 preset.reasoningEffort?.let { put("reasoning_effort", it.name.lowercase()) }
                 if (preset.jsonMode) putJsonObject("response_format") { put("type", "json_object") }
                 putJsonArray("messages") {
@@ -295,6 +295,9 @@ private fun okio.BufferedSource.readAtMost(limit: Int): ByteArray {
     val prompt: String, val choices: List<Choice> = emptyList(), val acceptedAnswers: List<String> = emptyList(), val explanation: String,
     val passage: String? = null, val question: String? = null, val sourceSentence: String? = null,
 )
-@Serializable internal data class FeedbackProposal(val explanation: String, val targetUsage: String, val quotedAnswer: String)
+@Serializable internal data class FeedbackProposal(
+    val explanation: String, val targetUsage: String, val quotedAnswer: String,
+    val dimensions: List<WritingFeedbackDimension>, val optimizedSentence: String, val optimizationNotes: String,
+)
 @Serializable internal data class ExplanationProposal(val content: ExplanationContent, val recommendations: List<RecommendationSeed> = emptyList())
 @Serializable internal data class AnalysisProposal(val patch: PolicyPatch, val actions: List<Command> = emptyList())

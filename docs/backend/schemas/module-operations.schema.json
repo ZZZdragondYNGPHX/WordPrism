@@ -276,10 +276,24 @@
                     "type": "boolean"
                 },
                 "timeoutSeconds": {
-                    "type": "integer"
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 },
                 "maxOutputTokens": {
-                    "type": "integer"
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 },
                 "jsonMode": {
                     "type": "boolean"
@@ -2416,6 +2430,32 @@
                 },
                 "provenance": {
                     "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                },
+                "dimensions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.WritingFeedbackDimension"
+                    }
+                },
+                "optimizedSentence": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "optimizationNotes": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -2424,6 +2464,32 @@
                 "answerVersion",
                 "explanation",
                 "source"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.WritingFeedbackDimension": {
+            "type": "object",
+            "properties": {
+                "dimension": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "quote": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "dimension",
+                "comment"
             ],
             "additionalProperties": false
         },

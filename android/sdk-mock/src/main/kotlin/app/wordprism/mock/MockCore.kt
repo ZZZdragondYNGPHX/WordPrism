@@ -147,7 +147,7 @@ internal class MockCore(
     }
 
     suspend fun setStatus(id: String, status: OperationStatus, actions: Set<OperationAction>? = null) = mutate { d ->
-        d.updateOp(id) { it.copy(status = status, actions = actions ?: if (status.isActive) setOf(OperationAction.Cancel) else it.actions) }
+        d.updateOp(id) { if (it.status.isTerminal) it else it.copy(status = status, actions = actions ?: if (status.isActive) setOf(OperationAction.Cancel) else it.actions) }
     }
 
     fun launch(opId: String) {

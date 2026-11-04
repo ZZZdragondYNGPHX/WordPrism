@@ -63,10 +63,24 @@
                     "type": "boolean"
                 },
                 "timeoutSeconds": {
-                    "type": "integer"
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 },
                 "maxOutputTokens": {
-                    "type": "integer"
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 },
                 "jsonMode": {
                     "type": "boolean"

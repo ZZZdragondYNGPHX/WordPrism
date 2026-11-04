@@ -44,6 +44,9 @@
                     "$ref": "#/$defs/operation-variant"
                 },
                 {
+                    "$ref": "#/$defs/operation_feedback-variant"
+                },
+                {
                     "$ref": "#/$defs/package_preview-variant"
                 },
                 {
@@ -334,6 +337,22 @@
             "required": [
                 "type",
                 "id"
+            ],
+            "additionalProperties": false
+        },
+        "operation_feedback-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "operation_feedback"
+                },
+                "operationId": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "type",
+                "operationId"
             ],
             "additionalProperties": false
         },

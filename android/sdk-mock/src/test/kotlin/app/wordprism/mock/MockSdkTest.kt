@@ -3,6 +3,7 @@ package app.wordprism.mock
 import app.wordprism.sdk.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.*
 import org.junit.Before
@@ -11,6 +12,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.InputStream
 import java.io.OutputStream
+import java.time.ZoneId
 
 /**
  * Pins down behaviours the UI relies on. These test the MOCK; the real core must satisfy the same
@@ -57,6 +59,16 @@ class MockSdkTest {
         assertTrue(sdk.operations.cancel(id) is SdkResult.Ok)
         assertEquals(OperationStatus.Cancelled, sdk.operations.observe(id).first()!!.status)
         assertEquals(before, sdk.library.observeLibrary(LibraryQuery()).first().totalGroups)
+    }
+
+    @Test fun lateRunningStatusDoesNotRestoreACancelledOperation() = runBlocking {
+        val core = MockCore(tmp.newFile("race.json").also { it.delete() }, noDocs, System::currentTimeMillis, ZoneId.systemDefault())
+        val op = core.newOperation(core.db.value, OperationKind.Intake, "test", FeatureId.WordIntake)
+        core.mutate { db -> with(core) { db.withOp(op) } }
+        assertTrue(core.cancel(op.id) is SdkResult.Ok)
+        core.setStatus(op.id.value, OperationStatus.Running)
+        assertEquals(OperationStatus.Cancelled, core.db.value.operations.getValue(op.id.value).status)
+        core.scope.cancel()
     }
 
     @Test fun undoIntakeRemovesCreatedGroup() = runBlocking {
