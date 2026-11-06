@@ -96,6 +96,7 @@ internal fun dev.wordprism.contract.Provenance.toSdk() = ContentSource(
     presetVersion = presetVersion?.toInt(), model = model, generatedAt = atMs.takeIf { it > 0 },
 )
 internal fun featureLabel(feature: CFeature): String = when (feature) {
+    CFeature.TUTORING -> "随身助教"
     CFeature.WORD_INTAKE -> "AI 添加"; CFeature.WORD_RECOMMENDATION -> "相似词推荐"; CFeature.EXPLANATION -> "补充讲解"
     CFeature.PRACTICE_GENERATION -> "练习生成"; CFeature.WRITING_FEEDBACK -> "表达反馈"; CFeature.LEARNING_ANALYSIS -> "学习分析"
 }
@@ -147,11 +148,12 @@ fun CFeature.toSdk(): FeatureId = FeatureId(name.lowercase())
 fun FeatureId.toCodex(): CFeature? = CFeature.entries.firstOrNull { it.name.lowercase() == value }
 
 fun CStatus.toSdk(): OperationStatus = when (this) {
-    CStatus.QUEUED, CStatus.RESTORED_PENDING -> OperationStatus.Queued
+    CStatus.QUEUED -> OperationStatus.Queued
+    CStatus.RESTORED_PENDING -> OperationStatus.RestoredPending
     CStatus.WAITING_NETWORK -> OperationStatus.WaitingNetwork
     CStatus.RUNNING -> OperationStatus.Running
     // NEEDS_CONFIGURATION is a real waiting state (missing preset/credential); keep it distinct.
-    CStatus.NEEDS_CONFIGURATION -> OperationStatus("needs_configuration")
+    CStatus.NEEDS_CONFIGURATION -> OperationStatus.NeedsConfiguration
     CStatus.NEEDS_INPUT -> OperationStatus.NeedsInput
     CStatus.SUCCEEDED -> OperationStatus.Succeeded
     CStatus.FAILED -> OperationStatus.Failed
@@ -160,6 +162,7 @@ fun CStatus.toSdk(): OperationStatus = when (this) {
 }
 
 internal val kindTitles = mapOf(
+    "tutor_session" to "随身助教",
     "intake" to "AI 添加", "submit_intake" to "AI 添加", "recommendation" to "寻找相似词", "request_recommendations" to "寻找相似词", "accept_recommendations" to "加入推荐词",
     "analysis" to "学习分析", "analyze_learning" to "学习分析", "test_connection" to "连接测试", "evaluate_response" to "造句反馈",
     "generate_activity" to "生成练习", "explain_sense" to "补充讲解", "commit_import" to "导入", "restore_backup" to "恢复备份", "export" to "导出",

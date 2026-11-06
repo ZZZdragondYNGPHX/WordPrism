@@ -56,6 +56,8 @@ value class OperationStatus(val value: String) {
         val WaitingNetwork = OperationStatus("waiting_network")
         val Running = OperationStatus("running")
         val NeedsInput = OperationStatus("needs_input")
+        val NeedsConfiguration = OperationStatus("needs_configuration")
+        val RestoredPending = OperationStatus("restored_pending")
         val Succeeded = OperationStatus("succeeded")
         val Failed = OperationStatus("failed")
         val Cancelled = OperationStatus("cancelled")

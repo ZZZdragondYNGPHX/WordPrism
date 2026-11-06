@@ -37,9 +37,8 @@ class SqliteStateStore(path: Path) : StateStore {
             try {
                 val before = rows(); val db = StateCodec.decode(before); val result = block(db)
                 val beforeMap = before.associate { (it.bucket to it.key) to it.payload }
-                if (StateCodec.rows(db).associate { (it.bucket to it.key) to it.payload } != beforeMap) {
-                    db.revision++
-                    val after = StateCodec.rows(db); val afterKeys = after.map { it.bucket to it.key }.toSet()
+                StateCodec.rowsForCommit(db, beforeMap)?.let { after ->
+                    val afterKeys = after.map { it.bucket to it.key }.toSet()
                     connection.prepareStatement("DELETE FROM records WHERE bucket=? AND record_key=?").use { delete ->
                         before.filter { (it.bucket to it.key) !in afterKeys }.forEach { row -> delete.setString(1, row.bucket); delete.setString(2, row.key); delete.addBatch() }; delete.executeBatch()
                     }

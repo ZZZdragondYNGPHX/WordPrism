@@ -26,8 +26,9 @@ object Contract {
     QUEUED, WAITING_NETWORK, NEEDS_CONFIGURATION, RUNNING, NEEDS_INPUT,
     SUCCEEDED, FAILED, CANCELLED, SUPERSEDED, RESTORED_PENDING
 }
-@Serializable enum class Feature { WORD_INTAKE, WORD_RECOMMENDATION, EXPLANATION, PRACTICE_GENERATION, WRITING_FEEDBACK, LEARNING_ANALYSIS }
+@Serializable enum class Feature { WORD_INTAKE, WORD_RECOMMENDATION, EXPLANATION, PRACTICE_GENERATION, WRITING_FEEDBACK, LEARNING_ANALYSIS, TUTORING }
 @Serializable enum class Actor { USER, AI, SYSTEM }
+@Serializable enum class LearningMode { STANDARD, AI_MANAGED }
 @Serializable enum class Relation { LOOK_ALIKE, SYNONYM, WORD_FAMILY, SOUND_ALIKE, PERSONAL }
 @Serializable enum class Ability { RECOGNITION, RECALL, SPELLING, READING, EXPRESSION }
 @Serializable enum class ActivityKind { CHOICE, RECALL, SPELLING, PASSAGE, WRITING, REWRITE, FAMILIARITY, CONTRAST }
@@ -92,7 +93,10 @@ object Contract {
     val targetWords: List<String> = emptyList(), val cue: String? = null,
     val passage: String? = null, val question: String? = null, val sourceSentence: String? = null,
     val source: Provenance = Provenance(),
+    val introduction: SenseIntroduction? = null,
 )
+@Serializable data class SenseIntroduction(val spelling: String, val partOfSpeech: String, val meaning: String,
+    val examples: List<String> = emptyList(), val support: ExplanationContent? = null)
 @Serializable data class Exposure(val hintUsed: Boolean = false, val answerRevealed: Boolean = false)
 @Serializable data class AnswerInput(
     val text: String, val hintUsed: Boolean = false, val answerRevealed: Boolean = false,
@@ -117,6 +121,8 @@ object Contract {
     @EncodeDefault(EncodeDefault.Mode.NEVER) val optimizedSentence: String? = null,
     @OptIn(ExperimentalSerializationApi::class)
     @EncodeDefault(EncodeDefault.Mode.NEVER) val optimizationNotes: String? = null,
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val confusionNote: String? = null,
 )
 @Serializable data class WritingFeedbackDimension(val dimension: String, val comment: String, val quote: String? = null)
 @Serializable data class Draft(val key: String, val text: String, val version: Long, val atMs: Long)
@@ -131,6 +137,11 @@ object Contract {
     val lastAnswerId: Id? = null, val awaitingAdvance: Boolean = false, val revisingAnswerId: Id? = null,
     val includeIntroductions: Boolean = false, val exposedSenseIds: Set<Id> = emptySet(),
     val lastPresentationId: Id? = null,
+    /** One assisted correction per missed target, after the original queue; never a second FSRS grade. */
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val reinforcementTargets: List<Id> = emptyList(),
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER) val completedReinforcements: Set<Id> = emptySet(),
 )
 @Serializable data class LearningPlan(
     val id: Id, val dayId: Id, val policyVersion: Long, val targetIds: List<Id>,
@@ -172,6 +183,11 @@ object Contract {
     val defaultPresetId: Id? = null, val fallbackPresetId: Id? = null,
     /** preGenerationMaxPerDay is retained for older data and is no longer enforced. */
     val dailyRequestLimit: Int? = null, val maxRetries: Int = 0, val preGenerationMaxPerDay: Int = 10,
+    val learningMode: LearningMode = LearningMode.STANDARD,
+)
+@Serializable data class ManagedLearningState(
+    val mode: LearningMode, val presetId: Id?, val configurationFault: Fault?,
+    val pendingTasks: Int, val attentionTasks: Int, val summary: String,
 )
 @Serializable data class Metric(val successes: Int, val opportunities: Int, val observed: Boolean = true) {
     val lowSample: Boolean get() = opportunities < 20
@@ -261,6 +277,8 @@ object Contract {
     val actor: Actor = Actor.USER, val parentOperationId: Id? = null, val summary: String = "",
     val input: String? = null, val effects: List<IntakeEffect> = emptyList(),
     val spellingChoices: List<SpellingChoice> = emptyList(),
+    /** Captured authorization scope; switching modes fences automatic managed work. */
+    val managed: Boolean = false,
 )
 @Serializable enum class PackagePurpose { CONTENT, BACKUP }
 /** An opaque destination digest prevents replaying a completed export into a different file. */

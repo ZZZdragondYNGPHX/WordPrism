@@ -3,6 +3,7 @@ package dev.wordprism.android
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import android.content.Context
+import androidx.work.WorkManager
 import dev.wordprism.contract.*
 import dev.wordprism.engine.CoreEngine
 import dev.wordprism.engine.LlmProvider
@@ -21,6 +22,45 @@ import java.util.UUID
 @RunWith(AndroidJUnit4::class)
 class AndroidCoreTest {
     private val context get() = ApplicationProvider.getApplicationContext<Context>()
+    @Test fun configurationBlockedTasksStayDormantUntilExplicitRetry() = runBlocking<Unit> {
+        val sdk = AndroidWordPrism.open(context)
+        val first = sdk.execute(Request(UUID.randomUUID().toString(), Command.SubmitIntake("synthetic blocked word")))
+        val second = sdk.execute(Request(UUID.randomUUID().toString(), Command.SubmitIntake("another synthetic blocked word")))
+        assertNull(first.fault); assertNull(second.fault)
+        val blocked = listOf(first, second).map { (it.value as View.OperationResult).operation }
+        assertTrue(blocked.all { it.status == OperationStatus.NEEDS_CONFIGURATION })
+        val manager = WorkManager.getInstance(context)
+        try {
+            repeat(3) {
+                sdk.schedulePending()
+                delay(300)
+                blocked.forEach { original ->
+                    assertTrue("Waiting for credentials must not create Android jobs",
+                        manager.getWorkInfosForUniqueWork("wordprism:${original.id.value}").get().isEmpty())
+                    val current = (sdk.query(Query.GetOperation(original.id)).value as View.OperationResult).operation
+                    assertEquals(original, current)
+                }
+            }
+            // A user retry is still accepted. Without a preset it remains a visible, dormant task.
+            val retry = sdk.execute(Request(UUID.randomUUID().toString(), Command.RetryOperation(blocked.first().id)))
+            assertNull(retry.fault)
+            assertEquals(OperationStatus.QUEUED, (retry.value as View.OperationResult).operation.status)
+            val retried = withTimeout(10_000) {
+                var current: Operation
+                do {
+                    delay(100)
+                    current = (sdk.query(Query.GetOperation(blocked.first().id)).value as View.OperationResult).operation
+                } while (current.status != OperationStatus.NEEDS_CONFIGURATION)
+                current
+            }
+            delay(600)
+            sdk.schedulePending()
+            assertEquals(retried, (sdk.query(Query.GetOperation(retried.id)).value as View.OperationResult).operation)
+        } finally {
+            blocked.forEach { sdk.execute(Request(UUID.randomUUID().toString(), Command.CancelOperation(it.id))) }
+        }
+    }
+
     @Test fun analysisAddsPracticeAndRoomKeepsItAfterReopen() = runBlocking<Unit> {
         val name = "practice-${UUID.randomUUID()}.db"
         val presetId = Id("practice-preset-${UUID.randomUUID()}")

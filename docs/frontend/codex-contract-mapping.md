@@ -61,6 +61,14 @@
 
 Chat Completions 与原生 Responses 通过相同预设页面配置。`observeAdapters()` 和已保存预设的 `adapterLabel` 均来自核心 `Query.Protocols`，不在门面写死名称；切换协议保留用户填写的服务地址。详细 ID 和样例见[LLM 协议接入](../backend/api-protocols.md)。
 
+## 双模式映射
+
+`AdaptationApi.observeManagedLearning()` 对应 `Query.ManagedLearning`，`setLearningMode()` 对应带版本检查的 `SetLearningMode`。托管首页复用同一个 `TodayViewModel`、日计划和学习入口；模式、任务计数和配置错误由核心返回，不使用前端计时器模拟。`LearnWord.support / Contrast.support` 映射当前有效的讲解分段，进入作答后不显示。完整行为见[托管契约](../backend/contract.md#学习模式与托管执行)，最新执行结果见[验证记录](../backend/validation.md)。
+
+`StudyApi.observeTutor(sessionId?)` 映射 `Query.Tutoring`；`askTutor()` 使用当前展示及已提交反馈的真实答案版本调用 `TutorSession(QUESTION)`。`StudyViewModel` 保留请求身份并只在持久提交成功后清空相同草稿；模式关闭、取消、重试和配置状态沿用业务操作。学习页显示当前题目或答案版本的助教内容，未作答的评分题不展示开场讲解。托管首页使用真实日计划和最近小结，不伪造 AI 进度。
+
+`TutorSheet` 使用原生 Material 底部面板，区分用户气泡、助教正文和理解追问；输入采用 `TextFieldValue` 保留 IME 状态，明确发送时提交可见文本，等待期间仍可编辑。48 dp 发送/关闭触点、窄屏提示横向滚动及键盘下紧凑标题复用现有主题。界面取材与边界见[资料 R61–R63](../research/sources.md#r61)。
+
 ## 验证
 
 `sdk-codex` 已执行 23 个 JVM 测试：8 个门面映射测试，以及 15 个使用真实 `CoreEngine + SQLite + Rust JNI` 的集成测试。后者覆盖 SQLite 重开后的作答幂等、理解步骤、原子编辑/撤销、调用额度、正式备份流、统一总览与保留后续学习的撤销、持久拼写选择、关闭自动分析后的迟到结果，以及 Responses 协议标签、独立绑定、离线任务重开、模型目录选择保存和保存新版预设后重开重试。本轮新增讲解分段与来源、词族接纳/撤销、六种题型的完整题面及重开后的最新任务选择。模型拉取的页面状态另有 6 个单元测试，模型选择器另有 2 个此前执行的实际 Android Compose 仪器测试；这些自动化用合成响应，真实供应商的 Android 验证另见下段。

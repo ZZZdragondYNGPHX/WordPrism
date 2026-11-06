@@ -73,6 +73,9 @@ class AdjustmentsViewModel(sdk: WordPrismSdk, private val saved: SavedStateHandl
 
 @Composable
 fun AdjustmentsScreen(onBack: () -> Unit, openApi: () -> Unit) {
+    val sdk = appSdk()
+    val managed by remember(sdk) { sdk.adaptation.observeManagedLearning() }.collectAsStateWithLifecycle(null)
+    val aiMode = managed?.mode == LearningMode.AiManaged
     val vm = wpViewModel { sdk, s -> AdjustmentsViewModel(sdk, s) }
     CollectMessages(vm, LocalSnackbar.current)
     val s by vm.settings.collectAsStateWithLifecycle()
@@ -94,14 +97,14 @@ fun AdjustmentsScreen(onBack: () -> Unit, openApi: () -> Unit) {
             Spacer(Modifier.height(20.dp))
             val on = st.mode == AnalysisMode.DailyAfterDayEnd
             Row(
-                Modifier.fillMaxWidth().toggleable(on, role = Role.Switch) { vm.setMode(it) }.padding(vertical = 8.dp),
+                Modifier.fillMaxWidth().toggleable(on, enabled = !aiMode, role = Role.Switch) { vm.setMode(it) }.padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f)) {
                     Text("每天学习结束后自动分析", style = MaterialTheme.typography.titleMedium, color = c.ink)
-                    Text("每天最多一次。暂停或退出不会触发；没有新数据时跳过", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                    Text(if (aiMode) "托管模式自动开启；有新作答时退出即自动分析，每天最多一次。切回普通模式可手动控制。" else "每天最多一次。暂停或退出不会触发；没有新数据时跳过", style = MaterialTheme.typography.bodySmall, color = c.muted)
                 }
-                Switch(checked = on, onCheckedChange = null)
+                Switch(checked = on, onCheckedChange = null, enabled = !aiMode)
             }
             ApiDisclosure(st.requirement, onConfigure = openApi)
 

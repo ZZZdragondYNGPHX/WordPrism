@@ -80,12 +80,21 @@ fun main(args: Array<String>) {
             WritingFeedbackDimension("naturalness", "表达自然。"),
             WritingFeedbackDimension("intent", "表达了线性关系。")), "The relationship is linear.", "用 relationship 突出关系。")
     samples["writing-feedback"] = Reply(11, View.Feedbacks(writingAnswer, listOf(writingFeedback)))
+    samples["managed-learning"] = Reply(12, View.ManagedLearning(ManagedLearningState(LearningMode.AI_MANAGED,
+        responsesPreset.id, null, 2, 0, "AI 正在整理词组、准备讲解与练习；已有内容可以先学")))
+    samples["tutoring"] = Reply(13, View.Tutoring(listOf(TutorEntry(
+        operation.copy(kind = "tutor_session", feature = Feature.TUTORING, status = OperationStatus.SUCCEEDED),
+        TutorMoment.COACH, writingAnswer.sessionId, answer = Ref(writingAnswer.id, writingAnswer.version),
+        report = TutorReport("这次用词表达了线性关系，下次试着放到新的语境中。", "可以换一个主语再说一句吗？")))))
     samples.forEach { (name, value) ->
         val json = Contract.json.encodeToString(value)
         check(Contract.json.decodeFromString<Reply>(json) == value)
         File(output, "$name.json").writeText(json + "\n")
     }
     File(output, "submit-intake.request.json").writeText(Contract.json.encodeToString(Request("fixture-intake-key", Command.SubmitIntake("linear / liner"))) + "\n")
+    File(output, "set-learning-mode.request.json").writeText(Contract.json.encodeToString(Request("fixture-mode-key", Command.SetLearningMode(LearningMode.AI_MANAGED, 1))) + "\n")
+    File(output, "tutor-session.request.json").writeText(Contract.json.encodeToString(Request("fixture-tutor-key",
+        Command.TutorSession(writingAnswer.sessionId, TutorMoment.QUESTION, Id("fixture-presentation"), Ref(writingAnswer.id, writingAnswer.version), "请换一个例子讲解"))) + "\n")
     File(output, "save-responses-preset.request.json").writeText(Contract.json.encodeToString(Request("fixture-responses-key", Command.SavePreset(responsesPreset))) + "\n")
     File(output, "save-reasoning-preset.request.json").writeText(Contract.json.encodeToString(Request("fixture-reasoning-key", Command.SavePreset(reasoningPreset))) + "\n")
     File(output, "save-unlimited-preset.request.json").writeText(Contract.json.encodeToString(Request("fixture-unlimited-key",
@@ -107,5 +116,5 @@ fun main(args: Array<String>) {
     writeSchemas(File(output.parentFile, "schemas"))
     if ("--skip-packages" !in args) kotlinx.coroutines.runBlocking { writeReferencePackages(File(output.parentFile, "packages")) }
     if ("--explanation-package" in args) kotlinx.coroutines.runBlocking { writeExplanationPackage(File(output.parentFile, "packages")) }
-    println("Validated ${samples.size} typed response fixtures, eight command requests and ${catalogRequests.size} model catalog requests in ${output.absolutePath}")
+    println("Validated ${samples.size} typed response fixtures, ten command requests and ${catalogRequests.size} model catalog requests in ${output.absolutePath}")
 }

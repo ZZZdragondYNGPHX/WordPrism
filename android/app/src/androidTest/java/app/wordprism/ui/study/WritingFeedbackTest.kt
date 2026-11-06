@@ -43,10 +43,10 @@ class WritingFeedbackTest {
         saveScreenshot("writing-feedback-top")
         compose.onNodeWithText("意图表达").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("AI 优化版").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("The relationship is linear.").assertIsDisplayed()
+        compose.onNodeWithText("The relationship is linear.").performScrollTo().assertIsDisplayed()
         saveScreenshot("writing-feedback-optimized")
-        compose.onNodeWithText("改一改再交").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("继续").performScrollTo().performClick()
+        compose.onNodeWithText("改一改再交").assertIsDisplayed()
+        compose.onNodeWithText("继续").assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(1, continued) }
     }
 

@@ -82,7 +82,7 @@ class IntakeViewModel(sdk: WordPrismSdk, private val saved: SavedStateHandle, pr
 
     fun undoResult() { opId.value?.let { undo(OperationId(it)) } }
 
-    fun clearDraftAfterSuccess() = viewModelScope.launch { drafts.write(DRAFT_KEY, "") }
+    suspend fun clearDraftAfterSuccess() { drafts.write(DRAFT_KEY, "") }
 
     fun startOver() { saved["op"] = null }
 }
@@ -97,6 +97,8 @@ fun IntakeScreen(prefill: String, onClose: () -> Unit, openGroup: (String) -> Un
     val req by vm.requirement.collectAsStateWithLifecycle()
     val st by vm.state.collectAsStateWithLifecycle()
     val submitting by vm.submitting.collectAsStateWithLifecycle()
+    val sdk = appSdk()
+    val managed by remember(sdk) { sdk.adaptation.observeManagedLearning() }.collectAsStateWithLifecycle(null)
     val c = Wp.colors
     val focusManager = LocalFocusManager.current
 
@@ -107,7 +109,12 @@ fun IntakeScreen(prefill: String, onClose: () -> Unit, openGroup: (String) -> Un
     }
     val focus = remember { FocusRequester() }
     LaunchedEffect(loaded) { if (loaded && st == null) runCatching { focus.requestFocus() } }
-    LaunchedEffect(st?.operation?.status) { if (st?.operation?.status == OperationStatus.Succeeded) vm.clearDraftAfterSuccess() }
+    LaunchedEffect(st?.operation?.id, st?.operation?.status, managed?.mode) {
+        if (st?.operation?.status == OperationStatus.Succeeded) {
+            vm.clearDraftAfterSuccess()
+            if (managed?.mode == LearningMode.AiManaged) onClose()
+        }
+    }
 
     Column(Modifier.fillMaxSize().imePadding()) {
         WpTopBar("AI 添加", onBack = onClose)

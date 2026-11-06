@@ -68,6 +68,9 @@
                     "$ref": "#/$defs/library_overview-variant"
                 },
                 {
+                    "$ref": "#/$defs/managed_learning-variant"
+                },
+                {
                     "$ref": "#/$defs/operation_effects-variant"
                 },
                 {
@@ -96,6 +99,9 @@
                 },
                 {
                     "$ref": "#/$defs/snapshot-variant"
+                },
+                {
+                    "$ref": "#/$defs/tutoring-variant"
                 }
             ]
         }
@@ -423,7 +429,8 @@
                                 "EXPLANATION",
                                 "PRACTICE_GENERATION",
                                 "WRITING_FEEDBACK",
-                                "LEARNING_ANALYSIS"
+                                "LEARNING_ANALYSIS",
+                                "TUTORING"
                             ]
                         },
                         {
@@ -526,6 +533,18 @@
             ],
             "additionalProperties": false
         },
+        "managed_learning-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "managed_learning"
+                }
+            },
+            "required": [
+                "type"
+            ],
+            "additionalProperties": false
+        },
         "operation_effects-variant": {
             "type": "object",
             "properties": {
@@ -610,7 +629,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 },
                 "recommendationIds": {
@@ -685,6 +705,28 @@
             "required": [
                 "type",
                 "id"
+            ],
+            "additionalProperties": false
+        },
+        "tutoring-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "tutoring"
+                },
+                "sessionId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type"
             ],
             "additionalProperties": false
         }

@@ -53,7 +53,10 @@ class AndroidWordPrism private constructor(private val context: Context, interna
         }
         val state = core.store.read(); val operations = state.operations.values.toList()
         val manager = WorkManager.getInstance(context)
-        operations.filter { it.status in setOf(OperationStatus.QUEUED, OperationStatus.WAITING_NETWORK, OperationStatus.NEEDS_CONFIGURATION) }.forEach { operation ->
+        // Configuration failures wait for RetryOperation or managed configuration reconciliation.
+        // Scheduling them again here
+        // makes blocked tasks wake each other and continuously invalidate every UI subscription.
+        operations.filter { it.status in setOf(OperationStatus.QUEUED, OperationStatus.WAITING_NETWORK) }.forEach { operation ->
             val constraints = Constraints.Builder().apply { if (operation.feature != null) setRequiredNetworkType(NetworkType.CONNECTED) }.build()
             val delay = ((state.jobs[operation.id]?.notBeforeMs ?: 0) - System.currentTimeMillis()).coerceAtLeast(0)
             val work = OneTimeWorkRequestBuilder<WordPrismWorker>().setInputData(workDataOf("operation_id" to operation.id.value)).setConstraints(constraints)

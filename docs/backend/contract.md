@@ -6,6 +6,14 @@
 
 Claude 的 Compose 前端现通过 `android/sdk-codex` 调用已发布的本地 Maven 构件。`android/sdk-contract` 是界面门面，适配器负责格式、标签和类型映射；存储、判分、归组、调度和统计集中在 `backend/`。具体对应见[前端映射](../frontend/codex-contract-mapping.md)，构建见 [running.md](running.md)。
 
+## 学习模式与托管执行
+
+`UserSettings.learningMode` 默认 `STANDARD`，旧存档无需迁移表结构；`SetLearningMode(mode, expectedVersion)` 使用版本检查切换，`Query.ManagedLearning` 返回当前模式、配置错误、默认预设、待处理与异常任务数及摘要。界面通过 `AdaptationApi.observeManagedLearning / setLearningMode` 访问，详细产品规则仅在[手机学习方案](../plan/mobile-learning.md#ai-托管模式)维护。
+
+`ManagedLearning.kt` 在命令提交、凭证保存、恢复和任务完成/失败后收敛待办。沿用持久 `Operation / JobData`、现有 provider、用量与撤销；任务以 epoch、义项版本及学习日构成持久去重键。托管有效分析/生成权限与普通设置分开计算，不覆盖原偏好。切换模式递增自动化 epoch，旧自动任务及迟到结果不再应用。
+
+`Operation.managed` 标记来源；自动讲解/练习作为添加操作的子任务，复合撤销保留之后作答。`SenseIntroduction.support` 只携带托管辨析阶段的当前版本讲解，不向测试卡片透露答案。设备内部凭证引用用于检测已拒绝请求是否可恢复，导出时清除；完整恢复关闭托管。契约样例包括 `managed-learning.json` 与 `set-learning-mode.request.json`。
+
 ## 调用、身份与错误
 
 - `execute(Request(key, command))`：持久幂等提交。同键同内容返回原动作及当前可观察结果；同键不同内容返回 `IDEMPOTENCY_CONFLICT`。实体编辑带 `Ref(id, version)`，重试须保留原始输入及版本，不能重新读取新版本拼成另一条命令。
@@ -62,11 +70,23 @@ JSON 使用 `type` 判别、枚举原名和字符串 ID。进程内 Kotlin 客�
 
 每日分析由学习日及证据序号去重；暂停会话不等于结束当天。关闭自动分析会使在途自动结果失去提交资格，手动动作依据本次授权执行。分析 AI 可使用 `generate_activity` 把补题作为子任务，原有题目不被替换；能力锁、预设和用户指定的总请求上限仍然适用。旧 `automaticRequestsPerDay`、`preGenerationMaxPerDay` 和 `preGenerateLimit` 保留用于读取历史数据，不再限制调用或作为 AI 可调整项目。调整只能使用能力目录内的动作；不能编辑真实作答、凭证或自动接纳额外推荐词。调用规则见[API 方案](../plan/api-presets.md#调用由用户控制)。
 
+## 随身助教
+
+`Feature.TUTORING` 复用现有持久任务、预设、实际用量与取消机制。`TutorSession(sessionId, moment, presentationId?, answer?, question?)` 的 `QUESTION` 由用户提交；`WELCOME / COACH / RECAP` 只由学习事件触发，按模式周期、会话、阶段与作答版本去重。`Query.Tutoring(sessionId?)` 返回最近 80 条 `TutorEntry`，含操作状态、用户提问及类型化 `TutorReport`。样例见 `fixtures/tutor-session.request.json` 与 `fixtures/tutoring.json`。
+
+提交前求助须符合提示策略，并先记录辅助曝光；题目切换或已经作答后到达的旧提示拒绝应用。助教观察必须引用提示中提供且仍有效的答案版本，答案修订或题目争议使旧记忆失效。当前题面使用公开卡片，不传入评分题的标准答案字段。相关记忆、近期作答与表达反馈供后续教学、讲解、出题及分析复用，不视为确定的学习能力。
+
+助教可在当前会话的未完成目标内提出优先顺序；提交时会话已前进则不重排。仅 `COACH` 可请求一份启用题型的针对性练习，作为原任务的子任务持久保存。遵守能力锁和用户请求额度，不修改历史作答、成绩或 FSRS 参数。切回普通模式取消待执行和在途助教任务的提交资格，保留已发生用量。报告随现有任务进入完整备份，恢复后不会自动重新请求。
+
 ## 学习、反馈与撤销
 
 作答带 `currentPresentationId` 与题目 `Ref`。同一展示以另一请求键重复提交仍只记一次；内容不同则冲突。`SessionState.feedback` 与 `GetPresentation` 保留已经提交的对应版本，页面退出、重开或强制停止后可恢复反馈，再由 `NextActivity` 明确前进。
 
-`FAMILIARITY` 和 `CONTRAST` 是理解步骤；曝光、提示、跳过和争议单独保存。提交前 `ActivityCard` 不暴露标准答案。开放表达先保存原文，AI 反馈绑定 `answerId + version`，旧版本反馈不套用到新答案。新反馈包含整体评价、目标词与搭配、语法与结构、自然度与语气、意图表达四个分项，以及 AI 优化句和改动说明；分项引用须是原句的精确片段。`GetOperationFeedback` 按已完成任务返回对应的原始答案版本与反馈，供前进后的任务记录查看，旧反馈没有新增字段时仍可读取。完整字段见[合成反馈样例](fixtures/writing-feedback.json)。
+`FAMILIARITY` 和 `CONTRAST` 是理解步骤；曝光、提示、跳过和争议单独保存。评分题提交前的 `ActivityCard` 不暴露标准答案；理解步骤可以通过 `introduction` 提供本词拼写、词性、基本义和已有例句。开放表达先保存原文，AI 反馈绑定 `answerId + version`，旧版本反馈不套用到新答案。新反馈包含整体评价、目标词与搭配、语法与结构、自然度与语气、意图表达四个分项，以及 AI 优化句和改动说明；分项引用须是原句的精确片段。`GetOperationFeedback` 按已完成任务返回对应的原始答案版本与反馈，供前进后的任务记录查看，旧反馈没有新增字段时仍可读取。完整字段见[合成反馈样例](fixtures/writing-feedback.json)。
+
+Android 使用 `StartSession(includeIntroductions=true)`：不认识的义项先进入理解步骤，孤立词也适用。引导模式下首次答错的目标进入 `Session.reinforcementTargets`，原队列结束后最多巩固一次；已有例句可遮住目标词生成不同题面，没有其他语境时退回释义回忆。巩固展示持久化为 `answerRevealed`，不重复更新 FSRS，完成记录保存于 `completedReinforcements`。预算仍可暂停队列，重开按原状态继续；不启用引导模式的直接核心调用保持原来的队列行为。
+
+`AnswerResult.correctChoiceIds` 返回全部可接受选项，旧单值 `correctChoiceId` 保留；反馈恢复使用原题版本。错选反馈可带 `Feedback.confusionNote`，引用实际选择义项与目标义项。UI 的“辅助练习”状态与此次客观对错分别展示，不因练习不计调度而隐藏纠错，也不把另一个正确选项标红。
 
 AI 另保留目标词用法分类 `good`、`misused`、`acceptable_unnatural`、`equally_valid`、`uncertain`，用于表达汇总；未知分类或无效分项明确失败。AI 反馈不直接更改记忆评分，与记忆证据分开。
 

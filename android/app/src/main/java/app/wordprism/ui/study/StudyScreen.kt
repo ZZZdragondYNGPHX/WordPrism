@@ -1,13 +1,6 @@
 package app.wordprism.ui.study
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -49,7 +42,7 @@ import app.wordprism.ui.theme.Wp
 import app.wordprism.ui.theme.WpType
 
 @Composable
-fun StudyScreen(sessionId: String, onExit: () -> Unit, openApi: () -> Unit) {
+fun StudyScreen(sessionId: String, onExit: () -> Unit, openApi: () -> Unit, openFeedback: () -> Unit) {
     val vm = wpViewModel(key = "study-$sessionId") { sdk, s -> StudyViewModel(sdk, s, SessionId(sessionId)) }
     CollectMessages(vm, LocalSnackbar.current)
     val state by vm.session.collectAsStateWithLifecycle()
@@ -57,6 +50,10 @@ fun StudyScreen(sessionId: String, onExit: () -> Unit, openApi: () -> Unit) {
     val busy by vm.busy.collectAsStateWithLifecycle()
     val hint by vm.hint.collectAsStateWithLifecycle()
     val review by vm.pendingReview.collectAsStateWithLifecycle()
+    val managed by vm.managed.collectAsStateWithLifecycle()
+    val tutoring by vm.tutoring.collectAsStateWithLifecycle()
+    val askingTutor by vm.askingTutor.collectAsStateWithLifecycle()
+    var showTutor by rememberSaveable { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
     var disputeFor by rememberSaveable { mutableStateOf<String?>(null) }
     var confirmEndDay by rememberSaveable { mutableStateOf(false) }
@@ -70,6 +67,17 @@ fun StudyScreen(sessionId: String, onExit: () -> Unit, openApi: () -> Unit) {
     BackHandler { vm.pause(onExit) }
 
     val s = state
+    val contextualTutor = tutoring.filter { item ->
+        if (s?.feedback != null) item.answerId == s.feedback!!.answerId && item.answerVersion == s.feedback!!.answerVersion
+        else item.answerId == null && (item.presentationId == s?.current?.id?.value || item.moment == "welcome" &&
+            (s?.current is ActivityView.LearnWord || s?.current is ActivityView.Contrast || s?.current is ActivityView.Familiarity))
+    }
+    if (showTutor && s != null) TutorSheet(
+        contextKey = "${s.current?.id?.value}:${s.feedback?.answerVersion}",
+        messages = if (s.current == null) tutoring.filter { it.moment == "recap" } else contextualTutor,
+        canAsk = s.current != null, assisted = s.feedback == null, submitting = askingTutor,
+        onAsk = { question, saved -> s.current?.let { vm.askTutor(it.id, question, saved) } },
+        onCancel = vm::cancelTutor, onRetry = vm::retryTutor, openApi = openApi, onClose = { showTutor = false })
     Column(Modifier.fillMaxSize().background(c.ground).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)).imePadding()) {
         // ---------------------------------------------------------------- top bar
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -78,6 +86,7 @@ fun StudyScreen(sessionId: String, onExit: () -> Unit, openApi: () -> Unit) {
                 ProgressSegments(s.done, s.total, Modifier.weight(1f).padding(horizontal = 8.dp))
                 Text("${minOf(s.done + if (s.feedback == null) 1 else 0, s.total)}/${s.total}", style = MaterialTheme.typography.labelLarge.merge(WpType.tabular), color = c.muted)
             } else Spacer(Modifier.weight(1f))
+            if (managed?.mode == LearningMode.AiManaged) TextButton(onClick = { showTutor = true }) { Text("问助教") }
             Box {
                 IconButton(onClick = { menu = true }) { Icon(Icons.Outlined.MoreVert, contentDescription = "更多操作") }
                 DropdownMenu(menu, onDismissRequest = { menu = false }) {
@@ -96,20 +105,18 @@ fun StudyScreen(sessionId: String, onExit: () -> Unit, openApi: () -> Unit) {
 
         when {
             s == null -> Loading()
-            s.status == SessionStatus.Completed || s.current == null -> SessionDone(s, day, onExit) { confirmEndDay = true }
+            s.status == SessionStatus.Completed || s.current == null -> SessionDone(s, day, { vm.pause(onExit) }, openFeedback) { confirmEndDay = true }
             else -> {
                 val act = s.current!!
-                val reduced = Wp.reducedMotion
-                AnimatedContent(
-                    targetState = act, contentKey = { it.id }, label = "activity",
-                    transitionSpec = { if (reduced) fadeIn(tween(0)) togetherWith fadeOut(tween(0)) else fadeIn(tween(220)) togetherWith fadeOut(tween(120)) },
-                    modifier = Modifier.weight(1f),
-                ) { shown ->
-                    // Render the activity this slot was created for, not whatever is current, so the cross-fade is honest.
-                    val slotFeedback = if (shown.id == act.id) s.feedback else null
-                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter).padding(bottom = 24.dp)) {
+                key(act.id) {
+                    val shown = act
+                    val slotFeedback = s.feedback
+                    Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter).padding(bottom = 24.dp)) {
                         Text(shown.kindLabel, style = MaterialTheme.typography.labelLarge, color = c.action, modifier = Modifier.padding(top = 8.dp, bottom = 12.dp))
                         ActivityBody(shown, slotFeedback, busy, vm, openApi)
+                        if (managed?.mode == LearningMode.AiManaged && (slotFeedback != null || shown is ActivityView.LearnWord || shown is ActivityView.Contrast)) {
+                            TutorInline(contextualTutor.firstOrNull()) { showTutor = true }
+                        }
                         if (hint?.first == shown.id && slotFeedback == null) HintCard(hint!!.second)
                         if (shown.hintAvailable && slotFeedback == null && hint?.first != shown.id) {
                             TextButton(onClick = { vm.requestHint(shown.id) }, modifier = Modifier.padding(top = 8.dp)) {
@@ -119,8 +126,8 @@ fun StudyScreen(sessionId: String, onExit: () -> Unit, openApi: () -> Unit) {
                     }
                 }
                 val fb = s.feedback
-                AnimatedVisibility(fb != null, enter = if (Wp.reducedMotion) fadeIn(tween(0)) else slideInVertically(tween(240)) { it / 3 } + fadeIn(tween(200))) {
-                    if (fb != null) FeedbackPanel(fb, act, review, busy, onContinue = vm::advance, onHard = { vm.markHard(fb.answerId, it) }, onRevise = { vm.revise(act.id) }, onRetryReview = vm::retryReview, openApi = openApi)
+                if (fb != null) {
+                    FeedbackPanel(fb, act, review, busy, onContinue = vm::advance, onHard = { vm.markHard(fb.answerId, it) }, onRevise = { vm.revise(act.id) }, onRetryReview = vm::retryReview, openApi = openApi, reinforcementRemaining = s.reinforcementRemaining)
                 }
             }
         }
@@ -157,6 +164,7 @@ fun StudyScreen(sessionId: String, onExit: () -> Unit, openApi: () -> Unit) {
 private fun ActivityBody(act: ActivityView, fb: Feedback?, busy: Boolean, vm: StudyViewModel, openApi: () -> Unit) {
     when (act) {
         is ActivityView.Familiarity -> Familiarity(act, fb, busy) { vm.submit(act.id, Answer.Familiarity(it)) }
+        is ActivityView.LearnWord -> LearnWord(act, fb, busy) { vm.submit(act.id, Answer.Acknowledge) }
         is ActivityView.Contrast -> Contrast(act, fb, busy) { vm.submit(act.id, Answer.Acknowledge) }
         is ActivityView.Choice -> {
             Text(act.instruction, style = MaterialTheme.typography.bodyMedium, color = Wp.colors.muted)
@@ -203,6 +211,22 @@ private fun Familiarity(act: ActivityView.Familiarity, fb: Feedback?, busy: Bool
 }
 
 @Composable
+internal fun LearnWord(act: ActivityView.LearnWord, fb: Feedback?, busy: Boolean, onDone: () -> Unit) {
+    Text(act.lemma, style = WpType.word, color = Wp.colors.ink)
+    Text(act.partOfSpeech, style = MaterialTheme.typography.labelLarge, color = Wp.colors.muted, modifier = Modifier.padding(top = 8.dp))
+    Text(act.meaning, style = MaterialTheme.typography.headlineSmall, color = Wp.colors.ink, modifier = Modifier.padding(top = 8.dp))
+    if (act.examples.isNotEmpty()) {
+        SectionTitle("放进句子里")
+        act.examples.take(2).forEach {
+            Text(it, style = WpType.english, color = Wp.colors.ink, modifier = Modifier.padding(bottom = 12.dp))
+        }
+    }
+    StudySupport(act.support)
+    Text("先理解意思，再试着回忆。刚看过答案的练习不会算作独立记忆成功。", style = MaterialTheme.typography.bodySmall, color = Wp.colors.muted, modifier = Modifier.padding(vertical = 20.dp))
+    if (fb == null) Button(onClick = onDone, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("理解了，试着回忆") }
+}
+
+@Composable
 private fun Contrast(act: ActivityView.Contrast, fb: Feedback?, busy: Boolean, onDone: () -> Unit) {
     val g = act.group
     var revealed by remember(act.id) { mutableStateOf(false) }
@@ -222,12 +246,31 @@ private fun Contrast(act: ActivityView.Contrast, fb: Feedback?, busy: Boolean, o
                 }, style = MaterialTheme.typography.bodyLarge)
                 m.examples.firstOrNull()?.let { Text(it.text, style = WpType.english.copy(fontSize = WpType.english.fontSize * 0.88f), color = Wp.colors.muted) }
                 if (m.collocations.isNotEmpty()) Text("常见搭配：" + m.collocations.joinToString("，"), style = MaterialTheme.typography.bodySmall, color = Wp.colors.muted)
+                m.senses.forEach { sense -> StudySupport(act.support[sense.id.value].orEmpty()) }
             }
         }
     }
     SourceNote(g.source, Modifier.padding(top = 4.dp))
     Spacer(Modifier.height(20.dp))
     if (fb == null) Button(onClick = onDone, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("看清了，开始练习") }
+}
+
+@Composable
+private fun StudySupport(sections: List<ExplanationSection>) {
+    if (sections.isEmpty()) return
+    Spacer(Modifier.height(12.dp))
+    Text("AI 学习讲解", style = MaterialTheme.typography.labelLarge, color = Wp.colors.action)
+    sections.firstOrNull { it.id == "explanation" }?.let {
+        Text(it.text, style = MaterialTheme.typography.bodyLarge, color = Wp.colors.ink, modifier = Modifier.padding(top = 6.dp))
+    }
+    val details = sections.filter { it.id != "explanation" }
+    if (details.isNotEmpty()) SectionDisclosure("词源、助记与用法", "按需展开，讲解已保存在本机") {
+        details.forEach { section ->
+            Text(section.title, style = MaterialTheme.typography.titleSmall, color = Wp.colors.ink, modifier = Modifier.padding(top = 10.dp))
+            Text(section.text, style = MaterialTheme.typography.bodyMedium, color = Wp.colors.ink)
+            section.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Wp.colors.muted) }
+        }
+    }
 }
 
 /** Stem with `____` drawn as a visible blank (and read as “空格” by TalkBack). */
@@ -258,12 +301,13 @@ private fun highlightTargets(passage: String, question: String) = buildAnnotated
 }
 
 @Composable
-private fun Options(options: List<ChoiceOption>, fb: Feedback?, busy: Boolean, wordStyle: Boolean, onPick: (String) -> Unit) {
+internal fun Options(options: List<ChoiceOption>, fb: Feedback?, busy: Boolean, wordStyle: Boolean, onPick: (String) -> Unit) {
     val c = Wp.colors
     Column(Modifier.selectableGroup()) {
         options.forEach { o ->
-            val isCorrect = fb?.correctOptionId == o.id
-            val isChosenWrong = fb?.chosenOptionId == o.id && !isCorrect
+            val graded = fb?.answerCorrect != null || fb?.verdict in listOf(Verdict.Correct, Verdict.AcceptedAlternative, Verdict.Incorrect, Verdict.Practice)
+            val isCorrect = graded && (o.id in fb?.correctOptionIds.orEmpty() || fb?.correctOptionId == o.id)
+            val isChosenWrong = graded && fb?.chosenOptionId == o.id && !isCorrect
             val border = when { isCorrect -> c.positive; isChosenWrong -> c.negative; else -> c.hairline }
             val fade = fb != null && !isCorrect && !isChosenWrong
             Row(
@@ -288,7 +332,7 @@ private fun Recall(act: ActivityView.Recall, fb: Feedback?, busy: Boolean, vm: S
     Text(act.instruction, style = MaterialTheme.typography.bodyMedium, color = c.muted)
     Spacer(Modifier.height(10.dp))
     Stem(act.stem)
-    act.cueZh?.let { Text("意思：$it", style = MaterialTheme.typography.bodyLarge, color = c.ink, modifier = Modifier.padding(top = 10.dp)) }
+    act.cueZh?.takeUnless { act.stem.contains(it) }?.let { Text("意思：$it", style = MaterialTheme.typography.bodyLarge, color = c.ink, modifier = Modifier.padding(top = 10.dp)) }
     act.letterCount?.let { Text("共 $it 个字母", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 2.dp)) }
     Spacer(Modifier.height(18.dp))
     var value by rememberSaveable(act.id.value, stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue(act.draft.orEmpty(), TextRange(act.draft.orEmpty().length))) }
@@ -302,7 +346,7 @@ private fun Recall(act: ActivityView.Recall, fb: Feedback?, busy: Boolean, vm: S
         if (!explicitClick && value.composition != null) return
         val text = value.text
         if (explicitClick) { value = value.copy(composition = null); focusManager.clearFocus() }
-        vm.flushDraft(act.id, text); vm.submit(act.id, Answer.Text(text.trim()))
+        vm.submit(act.id, Answer.Text(text.trim()))
     }
     OutlinedTextField(
         value = if (fb?.answerText != null) TextFieldValue(fb.answerText!!) else value,
@@ -327,10 +371,9 @@ private fun Production(act: ActivityView.Production, fb: Feedback?, busy: Boolea
     val focusManager = LocalFocusManager.current
     Text(act.instruction, style = MaterialTheme.typography.bodyMedium, color = c.muted)
     Spacer(Modifier.height(10.dp))
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("目标词", style = MaterialTheme.typography.bodySmall, color = c.muted)
-        Spacer(Modifier.width(10.dp))
-        MemberWords(act.targetWords, style = WpType.word)
+        MemberWords(act.targetWords, Modifier.fillMaxWidth(), style = WpType.word)
     }
     act.intentZh?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = c.ink, modifier = Modifier.padding(top = 10.dp)) }
     act.sourceSentence?.let { Text(it, style = WpType.english, color = c.ink, modifier = Modifier.padding(top = 10.dp)) }
@@ -355,7 +398,7 @@ private fun Production(act: ActivityView.Production, fb: Feedback?, busy: Boolea
             onClick = {
                 val text = value.text
                 value = value.copy(composition = null); focusManager.clearFocus()
-                vm.flushDraft(act.id, text); vm.submit(act.id, Answer.Text(text.trim()))
+                vm.submit(act.id, Answer.Text(text.trim()))
             },
             enabled = !busy && value.text.isNotBlank(), modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
         ) { Text("提交句子") }
@@ -376,6 +419,7 @@ private fun HintCard(h: Hint) {
 internal fun FeedbackPanel(
     fb: Feedback, act: ActivityView, review: Operation?, busy: Boolean, onContinue: () -> Unit, onHard: (Boolean) -> Unit,
     onRevise: () -> Unit, onRetryReview: (OperationId) -> Unit, openApi: () -> Unit,
+    reinforcementRemaining: Int = 0,
 ) {
     val c = Wp.colors
     val (icon, tone) = when (fb.verdict) {
@@ -390,9 +434,10 @@ internal fun FeedbackPanel(
         Modifier.fillMaxWidth().background(c.surface, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             .border(1.dp, c.hairline, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             .navigationBarsPadding().padding(horizontal = Wp.gutter, vertical = 18.dp)
-            .heightIn(max = 420.dp).verticalScroll(rememberScrollState())
+            .heightIn(max = 420.dp)
             .semantics { liveRegion = LiveRegionMode.Polite },
     ) {
+        Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = tone)
             Spacer(Modifier.width(10.dp))
@@ -400,7 +445,8 @@ internal fun FeedbackPanel(
         }
         fb.confusionNote?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 8.dp)) }
         fb.explanation?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 6.dp)) }
-        if (fb.verdict == Verdict.Incorrect && fb.acceptedAnswers.isNotEmpty()) Text("可接受：" + fb.acceptedAnswers.joinToString("，"), style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 4.dp))
+        val options = when (act) { is ActivityView.Choice -> act.options; is ActivityView.Reading -> act.options; else -> emptyList() }
+        if ((fb.verdict == Verdict.Incorrect || fb.answerCorrect == false) && fb.acceptedAnswers.isNotEmpty()) Text("可接受：" + fb.acceptedAnswers.map { answer -> options.firstOrNull { it.id == answer }?.text ?: answer }.distinct().joinToString("，"), style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 4.dp))
 
         if (fb.verdict == Verdict.PendingReview) {
             Spacer(Modifier.height(10.dp))
@@ -408,15 +454,17 @@ internal fun FeedbackPanel(
                 OperationLine(review, onRetry = { onRetryReview(review.id) })
                 if (review.error?.code == ErrorCode.CredentialMissing || review.error?.code == ErrorCode.PresetMissing) TextButton(onClick = openApi) { Text("去配置 API 预设") }
             } else Text("正在准备反馈", style = MaterialTheme.typography.bodySmall, color = c.muted)
-            Text("可以先继续下一题，反馈完成后会出现在任务列表里。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp))
+            Text("可以先继续下一题。回到首页，点击“表达反馈”即可查看结果或重试。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp))
         }
         fb.aiReview?.let { AiReviewBlock(it) }
 
         fb.scheduleNote?.let {
             Text((if (fb.affectsSchedule) "复习安排：" else "") + it, style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 10.dp))
         }
-        Spacer(Modifier.height(14.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        if (fb.answerCorrect == false && reinforcementRemaining > 0) Text("本轮末尾还有 $reinforcementRemaining 项巩固，帮助你再回想一次。", style = MaterialTheme.typography.bodySmall, color = c.action, modifier = Modifier.padding(top = 6.dp))
+        }
+        Spacer(Modifier.height(10.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             if (fb.canMarkHard) {
                 FilterChip(selected = fb.markedHard, onClick = { onHard(!fb.markedHard) }, label = { Text("答对了，但有点难") })
                 Spacer(Modifier.width(8.dp))
@@ -424,9 +472,8 @@ internal fun FeedbackPanel(
             if (fb.canRevise && act is ActivityView.Production) {
                 TextButton(onClick = onRevise) { Text("改一改再交") }
             }
-            Spacer(Modifier.weight(1f))
-            Button(onClick = onContinue, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("继续") }
         }
+        Button(onClick = onContinue, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("继续") }
     }
 }
 
@@ -486,12 +533,12 @@ private fun BudgetNote(d: LearningDay) {
 }
 
 @Composable
-private fun SessionDone(s: SessionState, day: LearningDay?, onExit: () -> Unit, onEndDay: () -> Unit) {
+private fun SessionDone(s: SessionState, day: LearningDay?, onExit: () -> Unit, openFeedback: () -> Unit, onEndDay: () -> Unit) {
     val c = Wp.colors
     Column(Modifier.fillMaxSize().padding(Wp.gutter).navigationBarsPadding()) {
         Spacer(Modifier.height(32.dp))
         Text("这一轮完成了", style = MaterialTheme.typography.headlineSmall, color = c.ink)
-        Text("共 ${s.total} 题，作答都已保存。", style = MaterialTheme.typography.bodyLarge, color = c.muted, modifier = Modifier.padding(top = 8.dp))
+        Text("共完成 ${s.done} 项练习，作答都已保存。", style = MaterialTheme.typography.bodyLarge, color = c.muted, modifier = Modifier.padding(top = 8.dp))
         day?.let {
             Spacer(Modifier.height(24.dp))
             KeyValue("今天累计", "${it.effectiveSeconds / 60} 分钟（预算 ${it.budgetMinutes}）")
@@ -499,6 +546,7 @@ private fun SessionDone(s: SessionState, day: LearningDay?, onExit: () -> Unit, 
             Text(it.dailyAnalysis.label, style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 12.dp))
         }
         Spacer(Modifier.weight(1f))
+        TextButton(onClick = openFeedback, modifier = Modifier.fillMaxWidth()) { Text("查看表达反馈") }
         Button(onClick = onExit, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("回到今天") }
         if (day?.canEndDay == true && day.status != DayStatus.PlanCompleted) {
             OutlinedButton(onClick = onEndDay, modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 52.dp)) { Text("结束今天") }

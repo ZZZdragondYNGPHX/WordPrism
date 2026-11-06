@@ -91,6 +91,8 @@ fun OperationStatus.label() = when (this) {
     OperationStatus.WaitingNetwork -> "等待联网"
     OperationStatus.Running -> "进行中"
     OperationStatus.NeedsInput -> "需要你选择"
+    OperationStatus.NeedsConfiguration -> "等待配置 API"
+    OperationStatus.RestoredPending -> "恢复的任务，等待手动重试"
     OperationStatus.Succeeded -> "已完成"
     OperationStatus.Failed -> "失败"
     OperationStatus.Cancelled -> "已取消"

@@ -20,6 +20,10 @@ internal fun <T> T?.found(name: String): T = this ?: fail(ErrorCode.NOT_FOUND, "
     val command: Command, val expectedEntities: Map<String, Long> = emptyMap(),
     val response: JsonElement? = null, val lease: Id? = null, val fitToken: Long? = null,
     val notBeforeMs: Long = 0, val retryCycleStartAttempt: Int = 0,
+    /** Durable preparation checkpoint. A failed/cancelled step is not silently resubmitted. */
+    val managedKey: String? = null,
+    val managedCredentialRef: Id? = null,
+    val tutorReport: TutorReport? = null,
 )
 @Serializable data class StoredPreview(val preview: PackagePreview, val manifest: PackageManifest, val modules: Map<String, JsonElement>)
 @Serializable data class ArchivedModule(val version: Int, val required: Boolean, val dependencies: List<String>, val data: JsonElement)
@@ -92,6 +96,13 @@ object StateCodec {
         if (bucket in scalar) listOf(Row("_root", bucket, value.toString()))
         else value.jsonObject.map { (key, item) -> Row(bucket, key, item.toString()) }
     }
+    /** Encode once per transaction; changing the revision needs only one scalar row. */
+    fun rowsForCommit(db: Database, before: Map<Pair<String, String>, String>): List<Row>? {
+        val after = rows(db)
+        if (after.size == before.size && after.all { before[it.bucket to it.key] == it.payload }) return null
+        db.revision++
+        return after.map { if (it.bucket == "_root" && it.key == "revision") it.copy(payload = db.revision.toString()) else it }
+    }
     fun decode(rows: List<Row>): Database {
         if (rows.isEmpty()) return Database()
         val root = mutableMapOf<String, JsonElement>()
@@ -116,7 +127,10 @@ internal fun Database.card(activity: Activity): ActivityCard {
     val target = targets[activity.targetId]; val sense = senses[target?.senseId]; val word = words[sense?.wordId]
     return activity.card().copy(groupId = target?.groupId,
         targetWords = if (activity.kind in setOf(ActivityKind.WRITING, ActivityKind.REWRITE, ActivityKind.FAMILIARITY)) activity.targetWords.ifEmpty { listOfNotNull(word?.spelling) } else emptyList(),
-        cue = activity.cue ?: sense?.meaning, hintAllowed = activity.kind !in introductionKinds)
+        cue = activity.cue ?: sense?.meaning, hintAllowed = activity.kind !in introductionKinds,
+        introduction = if (activity.kind == ActivityKind.CONTRAST && sense != null && word != null)
+            SenseIntroduction(word.spelling, sense.partOfSpeech, sense.meaning, sense.examples,
+                if (settings.learningMode == LearningMode.AI_MANAGED) explanation(sense)?.takeIf { it.basedOnSenseVersion == sense.version }?.content else null) else null)
 }
 internal fun Database.version(key: String): Long? {
     val parts = key.split(':', limit = 2); val identity = Id(parts[1])

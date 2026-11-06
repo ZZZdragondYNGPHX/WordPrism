@@ -115,6 +115,9 @@
                             "$ref": "#/$defs/set_call_policy-variant"
                         },
                         {
+                            "$ref": "#/$defs/set_learning_mode-variant"
+                        },
+                        {
                             "$ref": "#/$defs/set_settings-variant"
                         },
                         {
@@ -131,6 +134,9 @@
                         },
                         {
                             "$ref": "#/$defs/test_connection-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/tutor_session-variant"
                         },
                         {
                             "$ref": "#/$defs/unbind_preset-variant"
@@ -310,7 +316,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 },
                 "presetId": {
@@ -1134,6 +1141,30 @@
             ],
             "additionalProperties": false
         },
+        "set_learning_mode-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "set_learning_mode"
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "STANDARD",
+                        "AI_MANAGED"
+                    ]
+                },
+                "expectedVersion": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "type",
+                "mode",
+                "expectedVersion"
+            ],
+            "additionalProperties": false
+        },
         "set_settings-variant": {
             "type": "object",
             "properties": {
@@ -1219,6 +1250,13 @@
                 },
                 "preGenerationMaxPerDay": {
                     "type": "integer"
+                },
+                "learningMode": {
+                    "type": "string",
+                    "enum": [
+                        "STANDARD",
+                        "AI_MANAGED"
+                    ]
                 }
             },
             "required": [],
@@ -1385,6 +1423,62 @@
             ],
             "additionalProperties": false
         },
+        "tutor_session-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "tutor_session"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "moment": {
+                    "type": "string",
+                    "enum": [
+                        "WELCOME",
+                        "COACH",
+                        "QUESTION",
+                        "RECAP"
+                    ]
+                },
+                "presentationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "answer": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "question": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "sessionId",
+                "moment"
+            ],
+            "additionalProperties": false
+        },
         "unbind_preset-variant": {
             "type": "object",
             "properties": {
@@ -1399,7 +1493,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 }
             },

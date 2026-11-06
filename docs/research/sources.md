@@ -342,6 +342,48 @@ Nakata & Suzuki，2018 年在线、2019 年卷期。已读取出版方摘要和�
 
 已读取默认分支包清单和库入口文件。清单当时标识版本 `6.6.2`、Rust edition 2024 与 BSD-3-Clause；入口实际导出 `compute_parameters`、`evaluate_with_time_series_splits`、`MemoryState`、`FSRS` 等能力。默认分支文件不证明这些 API 已包含于同版本号的发布包，正式使用需固定 release 或提交。没有读取全部实现、运行拟合或验证 Android ABI；条件编译中存在 aarch64 支持也不等于本项目已构建成功。
 
+## AI 助教增强调研（2026-11-05）
+
+### R54
+
+[Duolingo: How we use AI to create speaking practice](https://blog.duolingo.com/ai-and-video-call/)。已读官方设计说明。对话后提炼事实，并在下次提供给模型，用来保持连续性。对 WordPrism 的实现启发是持久保存有来源的教学观察，在后续提示、讲解与出题中复用；不照搬私人生活事实采集，也不把模型推测当作已证实的学习能力。
+
+### R55
+
+[Khanmigo 官方介绍](https://khanmigo.ai/)。已读面向学习者与 FAQ 的说明，强调引导思考和逐步提示。落实为学习页直接追问、请求帮助记录为辅助练习、保持独立回忆与看过提示的结果分开。
+
+### R56
+
+[Kestin et al., Scientific Reports, 2025](https://doi.org/10.1038/s41598-025-97652-6)。已读摘要、教学设计与讨论部分。研究在大学物理课程比较定制 AI 导师和课堂主动学习，教学设计包含主动参与、控制认知负担、支架与及时反馈。不能据此宣称本软件对英语记忆有效；实现采用简短针对性回应、理解追问与自定学习速度。
+
+### R57
+
+[Bastani et al., PNAS, 2025](https://doi.org/10.1073/pnas.2422633122)。取得出版方索引摘要，PMC 正文读取遇到验证页。高中数学实验提示，练习时表现改善不保证无辅助测试进步；基于教学设计的提示能缓解负面影响。对应到本软件：助教不修改真实成绩，提示请求先登记曝光，不把 AI 点评直接写成 FSRS 掌握度。
+
+### R58
+
+[Making AI Tutoring Productive, NBER Working Paper 35621, August 2026](https://www.nber.org/papers/w35621)。已读取官方检索返回的完整摘要，直接页面读取返回 403，未据此声称阅读全文。6000 多名学生的数学练习实验观察到错误之后的支持价值，同时耗时增加；延迟测验的积极结果有限且依赖具体流程。这是工作论文。落实为错误驱动的点评、针对性补题及可直接继续的交互，避免强制长对话。
+
+### R59
+
+[Google's Pedagogical Framework for Generative AI to Support Human Learning, 2026](https://research.google/pubs/googles-pedagogical-framework-for-generative-ai-to-support-human-learning/)。已读官方摘要，五个原则为主动学习、认知负荷、动机、适应学习者与元认知。采用按真实回答调整讲法、让学习者解释自己的理解、只在当前计划内调整顺序。该框架不是本软件学习效果的实验证据。
+
+### R60
+
+[Anthropic: Effective context engineering for AI agents](https://www.anthropic.com/research/effective-context-engineering-for-ai-agents)。已读结构化记忆与上下文管理说明。落实为可检索的短教学观察、原作答引用、有限的近期相关上下文；不把全库无差别塞给每次请求。记忆随答案修订与题目争议失效，后续请求重新读取有效证据。
+
+### R61
+
+[Speak Tutor 官方说明](https://help.speak.com/en/articles/11396739-what-is-speak-tutor)。读取入口、学习活动适应和自定义练习说明；取材为学习过程中随时追问与上下文辅导入口。未复制其界面资产或第三方代码。
+
+### R62
+
+[Android Compose Button](https://developer.android.com/develop/ui/compose/components/button)。读取官方五类按钮用途，通过 Context7 核对 Material3 底部面板的默认 IME inset 行为。采用单一实色主操作、低强调辅助入口、48 dp 图标触点和紧凑组合输入栏；不再叠加重复的键盘 padding。
+
+### R63
+
+[Duolingo Max 官方介绍与界面图](https://blog.duolingo.com/duolingo-max/)。读取学习内对话、角色练习及反馈说明，参考对话与练习相邻的组织方式。页面产品说明已更新，旧 Explain My Answer 截图仅用于历史界面参考，不据此宣称其当前独立功能仍然存在。WordPrism 沿用自身靛蓝、淡紫、英文辨析字体与原生组件，没有引入网页组件库、品牌图像或额外 UI 依赖。
+
 ## 获取与使用边界
 
 - 检索中出现的非官方导出服务和用户博客，没有用于证明竞品官方能力。

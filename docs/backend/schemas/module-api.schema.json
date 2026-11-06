@@ -134,7 +134,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 },
                 "presetId": {
@@ -170,7 +171,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 },
                 "preset": {

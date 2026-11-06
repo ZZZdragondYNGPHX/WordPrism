@@ -97,7 +97,8 @@ internal fun Database.startSession(now: Long, extra: Boolean, introductions: Boo
         sessions[it.id] = tick(it.id, TimerMode.PAUSED, now).copy(status = SessionStatus.FINISHED)
     }
     val existing = sessions.values.filter { it.status != SessionStatus.FINISHED && it.belongsTo(day) }.maxByOrNull { it.timerAtMs ?: days[it.dayId]?.opensAtMs ?: 0 }
-    if (existing != null && (existing.awaitingAdvance || existing.targetIds.any { it !in existing.completedTargets })) {
+    if (existing != null && (existing.awaitingAdvance || existing.targetIds.any { it !in existing.completedTargets } ||
+            existing.reinforcementTargets.any { it !in existing.completedReinforcements })) {
         requireBusiness(extra || existing.extraBudgetDayId == day.id || existing.currentActivityId != null || studyTime(day.id) < settings.budgetMinutes * 60_000L,
             "已达到当日预算；继续学习需要本次明确选择", ErrorCode.BUDGET_EXCEEDED)
         val resumed = tick(existing.id, TimerMode.STUDY, now).copy(status = SessionStatus.ACTIVE, extraBudgetDayId = if (extra) day.id else existing.extraBudgetDayId)
@@ -141,7 +142,10 @@ internal fun Database.nextActivity(sessionId: Id, now: Long): View.SessionState 
         return sessionView(paused)
     }
     val sessionPolicy = policyVersions[session.policyVersion].found("会话策略")
-    val target = session.targetIds.filter { it !in session.completedTargets }.mapNotNull { targets[it] }.firstOrNull { activeTarget(it, sessionPolicy) }
+    val remaining = session.targetIds.filter { it !in session.completedTargets }
+    val corrections = session.reinforcementTargets.filter { it !in session.completedReinforcements }
+    val target = (remaining + corrections).mapNotNull { targets[it] }.firstOrNull { activeTarget(it, sessionPolicy) }
+    val reinforcing = target?.id in session.completedTargets
     if (target == null) {
         val finished = tick(session.id, TimerMode.PAUSED, now).copy(status = SessionStatus.FINISHED)
         sessions[session.id] = finished; return sessionView(finished)
@@ -149,16 +153,21 @@ internal fun Database.nextActivity(sessionId: Id, now: Long): View.SessionState 
     val used = answers.values.filter { it.targetId == target.id }.mapNotNull { activities[it.activityId]?.contextKey }.toSet()
     val kindCounts = answers.values.filter { answerDayId(it) == currentDay.id }.mapNotNull { activities[it.activityId]?.kind }.groupingBy { it }.eachCount()
     val familiarity = answers.values.lastOrNull { targets[it.targetId]?.senseId == target.senseId && activities[it.activityId]?.kind == ActivityKind.FAMILIARITY }
-    val contrasted = answers.values.any { activities[it.activityId]?.kind == ActivityKind.CONTRAST && targets[it.targetId]?.groupId == target.groupId }
+    val introduced = answers.values.any { it.valid && !it.input.skipped && activities[it.activityId]?.kind == ActivityKind.CONTRAST &&
+        (targets[it.targetId]?.senseId == target.senseId || target.groupId != null && targets[it.targetId]?.groupId == target.groupId) }
     val kind = when {
         session.includeIntroductions && familiarity == null && answers.values.none { it.targetId == target.id } -> ActivityKind.FAMILIARITY
-        session.includeIntroductions && familiarity?.input?.familiar == false && target.groupId != null && !contrasted -> ActivityKind.CONTRAST
+        session.includeIntroductions && familiarity?.input?.familiar == false && !introduced -> ActivityKind.CONTRAST
         else -> sessionPolicy.mix.filter { it.key !in introductionKinds && it.key.ability() == target.ability && it.value > 0 }.minByOrNull { (kind, weight) -> (kindCounts[kind] ?: 0).toDouble() / weight }?.key ?: target.ability.kind()
     }
-    val activity = activities.values.filter { it.targetId == target.id && it.kind == kind && !it.disputed && reusable(it, sessionPolicy, now) }
-        .sortedWith(compareBy<Activity> { it.contextKey in used }.thenBy { it.id.value }).firstOrNull() ?: localActivity(target, kind, now)
+    val activity = activities.values.filter { it.targetId == target.id && it.kind == kind && !it.disputed && reusable(it, sessionPolicy, now) &&
+        (!reinforcing || it.contextKey !in used) }
+        .sortedWith(compareBy<Activity> { it.contextKey in used }.thenBy {
+            val parent = operations[it.source.operationId]?.parentOperationId
+            (jobs[parent]?.command as? Command.TutorSession)?.sessionId != session.id
+        }.thenBy { it.id.value }).firstOrNull() ?: localActivity(target, kind, now)
     val updated = session.copy(currentActivityId = activity.id, currentPresentationId = id())
-    if (target.senseId in session.exposedSenseIds) exposures[updated.currentPresentationId!!] = Exposure(answerRevealed = true)
+    if (reinforcing || target.senseId in session.exposedSenseIds) exposures[updated.currentPresentationId!!] = Exposure(answerRevealed = true)
     sessions[session.id] = updated; return sessionView(updated)
 }
 internal fun Database.reusable(activity: Activity, policy: TrainingPolicy, now: Long): Boolean = activity.senseVersion == senses[targets[activity.targetId]?.senseId]?.version &&
@@ -173,16 +182,22 @@ internal fun Database.localActivity(target: LearningTarget, kind: ActivityKind, 
             .filter { it.id != sense.id && it.wordId != word.id && normalize(it.meaning) != normalize(sense.meaning) }.distinctBy { it.wordId }.take(3)
         (peers + sense).map { Choice(it.id.value, words[it.wordId].found("词条").spelling, it.id) }.shuffled(kotlin.random.Random(target.id.value.hashCode().toLong() xor now))
     } else emptyList()
+    val previousPrompts = activities.values.filter { it.targetId == target.id && it.kind == kind }.map { it.prompt }.toSet()
+    val forms = (sense.acceptedForms + word.spelling).filter { it.isNotBlank() }.distinct().sortedByDescending { it.length }
+    val wordPattern = Regex("(?i)(?<![\\p{L}])(?:" + forms.joinToString("|") { Regex.escape(it) } + ")(?![\\p{L}])")
+    val context = if (kind in setOf(ActivityKind.RECALL, ActivityKind.SPELLING, ActivityKind.CHOICE))
+        sense.examples.filter { wordPattern.containsMatchIn(it) }.map { wordPattern.replace(it, "____") }
+            .firstOrNull { it !in previousPrompts } else null
     val activity = Activity(id(), targetId = target.id, kind = kind,
         prompt = when (kind) {
             ActivityKind.WRITING -> "用 ${word.spelling}（${sense.meaning}）写一句符合这个义项的句子。"
             ActivityKind.REWRITE -> "将释义“${sense.meaning}”换一种说法写成英语句子，使用 ${word.spelling}。"
             ActivityKind.FAMILIARITY -> "你认识 ${word.spelling} 吗？"
             ActivityKind.CONTRAST -> groups[target.groupId]?.purpose ?: sense.meaning
-            else -> "${sense.partOfSpeech} · ${sense.meaning}"
+            else -> context ?: "${sense.partOfSpeech} · ${sense.meaning}"
         },
         choices = options, acceptedAnswers = if (kind in setOf(ActivityKind.WRITING, ActivityKind.REWRITE) + introductionKinds) emptyList() else (sense.acceptedForms + word.spelling).distinct(),
-        explanation = sense.meaning, contextKey = "local:${sense.id.value}:${sense.version}:${kind}", source = Provenance("local", atMs = now), senseVersion = sense.version,
+        explanation = sense.meaning, contextKey = "local:${sense.id.value}:${sense.version}:${kind}:${context.orEmpty().hashCode()}", source = Provenance("local", atMs = now), senseVersion = sense.version,
         cue = sense.meaning, targetWords = listOf(word.spelling))
     requireBusiness(activities.size < 30000, "当前题目数量已达到 30000 上限", ErrorCode.LIMIT_EXCEEDED)
     activities[activity.id] = activity; activityVersions["${activity.id.value}:${activity.version}"] = activity; return activity
@@ -244,22 +259,31 @@ internal fun Database.submitAnswer(command: Command.SubmitAnswer, now: Long, mem
     answers[answer.id] = answer; answerVersions["${answer.id.value}:1"] = answer; presentations[command.presentationId] = answer.id
     if (rating != null) schedules[target.id] = review(before, answer, policyVersions[session.policyVersion].found("策略版本"), memory)
     if (!open && !introduction) {
-        val result = Feedback(id(), answer.id, answer.version, activity.explanation, if (input.skipped) GradeSource.UNGRADED else GradeSource.OBJECTIVE)
+        val confusion = if (!correct && !input.skipped && choice != null) choice.senseId?.let(senses::get)?.let { selected ->
+            "你选了 ${choice.text}：${selected.meaning}。本题要表达：${senses[target.senseId]?.meaning.orEmpty()}。"
+        } else null
+        val result = Feedback(id(), answer.id, answer.version, activity.explanation,
+            if (input.skipped) GradeSource.UNGRADED else GradeSource.OBJECTIVE, confusionNote = confusion)
         feedback[result.id] = result
     }
     val timed = tick(session.id, TimerMode.STUDY, now)
     val exposed = when (activity.kind) {
-        ActivityKind.CONTRAST -> memberships.values.filter { it.groupId == target.groupId && it.active }.map { it.senseId }.toSet()
+        ActivityKind.CONTRAST -> setOf(target.senseId) + memberships.values.filter { target.groupId != null && it.groupId == target.groupId && it.active }.map { it.senseId }
         ActivityKind.FAMILIARITY -> setOf(target.senseId)
         else -> emptySet()
     }
+    val reinforcing = !introduction && target.id in timed.completedTargets
+    val needsCorrection = session.includeIntroductions && !reinforcing && verdict == Verdict.INCORRECT && !activity.disputed
+    val reinforcementTargets = if (needsCorrection) (timed.reinforcementTargets + target.id).distinct() else timed.reinforcementTargets
+    val completedReinforcements = if (reinforcing) timed.completedReinforcements + target.id else timed.completedReinforcements
     sessions[session.id] = timed.copy(completedTargets = if (introduction) timed.completedTargets else timed.completedTargets + target.id,
+        reinforcementTargets = reinforcementTargets, completedReinforcements = completedReinforcements,
         currentActivityId = null, currentPresentationId = null, lastAnswerId = answer.id, awaitingAdvance = true, revisingAnswerId = null,
         exposedSenseIds = timed.exposedSenseIds + exposed, lastPresentationId = command.presentationId)
     if (open && input.requestFeedback && !input.skipped) queue(Command.EvaluateResponse(Ref(answer.id, answer.version)), Feature.WRITING_FEEDBACK, now)
     val day = days[answer.dayId].found("学习日"); val plan = day.planId?.let { plans[it] }
     val done = answers.values.filter { answerDayId(it) == day.id && activities[it.activityId]?.kind !in introductionKinds }.map { it.targetId }.toSet()
-    if (!introduction && plan != null && done.containsAll(plan.targetIds)) finishDay(day.id, DayEndReason.PLAN_COMPLETED, now)
+    if (!introduction && plan != null && done.containsAll(plan.targetIds) && completedReinforcements.containsAll(reinforcementTargets)) finishDay(day.id, DayEndReason.PLAN_COMPLETED, now)
     else if (studyTime(day.id) >= settings.budgetMinutes * 60_000L) finishDay(day.id, DayEndReason.BUDGET_REACHED, now)
     return answerView(answer)
 }
@@ -269,12 +293,16 @@ internal fun Database.rating(answer: Answer): Rating? = if (answer.rating in set
 } else answer.rating
 internal fun Database.answerView(answer: Answer): View.AnswerResult {
     val activity = activityVersions["${answer.activityId.value}:${answer.activityVersion}"]
+    val correctChoices = activity?.choices.orEmpty().filter { choice ->
+        activity!!.acceptedAnswers.any { it == choice.id || normalize(it) == normalize(choice.text) }
+    }.map { it.id }
     return View.AnswerResult(answer, feedback.values.filter { it.answerId == answer.id && it.answerVersion == answer.version }, schedules[answer.targetId],
-        activity?.acceptedAnswers.orEmpty(), activity?.choices?.firstOrNull { c -> activity.acceptedAnswers.any { it == c.id || normalize(it) == normalize(c.text) } }?.id,
+        activity?.acceptedAnswers.orEmpty(), correctChoices.firstOrNull(),
         answer.valid && answer.verdict == Verdict.CORRECT && answer.affectsSchedule && answer.gradeSource == GradeSource.OBJECTIVE,
         difficultyMark(answer)?.difficult ?: answer.input.difficult,
         answer.gradeSource == GradeSource.UNGRADED && !answer.input.skipped && activity?.kind in setOf(ActivityKind.WRITING, ActivityKind.REWRITE),
-        operations.values.asSequence().filter { op -> (jobs[op.id]?.command as? Command.EvaluateResponse)?.answer == Ref(answer.id, answer.version) && op.status != OperationStatus.SUPERSEDED }.latestOperation()?.id)
+        operations.values.asSequence().filter { op -> (jobs[op.id]?.command as? Command.EvaluateResponse)?.answer == Ref(answer.id, answer.version) && op.status != OperationStatus.SUPERSEDED }.latestOperation()?.id,
+        correctChoices)
 }
 
 internal fun review(before: Schedule, answer: Answer, policy: TrainingPolicy, kernel: MemoryKernel): Schedule {

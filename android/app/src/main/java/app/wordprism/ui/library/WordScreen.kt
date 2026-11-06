@@ -167,7 +167,7 @@ fun WordScreen(wordId: String, onBack: () -> Unit, openApi: () -> Unit, openGrou
                     word.groups.forEach { g -> TextButton(onClick = { openGroup(g.id.value) }) { Text(g.title) } }
                 }
                 Spacer(Modifier.height(20.dp)); Hairline()
-                SectionTitle("词源与助记")
+                SectionTitle("理解与记忆")
                 support?.operation?.let { op ->
                     OperationLine(op, onCancel = { vm.cancel(op.id) }, onRetry = { vm.retry(op.id) })
                     if (OperationAction.Undo in op.actions) TextButton(onClick = { vm.undo(op.id) }) { Text("撤销这次讲解") }
@@ -185,13 +185,19 @@ fun WordScreen(wordId: String, onBack: () -> Unit, openApi: () -> Unit, openGrou
                         source?.presetName?.let { "预设「$it」" }, source?.model,
                         source?.generatedAt?.dayAndClock(), "内容第 ${support.version} 版").joinToString(" · ")
                     Text(sourceText, style = MaterialTheme.typography.bodySmall, color = c.muted)
-                    support.sections.forEach { section ->
-                        SectionTitle(section.title)
-                        SelectionContainer {
-                            Text(section.text, style = if (section.id in setOf("english_definition", "examples")) WpType.english else MaterialTheme.typography.bodyLarge, color = c.ink)
+                    key(current?.id) {
+                        val primary = setOf("explanation", "english_definition", "usage")
+                        val order = listOf("explanation", "english_definition", "usage", "examples", "word_parts", "etymology", "mnemonic")
+                        support.sections.sortedBy { order.indexOf(it.id).takeIf { index -> index >= 0 } ?: Int.MAX_VALUE }.forEach { section ->
+                            SectionDisclosure(section.title, initiallyExpanded = section.id in primary) {
+                                SelectionContainer {
+                                    Text(section.text, style = if (section.id in setOf("english_definition", "examples")) WpType.english else MaterialTheme.typography.bodyLarge, color = c.ink)
+                                }
+                                section.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 8.dp)) }
+                                Spacer(Modifier.height(16.dp))
+                            }
+                            Hairline()
                         }
-                        section.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 8.dp)) }
-                        Spacer(Modifier.height(16.dp)); Hairline()
                     }
                     SectionTitle("关联词族")
                     Text("选中后加入词库，可以撤销；不会自动并入当前词组。", style = MaterialTheme.typography.bodySmall, color = c.muted)

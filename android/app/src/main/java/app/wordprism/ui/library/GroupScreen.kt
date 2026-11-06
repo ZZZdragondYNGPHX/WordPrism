@@ -139,8 +139,14 @@ fun GroupScreen(groupId: String, onBack: () -> Unit, openApi: () -> Unit, openWo
                     Spacer(Modifier.width(10.dp))
                     Text(m.lemma, style = WpType.word.copy(fontSize = WpType.word.fontSize * 0.8f), color = c.ink, modifier = Modifier.weight(1f))
                     StatusPill(m.status.label(), tone = m.status.tone())
-                    IconButton(onClick = { editing = m.wordId.value }) { Icon(Icons.Outlined.EditNote, "编辑 ${m.lemma}") }
-                    IconButton(onClick = { removing = m.wordId.value }, enabled = g.members.size > 1) { Icon(Icons.Outlined.RemoveCircleOutline, "从词组移出 ${m.lemma}") }
+                    var memberMenu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { memberMenu = true }) { Icon(Icons.Outlined.MoreVert, "${m.lemma} 的更多操作") }
+                        DropdownMenu(memberMenu, onDismissRequest = { memberMenu = false }) {
+                            DropdownMenuItem(text = { Text("编辑释义与笔记") }, onClick = { memberMenu = false; editing = m.wordId.value })
+                            DropdownMenuItem(text = { Text("从词组移出") }, enabled = g.members.size > 1, onClick = { memberMenu = false; removing = m.wordId.value })
+                        }
+                    }
                 }
                 m.senses.forEach { s -> Text("${s.partOfSpeech}  ${s.glossZh}", style = MaterialTheme.typography.bodyLarge, color = c.ink, modifier = Modifier.padding(start = 20.dp, top = 4.dp)) }
                 Column(Modifier.padding(start = 20.dp)) {
@@ -151,7 +157,7 @@ fun GroupScreen(groupId: String, onBack: () -> Unit, openApi: () -> Unit, openWo
                     }
                     m.note?.let { Text("笔记：$it", style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 8.dp)) }
                     m.joinReason?.let { Text("归组理由：$it", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp)) }
-                    TextButton(onClick = { openWord(m.wordId.value) }) { Text("词源与助记") }
+                    TextButton(onClick = { openWord(m.wordId.value) }) { Text("查看完整讲解") }
                 }
                 Spacer(Modifier.height(12.dp)); Hairline()
             }

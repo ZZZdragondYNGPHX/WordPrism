@@ -103,6 +103,7 @@ internal class Packages(private val engine: CoreEngine) {
         } }
         val selected = if (purpose == PackagePurpose.BACKUP) StateCodec.clone(db) else content(db, wordIds)
         selected.previews.clear()
+        selected.jobs.replaceAll { _, job -> job.copy(managedCredentialRef = null) }
         val all = Contract.json.encodeToJsonElement(selected).jsonObject
         val values = linkedMapOf<String, JsonElement>()
         val keys = if (purpose == PackagePurpose.BACKUP) moduleFields.keys else setOf("library")
@@ -146,7 +147,7 @@ internal class Packages(private val engine: CoreEngine) {
         val staged = decode(stored.manifest, stored.modules); validateDatabase(staged, engine.memory)
         val opId = id()
         if (restoring) {
-            staged.settings = staged.settings.copy(automaticAnalysis = false, automaticGeneration = false, automationEpoch = maxOf(staged.settings.automationEpoch, db.settings.automationEpoch) + 1)
+            staged.settings = staged.settings.copy(automaticAnalysis = false, automaticGeneration = false, learningMode = LearningMode.STANDARD, automationEpoch = maxOf(staged.settings.automationEpoch, db.settings.automationEpoch) + 1)
             staged.operations.replaceAll { _, op -> if (op.status !in terminalStatuses) op.copy(status = OperationStatus.RESTORED_PENDING, fault = Fault(ErrorCode.DISABLED, "备份恢复后需要重新授权任务")) else op }
             staged.jobs.replaceAll { _, job -> job.copy(lease = null, fitToken = null) }
             staged.sessions.replaceAll { _, session -> session.copy(timerMode = TimerMode.PAUSED, timerAtMs = null, status = if (session.status == SessionStatus.ACTIVE) SessionStatus.PAUSED else session.status) }
@@ -295,13 +296,25 @@ fun validateDatabase(db: Database, memory: dev.wordprism.memory.MemoryKernel) {
     valid(db.days.all { (id, day) -> id == day.id && day.opensAtMs < day.closesAtMs && (day.planId == null || db.plans[day.planId]?.dayId == id) &&
         (day.automaticOperationId == null || day.automaticOperationId in db.operations) }, "学习日引用无效")
     valid(db.sessions.values.all { s -> (s.currentActivityId == null || s.currentActivityId in db.activities) &&
-        (s.lastAnswerId == null || db.answers[s.lastAnswerId]?.sessionId == s.id) && s.completedTargets.all { it in s.targetIds } }, "会话进度无效")
+        (s.lastAnswerId == null || db.answers[s.lastAnswerId]?.sessionId == s.id) && s.completedTargets.all { it in s.targetIds } &&
+        s.reinforcementTargets.distinct().size == s.reinforcementTargets.size && s.reinforcementTargets.all { it in s.completedTargets } &&
+        s.completedReinforcements.all { it in s.reinforcementTargets } }, "会话进度无效")
     valid(db.timeSpans.all { (id, span) -> id == span.id && span.sessionId in db.sessions && span.dayId in db.days && span.fromMs <= span.toMs &&
         span.fromMs >= db.days.getValue(span.dayId).opensAtMs && span.toMs <= db.days.getValue(span.dayId).closesAtMs &&
         (span.targetId == null || span.targetId in db.targets) }, "计时间隔无效")
     valid(db.feedback.values.all { it.answerId in db.answers && "${it.answerId.value}:${it.answerVersion}" in db.answerVersions }, "反馈引用无效")
     valid(db.difficultyMarks.all { (id, mark) -> id == mark.id && "${mark.answerId.value}:${mark.answerVersion}" in db.answerVersions }, "难度标记引用无效")
     valid(db.bindings.values.all { it.presetId in db.presets } && db.jobs.keys.all { it in db.operations }, "配置或任务引用无效")
+    db.jobs.values.forEach { job ->
+        val tutor = job.command as? Command.TutorSession
+        if (tutor != null) valid(tutor.sessionId in db.sessions && (tutor.question?.length ?: 0) <= 2000 &&
+            (tutor.answer?.let { db.answerVersions["${it.id.value}:${it.version}"]?.sessionId == tutor.sessionId } != false), "助教会话或作答引用无效")
+        job.tutorReport?.let { report ->
+            valid(tutor != null && report.message.length in 1..2500 && (report.checkQuestion?.length ?: 0) <= 400 &&
+                (report.observation?.length ?: 0) <= 600 && report.evidence.size <= 24 && report.nextTargets.size <= 40 &&
+                report.evidence.all { "${it.id.value}:${it.version}" in db.answerVersions }, "助教记录或证据无效")
+        }
+    }
     valid(db.changes.values.all { it.operationId in db.operations && (it.snapshotId == null || it.snapshotId in db.snapshots) }, "调整历史引用无效")
     valid(db.operations.all { (id, op) -> id == op.id && (op.parentOperationId == null || op.parentOperationId in db.operations) &&
         (op.undoneBy == null || op.undoneBy in db.operations) && (op.snapshotId == null || op.snapshotId in db.snapshots) }, "操作记录引用无效")

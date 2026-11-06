@@ -60,6 +60,7 @@ internal class MockStudy(private val c: MockCore, private val analysis: () -> Mo
             s.adjustedBy,
             if (d.answers.size + d.history.answers < 200) "个人数据较少，按初始估计安排" else "按你近 14 天的实际用时估计",
             if (due > 12) "到期 $due 项，今天优先复习，其余顺延" else null,
+            libraryWords = d.words.size,
         )
     }.distinctUntilChanged()
 
@@ -121,7 +122,7 @@ internal class MockStudy(private val c: MockCore, private val analysis: () -> Mo
 
     // ------------------------------------------------------------------ session API
 
-    override suspend fun startOrResume(request: ClientRequestId): SdkResult<SessionId> = c.tx { d0 ->
+    override suspend fun startOrResume(request: ClientRequestId, continuePastBudget: Boolean): SdkResult<SessionId> = c.tx { d0 ->
         val (d, day) = ensureDay(d0)
         day.openSessionId?.let { sid ->
             val s = d.sessions[sid]
@@ -204,7 +205,7 @@ internal class MockStudy(private val c: MockCore, private val analysis: () -> Mo
         fun fb(verdict: Verdict, headline: String, schedule: Boolean, note: String?, extra: (Feedback) -> Feedback = { it }) =
             extra(Feedback(answerId, version, (answer as? Answer.Text)?.text, verdict, headline, act.explanation, affectsSchedule = schedule, scheduleNote = note))
         return when (val v = act.view) {
-            is ActivityView.Contrast -> fb(Verdict.Recorded, "已看过差异", false, null)
+            is ActivityView.Contrast, is ActivityView.LearnWord -> fb(Verdict.Recorded, "已看过基本义", false, null)
             is ActivityView.Familiarity -> {
                 val knows = (answer as? Answer.Familiarity)?.knowsIt == true
                 fb(Verdict.Recorded, if (knows) "好的，直接进入辨析" else "先看基本义，再做辨析", false, "只用于安排学习路径，不计入对错")

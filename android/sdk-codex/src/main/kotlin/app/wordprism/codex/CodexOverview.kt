@@ -33,7 +33,7 @@ class CodexOverview(private val b: CodexBridge) : OverviewApi {
                 s.newContext.metric("new_context", "新语境表现", "此前未做过的 AI 语境；不计看过答案或使用提示的作答")), abilities,
             d.confusions.map { ConfusionPair(it.expected, it.selected, it.count, it.opportunities, it.trend, "趋势证据不足", it.lowSample, it.groupId?.value?.let(::GroupId)) },
             LoadStats(s.dueTargets, d.overdueTargets, d.forecast.map { DayForecast(LocalDay(it.date), it.targets, (it.estimatedMs / 60_000).toInt()) },
-                "按当前记忆安排预测，暂按每目标约 1 分钟估计；未假设未来作答结果或新增词量"),
+                "按当前记忆安排与各题型近期有效用时估计；样本不足时采用初始估计，不含未来新增词或尚未发生的作答"),
             listOf(CountMetric("争议作答", s.disputedAnswers), CountMetric("使用提示或看过答案", s.hintedAnswers), CountMetric("跳过", s.skippedAnswers), CountMetric("收到的 AI 反馈", s.aiFeedbackCount)),
             d.usage.map { UsageRow(it.feature.toSdk(), featureLabel(it.feature), it.presetName, UsageFigure(it.requests, it.knownInputTokens, it.knownOutputTokens), it.unknownRequests > 0) })
     }
@@ -47,12 +47,26 @@ class CodexOverview(private val b: CodexBridge) : OverviewApi {
 }
 
 class CodexAdaptation(private val b: CodexBridge) : AdaptationApi {
+    override fun observeManagedLearning(): Flow<ManagedLearning> = b.live {
+        val state = (b.view(Query.ManagedLearning) as View.ManagedLearning).state
+        ManagedLearning(LearningMode(state.mode.name.lowercase()), state.presetId?.value, state.configurationFault?.toSdk(),
+            state.pendingTasks, state.attentionTasks, state.summary)
+    }
+    override suspend fun setLearningMode(mode: LearningMode, request: ClientRequestId): SdkResult<Unit> = safely {
+        val coreMode = when (mode) {
+            LearningMode.Standard -> dev.wordprism.contract.LearningMode.STANDARD
+            LearningMode.AiManaged -> dev.wordprism.contract.LearningMode.AI_MANAGED
+            else -> return@safely invalid<Unit>("未知学习模式")
+        }
+        val settings = (b.view(Query.Settings) as View.Settings).settings
+        b.exec(request, Command.SetLearningMode(coreMode, settings.version)) { Unit }
+    }
     private suspend fun settings(): AdaptationSettings {
         val v = b.view(Query.Settings) as View.Settings
         val ops = (b.view(Query.Operations(200)) as View.Operations).operations.filter { it.feature == CFeature.LEARNING_ANALYSIS }
         val last = ops.maxByOrNull { it.updatedAtMs }
         val snap = last?.snapshotId?.let { (b.optionalView(Query.Snapshot(it)) as? View.Snapshot)?.snapshot }
-        return AdaptationSettings(if (v.settings.automaticAnalysis) AnalysisMode.DailyAfterDayEnd else AnalysisMode.Off, v.settings.budgetMinutes, IntRangeDto(1, 241),
+        return AdaptationSettings(if (v.settings.automaticAnalysis || v.settings.learningMode == dev.wordprism.contract.LearningMode.AI_MANAGED) AnalysisMode.DailyAfterDayEnd else AnalysisMode.Off, v.settings.budgetMinutes, IntRangeDto(1, 241),
             (b.view(Query.PreviewCall(CFeature.LEARNING_ANALYSIS)) as View.Preview).preview.toSdk(b.online.value),
             last?.let { AnalysisRun(OperationId(it.id.value), if (it.automatic) "auto" else "manual", it.triggerDayId?.let { id -> (b.optionalView(Query.GetLearningDay(id)) as? View.Day)?.day?.date?.let(::LocalDay) },
                 it.updatedAtMs.takeIf { _ -> it.status == CStatus.SUCCEEDED }, snap?.asOfMs, it.toSdk().status, it.summary.ifBlank { null }) },

@@ -112,7 +112,7 @@ class CodexLibrary(private val b: CodexBridge) : LibraryApi {
 private fun dev.wordprism.contract.Recommendation.toSdkRecommendation() =
     Recommendation(id.value, spelling, content?.meaning, reason, content == null, inLibrary, libraryWordId?.value?.let(::WordId))
 
-private fun dev.wordprism.contract.ExplanationContent.sections(): List<ExplanationSection> = buildList {
+internal fun dev.wordprism.contract.ExplanationContent.sections(): List<ExplanationSection> = buildList {
     add(ExplanationSection("explanation", "理解这个词", explanation))
     englishDefinition?.let { add(ExplanationSection("english_definition", "英英释义", it)) }
     if (wordParts.isNotEmpty()) add(ExplanationSection("word_parts", "词根与词缀", wordParts.joinToString("\n\n") { part ->

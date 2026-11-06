@@ -37,15 +37,15 @@ class TodayViewModel(sdk: WordPrismSdk, private val saved: SavedStateHandle) : W
     private val _starting = MutableStateFlow(false)
     val starting = _starting.asStateFlow()
 
-    fun start(open: (String) -> Unit) {
+    fun start(open: (String) -> Unit, continuePastBudget: Boolean = false) {
         if (_starting.value) return
         _starting.value = true
         viewModelScope.launch {
-            when (val r = sdk.study.startOrResume(saved.requestIdFor("start"))) {
+            try { when (val r = sdk.study.startOrResume(saved.requestIdFor("start"), continuePastBudget)) {
                 is SdkResult.Ok -> { saved.clearRequestId("start"); open(r.value.value) }
                 is SdkResult.Err -> sayError(r.error)
             }
-            _starting.value = false
+            } finally { _starting.value = false }
         }
     }
 
@@ -61,6 +61,7 @@ class TodayViewModel(sdk: WordPrismSdk, private val saved: SavedStateHandle) : W
 fun TodayScreen(
     openStudy: (String) -> Unit, openIntake: () -> Unit, openAdjustments: () -> Unit,
     openTasks: () -> Unit, openGroup: (String) -> Unit, openApi: () -> Unit,
+    openData: () -> Unit, openFeedback: () -> Unit,
 ) {
     val vm = wpViewModel { sdk, s -> TodayViewModel(sdk, s) }
     CollectMessages(vm, LocalSnackbar.current)
@@ -68,6 +69,7 @@ fun TodayScreen(
     val plan by vm.plan.collectAsStateWithLifecycle()
     val ops by vm.activeOps.collectAsStateWithLifecycle()
     val starting by vm.starting.collectAsStateWithLifecycle()
+    var confirmExtra by rememberSaveable { mutableStateOf(false) }
     var confirmEnd by rememberSaveable { mutableStateOf(false) }
     val c = Wp.colors
 
@@ -75,39 +77,51 @@ fun TodayScreen(
     val p = plan
     if (d == null || p == null) { Loading(); return }
 
+    val empty = p.libraryWords == 0 && p.reviewsDue == 0 && p.newPlanned == 0 && d.openSessionId == null
+    if (empty) {
+        EmptyToday(openIntake, openData)
+        return
+    }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter).padding(bottom = 32.dp)) {
         Spacer(Modifier.height(20.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(d.date.long(), style = MaterialTheme.typography.titleMedium, color = c.muted, modifier = Modifier.weight(1f))
             val running = ops.count { it.status.isActive }
-            if (running > 0) TextButton(onClick = openTasks) { Text("$running 个任务进行中") }
+            if (running > 0) TextButton(onClick = openTasks) { Text("$running 项任务待处理") }
         }
         Spacer(Modifier.height(4.dp))
         Text(headline(d, p), style = MaterialTheme.typography.headlineSmall, color = c.ink)
 
         Spacer(Modifier.height(20.dp))
-        BudgetBar(d)
-
-        Spacer(Modifier.height(24.dp))
         val hasOpen = d.openSessionId != null
+        val hasPlanned = d.completedItems < d.plannedItems
         Button(
-            onClick = { vm.start(openStudy) }, enabled = !starting,
+            onClick = { if (d.budgetState == BudgetState.Reached) confirmExtra = true else vm.start(openStudy) }, enabled = !starting && (hasOpen || hasPlanned),
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = RoundedCornerShape(50),
         ) {
             Text(
                 when {
                     starting -> "正在准备…"
                     hasOpen -> "继续学习（已完成 ${d.completedItems}/${d.plannedItems}）"
-                    d.status == DayStatus.Ended || d.status == DayStatus.PlanCompleted -> "再学一轮"
+                    !hasPlanned -> "今天暂时没有待学内容"
+                    d.status == DayStatus.Ended -> "继续今天的安排"
                     else -> "开始今天的学习"
                 },
                 style = MaterialTheme.typography.titleMedium,
             )
         }
         if (d.status == DayStatus.Ended || d.status == DayStatus.PlanCompleted) {
-            Text("今天的计划已完成。额外学习也会记录，但不会触发第二次自动分析。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 8.dp))
+            Text(if (hasOpen || hasPlanned) "今天已经结束，仍可继续未完成的安排，不会触发第二次自动分析。" else "今天的安排已经完成。可以回看词条和表达反馈，下一次复习会按记忆安排出现。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 8.dp))
         }
 
+        Spacer(Modifier.height(16.dp))
+        TextButton(onClick = openFeedback) {
+            val waiting = ops.count { it.feature == FeatureId.WritingFeedback && it.status.isActive }
+            val failed = ops.count { it.feature == FeatureId.WritingFeedback && it.status in setOf(OperationStatus.Failed, OperationStatus.NeedsConfiguration, OperationStatus.RestoredPending) }
+            Text("表达反馈" + when { failed > 0 -> " · $failed 项需要处理"; waiting > 0 -> " · $waiting 项等待完成"; else -> " · 查看已提交的句子" })
+        }
+        Spacer(Modifier.height(12.dp))
+        BudgetBar(d)
         SectionTitle("今天的安排")
         Panel {
             Row {
@@ -115,10 +129,12 @@ fun TodayScreen(
                 PlanFigure("${p.newPlanned}", "新学", Modifier.weight(1f))
                 PlanFigure("${p.estimatedMinutes}", "预计分钟", Modifier.weight(1f))
             }
-            Spacer(Modifier.height(18.dp))
-            MixBar(p.mix)
-            Spacer(Modifier.height(14.dp))
-            Text(p.estimateBasis, style = MaterialTheme.typography.bodySmall, color = c.muted)
+            Spacer(Modifier.height(12.dp))
+            SectionDisclosure("练习组成与估算", "回忆、辨析与表达交替安排") {
+                MixBar(p.mix)
+                Spacer(Modifier.height(14.dp))
+                Text(p.estimateBasis, style = MaterialTheme.typography.bodySmall, color = c.muted)
+            }
             p.backlogNote?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.caution, modifier = Modifier.padding(top = 4.dp)) }
         }
 
@@ -172,6 +188,12 @@ fun TodayScreen(
         if (d.dailyAnalysis.state == "failed") TextButton(onClick = openApi) { Text("检查分析用的 API 预设") }
     }
 
+    if (confirmExtra) AlertDialog(
+        onDismissRequest = { confirmExtra = false }, title = { Text("今天已达到学习预算") },
+        text = { Text("可以在这里停下，也可以继续。额外用时会照实记录，不会重复触发自动分析。") },
+        confirmButton = { TextButton(onClick = { confirmExtra = false; vm.start(openStudy, continuePastBudget = true) }) { Text("继续学习") } },
+        dismissButton = { TextButton(onClick = { confirmExtra = false }) { Text("先休息") } },
+    )
     if (confirmEnd) {
         AlertDialog(
             onDismissRequest = { confirmEnd = false },
@@ -180,6 +202,26 @@ fun TodayScreen(
             confirmButton = { TextButton(onClick = { confirmEnd = false; vm.endDay() }) { Text("结束今天") } },
             dismissButton = { TextButton(onClick = { confirmEnd = false }) { Text("继续学习") } },
         )
+    }
+}
+
+@Composable
+internal fun EmptyToday(openIntake: () -> Unit, openData: () -> Unit) {
+    val c = Wp.colors
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter, vertical = 28.dp)) {
+        Text("你的易混词，在这里分清", style = MaterialTheme.typography.labelLarge, color = c.action)
+        Text("从一组易混词开始", style = MaterialTheme.typography.headlineSmall, color = c.ink, modifier = Modifier.padding(top = 12.dp))
+        Text("留下总是分不清的词，先理解差异，再用回忆和表达把它们记牢。", style = MaterialTheme.typography.bodyLarge, color = c.muted, modifier = Modifier.padding(top = 12.dp))
+        Spacer(Modifier.height(28.dp))
+        Panel {
+            Text("例如", style = MaterialTheme.typography.labelMedium, color = c.muted)
+            Spacer(Modifier.height(12.dp))
+            PrismStrip(listOf(PrismRow("linear", "linear", listOf(IntRangeDto(4, 6)), "adj. 线性的"), PrismRow("liner", "liner ", listOf(IntRangeDto(4, 5)), "n. 衬里；邮轮")))
+        }
+        Spacer(Modifier.height(28.dp))
+        Button(onClick = openIntake, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) { Text("添加我的第一组词") }
+        OutlinedButton(onClick = openData, modifier = Modifier.fillMaxWidth().padding(top = 10.dp).heightIn(min = 52.dp)) { Text("导入已有词库") }
+        Text("已保存的词库和练习可离线使用。AI 整理需要你配置自己的 API 预设。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 16.dp))
     }
 }
 

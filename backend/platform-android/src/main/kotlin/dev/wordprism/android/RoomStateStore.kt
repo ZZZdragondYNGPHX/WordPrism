@@ -44,9 +44,8 @@ class RoomStateStore(private val database: WordPrismDatabase) : StateStore {
     override suspend fun <T> transaction(block: (CoreDatabase) -> T): T = storage { database.withTransaction {
         val original = dao.all(); val db = StateCodec.decode(original.map { StateCodec.Row(it.bucket, it.key, it.payload) })
         val result = block(db); val before = original.associate { (it.bucket to it.key) to it.payload }
-        if (StateCodec.rows(db).associate { (it.bucket to it.key) to it.payload } != before) {
-            db.revision++
-            val after = StateCodec.rows(db); val keys = after.map { it.bucket to it.key }.toSet()
+        StateCodec.rowsForCommit(db, before)?.let { after ->
+            val keys = after.map { it.bucket to it.key }.toSet()
             original.filter { (it.bucket to it.key) !in keys }.forEach { dao.delete(it.bucket, it.key) }
             dao.put(after.filter { before[it.bucket to it.key] != it.payload }.map { StoredRecord(it.bucket, it.key, it.payload) })
         }

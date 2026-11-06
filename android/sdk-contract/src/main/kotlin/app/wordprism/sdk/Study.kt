@@ -73,6 +73,7 @@ data class LearningPlan(
     val adjustedBy: String?,
     val estimateBasis: String,
     val backlogNote: String?,
+    val libraryWords: Int = 0,
 )
 
 @Serializable
@@ -95,6 +96,7 @@ data class SessionState(
     val budgetState: BudgetState,
     val budgetPromptPending: Boolean,
     val policyVersion: Int,
+    val reinforcementRemaining: Int = 0,
 )
 
 @JvmInline
@@ -115,6 +117,19 @@ sealed interface ActivityView {
     val hintAvailable: Boolean
     val allowDispute: Boolean
 
+    @Serializable @SerialName("learn_word")
+    data class LearnWord(
+        override val id: ActivityId,
+        override val kindLabel: String,
+        val lemma: String,
+        val partOfSpeech: String,
+        val meaning: String,
+        val examples: List<String>,
+        override val hintAvailable: Boolean = false,
+        override val allowDispute: Boolean = false,
+        val support: List<ExplanationSection> = emptyList(),
+    ) : ActivityView
+
     @Serializable @SerialName("contrast")
     data class Contrast(
         override val id: ActivityId,
@@ -122,6 +137,7 @@ sealed interface ActivityView {
         val group: GroupDetail,
         override val hintAvailable: Boolean = false,
         override val allowDispute: Boolean = false,
+        val support: Map<String, List<ExplanationSection>> = emptyMap(),
     ) : ActivityView
 
     @Serializable @SerialName("familiarity")
@@ -230,6 +246,9 @@ data class Feedback(
     val canMarkHard: Boolean = false,
     val markedHard: Boolean = false,
     val canRevise: Boolean = false,
+    val correctOptionIds: List<String> = emptyList(),
+    /** Objective outcome remains visible even when the attempt is assisted practice. */
+    val answerCorrect: Boolean? = null,
 )
 
 @JvmInline
@@ -267,13 +286,22 @@ data class ReviewPoint(val quote: String?, val comment: String, val aboutTarget:
 @Serializable
 data class Hint(val text: String, val note: String)
 
+@Serializable data class TutorMessage(
+    val operation: Operation, val moment: String, val sessionId: SessionId,
+    val presentationId: String? = null, val answerId: String? = null, val answerVersion: Int? = null,
+    val question: String? = null, val message: String? = null, val checkQuestion: String? = null,
+)
+
 interface StudyApi {
+    fun observeTutor(session: SessionId? = null): Flow<List<TutorMessage>> = kotlinx.coroutines.flow.flowOf(emptyList())
+    suspend fun askTutor(session: SessionId, activity: ActivityId, question: String, request: ClientRequestId): SdkResult<OperationId> =
+        SdkResult.Err(SdkError(ErrorCode("unsupported"), "当前后端不支持随身助教", false))
     /** Lifecycle/presence only. All timing and budget decisions belong to the local core. */
     suspend fun reportPresence(session: SessionId, visible: Boolean, waiting: Boolean = false): SdkResult<Unit> = SdkResult.Ok(Unit)
     fun observeLearningDay(): Flow<LearningDay>
     fun observePlan(): Flow<LearningPlan>
     /** Resumes today's open session if any, else starts one. Idempotent per [request]. */
-    suspend fun startOrResume(request: ClientRequestId): SdkResult<SessionId>
+    suspend fun startOrResume(request: ClientRequestId, continuePastBudget: Boolean = false): SdkResult<SessionId>
     fun observeSession(id: SessionId): Flow<SessionState?>
     /** Idempotent per [request]; double taps yield one scored answer. */
     suspend fun submitAnswer(session: SessionId, activity: ActivityId, answer: Answer, request: ClientRequestId): SdkResult<Feedback>

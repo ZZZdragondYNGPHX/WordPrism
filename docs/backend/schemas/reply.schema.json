@@ -66,6 +66,9 @@
                                     "$ref": "#/$defs/library_overview-variant"
                                 },
                                 {
+                                    "$ref": "#/$defs/managed_learning-variant"
+                                },
+                                {
                                     "$ref": "#/$defs/models-variant"
                                 },
                                 {
@@ -106,6 +109,9 @@
                                 },
                                 {
                                     "$ref": "#/$defs/snapshot-variant"
+                                },
+                                {
+                                    "$ref": "#/$defs/tutoring-variant"
                                 },
                                 {
                                     "$ref": "#/$defs/usage-variant"
@@ -251,6 +257,16 @@
                 },
                 "source": {
                     "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                },
+                "introduction": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.SenseIntroduction"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -343,6 +359,161 @@
             "required": [],
             "additionalProperties": false
         },
+        "dev.wordprism.contract.SenseIntroduction": {
+            "type": "object",
+            "properties": {
+                "spelling": {
+                    "type": "string"
+                },
+                "partOfSpeech": {
+                    "type": "string"
+                },
+                "meaning": {
+                    "type": "string"
+                },
+                "examples": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "support": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.ExplanationContent"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "spelling",
+                "partOfSpeech",
+                "meaning"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.ExplanationContent": {
+            "type": "object",
+            "properties": {
+                "explanation": {
+                    "type": "string"
+                },
+                "englishDefinition": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "wordParts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.WordPart"
+                    }
+                },
+                "etymology": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.EtymologyNote"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "mnemonic": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Mnemonic"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "usageNotes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "examples": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "explanation"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.WordPart": {
+            "type": "object",
+            "properties": {
+                "form": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "PREFIX",
+                        "ROOT",
+                        "SUFFIX",
+                        "STEM"
+                    ]
+                },
+                "meaning": {
+                    "type": "string"
+                },
+                "note": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "form",
+                "kind",
+                "meaning"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.EtymologyNote": {
+            "type": "object",
+            "properties": {
+                "explanation": {
+                    "type": "string"
+                },
+                "uncertainty": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "explanation"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.Mnemonic": {
+            "type": "object",
+            "properties": {
+                "story": {
+                    "type": "string"
+                },
+                "cue": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "story"
+            ],
+            "additionalProperties": false
+        },
         "answer-variant": {
             "type": "object",
             "properties": {
@@ -402,6 +573,12 @@
                             "type": "null"
                         }
                     ]
+                },
+                "correctChoiceIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
@@ -628,6 +805,16 @@
                     ]
                 },
                 "optimizationNotes": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "confusionNote": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -1037,6 +1224,21 @@
                             "type": "null"
                         }
                     ]
+                },
+                "plannerVersion": {
+                    "type": "integer"
+                },
+                "deferredReviewCount": {
+                    "type": "integer"
+                },
+                "deferredNewWordCount": {
+                    "type": "integer"
+                },
+                "unavailableTargetCount": {
+                    "type": "integer"
+                },
+                "estimateSamples": {
+                    "type": "integer"
                 }
             },
             "required": [
@@ -1094,7 +1296,8 @@
                                 "EXPLANATION",
                                 "PRACTICE_GENERATION",
                                 "WRITING_FEEDBACK",
-                                "LEARNING_ANALYSIS"
+                                "LEARNING_ANALYSIS",
+                                "TUTORING"
                             ]
                         },
                         {
@@ -1247,6 +1450,9 @@
                     "items": {
                         "$ref": "#/$defs/dev.wordprism.contract.SpellingChoice"
                     }
+                },
+                "managed": {
+                    "type": "boolean"
                 }
             },
             "required": [
@@ -1997,125 +2203,6 @@
             ],
             "additionalProperties": false
         },
-        "dev.wordprism.contract.ExplanationContent": {
-            "type": "object",
-            "properties": {
-                "explanation": {
-                    "type": "string"
-                },
-                "englishDefinition": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
-                "wordParts": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/$defs/dev.wordprism.contract.WordPart"
-                    }
-                },
-                "etymology": {
-                    "anyOf": [
-                        {
-                            "$ref": "#/$defs/dev.wordprism.contract.EtymologyNote"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
-                "mnemonic": {
-                    "anyOf": [
-                        {
-                            "$ref": "#/$defs/dev.wordprism.contract.Mnemonic"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ]
-                },
-                "usageNotes": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "examples": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            },
-            "required": [
-                "explanation"
-            ],
-            "additionalProperties": false
-        },
-        "dev.wordprism.contract.WordPart": {
-            "type": "object",
-            "properties": {
-                "form": {
-                    "type": "string"
-                },
-                "kind": {
-                    "type": "string",
-                    "enum": [
-                        "PREFIX",
-                        "ROOT",
-                        "SUFFIX",
-                        "STEM"
-                    ]
-                },
-                "meaning": {
-                    "type": "string"
-                },
-                "note": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "form",
-                "kind",
-                "meaning"
-            ],
-            "additionalProperties": false
-        },
-        "dev.wordprism.contract.EtymologyNote": {
-            "type": "object",
-            "properties": {
-                "explanation": {
-                    "type": "string"
-                },
-                "uncertainty": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "explanation"
-            ],
-            "additionalProperties": false
-        },
-        "dev.wordprism.contract.Mnemonic": {
-            "type": "object",
-            "properties": {
-                "story": {
-                    "type": "string"
-                },
-                "cue": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "story"
-            ],
-            "additionalProperties": false
-        },
         "dev.wordprism.contract.Recommendation": {
             "type": "object",
             "properties": {
@@ -2371,6 +2458,12 @@
                             "type": "null"
                         }
                     ]
+                },
+                "correctChoiceIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
@@ -2973,6 +3066,72 @@
             ],
             "additionalProperties": false
         },
+        "managed_learning-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "managed_learning"
+                },
+                "state": {
+                    "$ref": "#/$defs/dev.wordprism.contract.ManagedLearningState"
+                }
+            },
+            "required": [
+                "type",
+                "state"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.ManagedLearningState": {
+            "type": "object",
+            "properties": {
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "STANDARD",
+                        "AI_MANAGED"
+                    ]
+                },
+                "presetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "configurationFault": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Fault"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "pendingTasks": {
+                    "type": "integer"
+                },
+                "attentionTasks": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "mode",
+                "presetId",
+                "configurationFault",
+                "pendingTasks",
+                "attentionTasks",
+                "summary"
+            ],
+            "additionalProperties": false
+        },
         "models-variant": {
             "type": "object",
             "properties": {
@@ -3367,7 +3526,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 },
                 "presetId": {
@@ -3410,7 +3570,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 },
                 "requiresApi": {
@@ -3710,6 +3871,18 @@
                             "type": "null"
                         }
                     ]
+                },
+                "reinforcementTargets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "completedReinforcements": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
@@ -3813,6 +3986,13 @@
                 },
                 "preGenerationMaxPerDay": {
                     "type": "integer"
+                },
+                "learningMode": {
+                    "type": "string",
+                    "enum": [
+                        "STANDARD",
+                        "AI_MANAGED"
+                    ]
                 }
             },
             "required": [],
@@ -4185,7 +4365,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 },
                 "presetId": {
@@ -4215,6 +4396,155 @@
                 "knownInputTokens",
                 "knownOutputTokens",
                 "unknownRequests"
+            ],
+            "additionalProperties": false
+        },
+        "tutoring-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "tutoring"
+                },
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.TutorEntry"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "entries"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.TutorEntry": {
+            "type": "object",
+            "properties": {
+                "operation": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Operation"
+                },
+                "moment": {
+                    "type": "string",
+                    "enum": [
+                        "WELCOME",
+                        "COACH",
+                        "QUESTION",
+                        "RECAP"
+                    ]
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "presentationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "answer": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "question": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "report": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.TutorReport"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "operation",
+                "moment",
+                "sessionId"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.TutorReport": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "checkQuestion": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "observation": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "evidence": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                    }
+                },
+                "nextPractice": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "enum": [
+                                "CHOICE",
+                                "RECALL",
+                                "SPELLING",
+                                "PASSAGE",
+                                "WRITING",
+                                "REWRITE",
+                                "FAMILIARITY",
+                                "CONTRAST"
+                            ]
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "nextTargets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "message"
             ],
             "additionalProperties": false
         },
@@ -4257,7 +4587,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 },
                 "preset": {

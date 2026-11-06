@@ -103,6 +103,13 @@
                 },
                 "preGenerationMaxPerDay": {
                     "type": "integer"
+                },
+                "learningMode": {
+                    "type": "string",
+                    "enum": [
+                        "STANDARD",
+                        "AI_MANAGED"
+                    ]
                 }
             },
             "required": [],

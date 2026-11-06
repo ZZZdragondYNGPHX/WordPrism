@@ -38,6 +38,10 @@ import kotlinx.serialization.Serializable
     @Serializable @SerialName("generate_activity") data class GenerateActivity(val targetId: Id, val kind: ActivityKind) : Command
     @Serializable @SerialName("explain_sense") data class ExplainSense(val sense: Ref) : Command
     @Serializable @SerialName("evaluate_response") data class EvaluateResponse(val answer: Ref) : Command
+    @Serializable @SerialName("tutor_session") data class TutorSession(
+        val sessionId: Id, val moment: TutorMoment, val presentationId: Id? = null,
+        val answer: Ref? = null, val question: String? = null,
+    ) : Command
     @Serializable @SerialName("start_session") data class StartSession(val continuePastBudget: Boolean = false, val includeIntroductions: Boolean = false) : Command
     @Serializable @SerialName("next_activity") data class NextActivity(val sessionId: Id) : Command
     @Serializable @SerialName("request_hint") data class RequestHint(val sessionId: Id, val presentationId: Id, val revealAnswer: Boolean = false) : Command
@@ -53,6 +57,7 @@ import kotlinx.serialization.Serializable
     @Serializable @SerialName("dispute_activity") data class DisputeActivity(val activity: Ref, val reason: String) : Command
     @Serializable @SerialName("analyze_learning") data class AnalyzeLearning(val force: Boolean = false) : Command
     @Serializable @SerialName("set_settings") data class SetSettings(val settings: UserSettings, val expectedVersion: Long) : Command
+    @Serializable @SerialName("set_learning_mode") data class SetLearningMode(val mode: LearningMode, val expectedVersion: Long) : Command
     @Serializable @SerialName("apply_policy") data class ApplyPolicy(
         val patch: PolicyPatch, val expectedVersion: Long, val evaluationId: Id? = null,
     ) : Command
@@ -94,6 +99,8 @@ import kotlinx.serialization.Serializable
     @Serializable @SerialName("operations") data class Operations(val limit: Int = 50) : Query
     @Serializable @SerialName("recommendations") data class Recommendations(val groupId: Id? = null) : Query
     @Serializable @SerialName("settings") data object Settings : Query
+    @Serializable @SerialName("managed_learning") data object ManagedLearning : Query
+    @Serializable @SerialName("tutoring") data class Tutoring(val sessionId: Id? = null) : Query
     @Serializable @SerialName("capabilities") data object Capabilities : Query
     @Serializable @SerialName("policy_changes") data object PolicyChanges : Query
     @Serializable @SerialName("presets") data object Presets : Query
@@ -126,7 +133,7 @@ import kotlinx.serialization.Serializable
     @Serializable @SerialName("answer") data class AnswerResult(val answer: Answer, val feedback: List<Feedback>, val schedule: Schedule?,
         val acceptedAnswers: List<String> = emptyList(), val correctChoiceId: String? = null,
         val canMarkDifficult: Boolean = false, val markedDifficult: Boolean = false, val canRevise: Boolean = false,
-        val pendingOperationId: Id? = null) : View
+        val pendingOperationId: Id? = null, val correctChoiceIds: List<String> = emptyList()) : View
     @Serializable @SerialName("feedback") data class Feedbacks(val answer: Answer, val feedback: List<Feedback>, val details: AnswerResult? = null) : View
     @Serializable @SerialName("snapshot") data class Snapshot(val snapshot: LearningSnapshot) : View
     @Serializable @SerialName("evidence") data class Evidence(val answers: List<Answer>, val activities: List<Activity>, val nextSequence: Long?) : View
@@ -141,6 +148,8 @@ import kotlinx.serialization.Serializable
         val family: List<Recommendation> = emptyList(),
     ) : View
     @Serializable @SerialName("settings") data class Settings(val settings: UserSettings, val policy: TrainingPolicy, val bindings: List<Binding>) : View
+    @Serializable @SerialName("managed_learning") data class ManagedLearning(val state: ManagedLearningState) : View
+    @Serializable @SerialName("tutoring") data class Tutoring(val entries: List<TutorEntry>) : View
     @Serializable @SerialName("capabilities") data class Capabilities(val capabilities: List<Capability>) : View
     @Serializable @SerialName("policy_changes") data class PolicyChanges(val changes: List<PolicyChange>, val undoableIds: Set<Id> = emptySet()) : View
     @Serializable @SerialName("presets") data class Presets(val presets: List<PresetView>, val bindings: List<Binding>) : View

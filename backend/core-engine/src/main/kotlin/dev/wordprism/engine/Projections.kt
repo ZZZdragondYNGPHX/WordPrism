@@ -95,7 +95,7 @@ internal fun Database.daySummary(day: LearningDay): DaySummary {
     val op = day.automaticOperationId?.let(operations::get)
     val plan = day.planId?.let(plans::get)
     val state = when {
-        !settings.automaticAnalysis -> "disabled"
+        !settings.analysisEnabled() -> "disabled"
         op != null -> when (op.status) {
             OperationStatus.SUCCEEDED -> "done"; OperationStatus.SUPERSEDED -> "skipped_no_new_data"
             else -> op.status.name.lowercase()
@@ -108,7 +108,7 @@ internal fun Database.daySummary(day: LearningDay): DaySummary {
             sessions.values.filter { it.dayId == day.id }.sumOf { legacyTime(it, TimerMode.WAITING) },
         budgetState(day), answers.values.filter { answerDayId(it) == day.id && activities[it.activityId]?.kind !in introductionKinds }.map { it.targetId }.distinct().size,
         sessions.values.lastOrNull { it.status != SessionStatus.FINISHED && it.belongsTo(day) }?.id,
-        day.endedAtMs == null, settings.automaticAnalysis, state, day.planId?.let { plans[it]?.policyVersion }?.let(policyVersions::get) ?: policy,
+        day.endedAtMs == null, settings.analysisEnabled(), state, day.planId?.let { plans[it]?.policyVersion }?.let(policyVersions::get) ?: policy,
         policy.focusTargets.mapNotNull { targets[it]?.groupId }.distinct(),
         when { day.endReason == DayEndReason.PLAN_COMPLETED -> "plan_completed"; day.endedAtMs != null -> "ended"
             answers.values.any { answerDayId(it) == day.id } || studyTime(day.id) > 0 -> "in_progress"; else -> "not_started" },

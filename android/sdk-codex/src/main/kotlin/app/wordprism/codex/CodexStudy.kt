@@ -35,11 +35,26 @@ internal fun View.Day.toSdk(): LearningDay {
 }
 
 class CodexStudy(private val b: CodexBridge) : StudyApi {
+    override fun observeTutor(session: SessionId?): Flow<List<TutorMessage>> = b.live {
+        (b.view(Query.Tutoring(session?.value?.let(::CId))) as View.Tutoring).entries.map { entry ->
+            TutorMessage(entry.operation.toSdk(), entry.moment.name.lowercase(), SessionId(entry.sessionId.value),
+                entry.presentationId?.value, entry.answer?.id?.value, entry.answer?.version?.toInt(), entry.question,
+                entry.report?.message, entry.report?.checkQuestion)
+        }
+    }
+    override suspend fun askTutor(session: SessionId, activity: ActivityId, question: String, request: ClientRequestId): SdkResult<OperationId> = safely {
+        val current = session(session)
+        b.exec(request, Command.TutorSession(CId(session.value), dev.wordprism.contract.TutorMoment.QUESTION, CId(activity.value),
+            current.feedback?.answer?.let { Ref(it.id, it.version) }, question)) {
+            OperationId((it as View.OperationResult).operation.id.value)
+        }
+    }
     private val draftMutex = Mutex()
     override fun observeLearningDay(): Flow<LearningDay> = b.live(refreshEveryMs = 30_000) { (b.view(Query.GetLearningDay()) as View.Day).toSdk() }
     override fun observePlan(): Flow<LearningPlan> = b.live(refreshEveryMs = 30_000) {
         val day = b.view(Query.GetLearningDay()) as View.Day; val p = day.plan; val policy = day.summary.policy
-        val groups = (b.view(Query.LibrarySummary()) as View.LibrarySummary).library.groups
+        val library = (b.view(Query.LibrarySummary()) as View.LibrarySummary).library
+        val groups = library.groups
         val total = policy.mix.values.sum().coerceAtLeast(1)
         LearningPlan(p?.policyVersion?.toInt() ?: policy.version.toInt(), policy.version.toInt(), p?.reviewCount ?: 0, day.summary.plannedNewWords, (((p?.estimatedMs ?: 0) + 59_999) / 60_000).toInt(),
             policy.mix.filterValues { it > 0 }.map { (kind, amount) -> MixShare(kind.name.lowercase(), kindLabel(kind), amount.toFloat() / total) },
@@ -57,11 +72,11 @@ class CodexStudy(private val b: CodexBridge) : StudyApi {
                     if (it.unavailableTargetCount > 0) add("${it.unavailableTargetCount} 项练习等待可用内容")
                     if (isEmpty()) add("${it.deferredCount} 项能力练习待安排")
                 }.joinToString("；") + "。同一词的不同能力分别安排。"
-            })
+            }, libraryWords = library.totalWords)
     }
     private suspend fun session(id: SessionId) = b.view(Query.GetSession(CId(id.value))) as View.SessionState
-    override suspend fun startOrResume(request: ClientRequestId): SdkResult<SessionId> = safely {
-        val result = b.exec(request, Command.StartSession(includeIntroductions = true)) { it as? View.SessionState }
+    override suspend fun startOrResume(request: ClientRequestId, continuePastBudget: Boolean): SdkResult<SessionId> = safely {
+        val result = b.exec(request, Command.StartSession(continuePastBudget = continuePastBudget, includeIntroductions = true)) { it as? View.SessionState }
         if (result is SdkResult.Err) return@safely result
         val view = (result as SdkResult.Ok).value
         if (view.activity == null && view.session.status == CSessionStatus.ACTIVE) {
@@ -76,20 +91,32 @@ class CodexStudy(private val b: CodexBridge) : StudyApi {
     private suspend fun mapSession(v: View.SessionState): SessionState {
         val s = v.session
         return SessionState(SessionId(s.id.value), when (s.status) { CSessionStatus.ACTIVE -> SessionStatus.Active; CSessionStatus.PAUSED -> SessionStatus.Paused; CSessionStatus.FINISHED -> SessionStatus.Completed },
-            s.completedTargets.size, s.targetIds.size, v.activity?.let { mapActivity(it, s) }, v.feedback?.let(::mapFeedback),
-            BudgetState(v.budgetState.name.lowercase()), v.budgetPromptPending, s.policyVersion.toInt())
+            s.completedTargets.size + s.completedReinforcements.size, s.targetIds.size + s.reinforcementTargets.size,
+            v.activity?.let { mapActivity(it, s) }, v.feedback?.let(::mapFeedback),
+            BudgetState(v.budgetState.name.lowercase()), v.budgetPromptPending, s.policyVersion.toInt(),
+            (s.reinforcementTargets - s.completedReinforcements).size)
     }
     private suspend fun mapActivity(a: CCard, session: dev.wordprism.contract.Session): ActivityView {
-        val id = ActivityId((session.currentPresentationId ?: session.lastPresentationId ?: a.id).value); val label = kindLabel(a.kind)
+        val id = ActivityId((session.currentPresentationId ?: session.lastPresentationId ?: a.id).value)
+        val reinforcing = a.targetId in session.completedTargets && a.kind !in setOf(CKind.FAMILIARITY, CKind.CONTRAST)
+        val label = (if (reinforcing) "本轮巩固 · " else "") + kindLabel(a.kind)
         val draft = (b.view(Query.GetDraft(draftKey(SessionId(session.id.value), id))) as View.DraftResult).draft?.text
             ?: session.revisingAnswerId?.let { ((b.view(Query.GetFeedback(it)) as View.Feedbacks).answer.input.text) }
         return when (a.kind) {
             CKind.FAMILIARITY -> ActivityView.Familiarity(id, label, a.targetWords.firstOrNull().orEmpty(), null)
-            CKind.CONTRAST -> a.groupId?.let { gid -> (b.view(Query.GetGroup(gid)) as View.Library).group(GroupId(gid.value)) }
-                ?.let { ActivityView.Contrast(id, label, it) } ?: ActivityView.Unknown(id, label, a.prompt)
+            CKind.CONTRAST -> a.groupId?.let { gid ->
+                val library = b.view(Query.GetGroup(gid)) as View.Library
+                val group = library.group(GroupId(gid.value)) ?: return@let null
+                val managed = (b.view(Query.Settings) as View.Settings).settings.learningMode == dev.wordprism.contract.LearningMode.AI_MANAGED
+                ActivityView.Contrast(id, label, group, support = if (managed)
+                    library.senses.mapNotNull { sense -> sense.explanation?.takeIf { it.basedOnSenseVersion == sense.version }
+                        ?.let { sense.id.value to it.content.sections() } }.toMap() else emptyMap())
+            } ?: a.introduction?.let {
+                    ActivityView.LearnWord(id, "先认识这个词", it.spelling, it.partOfSpeech, it.meaning, it.examples, support = it.support?.sections().orEmpty())
+                } ?: ActivityView.Unknown(id, label, a.prompt)
             CKind.CHOICE -> ActivityView.Choice(id, label, "选择符合释义或语境的词", studyText(a.prompt, a.passage, a.question, a.sourceSentence), null,
                 a.choices.map { ChoiceOption(it.id, it.text) }, a.hintAllowed)
-            CKind.RECALL, CKind.SPELLING -> ActivityView.Recall(id, label, "独立写出对应的英文词",
+            CKind.RECALL, CKind.SPELLING -> ActivityView.Recall(id, label, if (reinforcing) "回想刚才的区别，写出英文词" else "独立写出对应的英文词",
                 studyText(a.prompt, a.passage, a.question, a.sourceSentence), a.cue, null, draft, a.hintAllowed)
             CKind.PASSAGE -> if (a.choices.isEmpty()) ActivityView.Unknown(id, label, a.prompt) else ActivityView.Reading(id, label, a.passage ?: a.prompt,
                 studyText(a.prompt.takeUnless { it == a.passage }, a.question, a.sourceSentence), a.choices.map { ChoiceOption(it.id, it.text) }, a.source.toSdk(), a.hintAllowed)
@@ -112,13 +139,14 @@ class CodexStudy(private val b: CodexBridge) : StudyApi {
             else -> Verdict.Recorded
         }
         val headline = when (verdict) {
-            Verdict.Correct -> "回答正确"; Verdict.Incorrect -> "这次没有回忆准确"; Verdict.Practice -> "练习已记录"
+            Verdict.Correct -> "回答正确"; Verdict.Incorrect -> "这次没有回忆准确"
+            Verdict.Practice -> if (a.verdict == CVerdict.CORRECT) "这次练对了" else "再看清这个区别"
             Verdict.PendingReview -> "句子已保存，等待 AI 反馈"; Verdict.Reviewed -> "AI 表达反馈"
             else -> if (a.input.skipped) "已跳过，不记为遗忘" else if (!a.valid) "已标记争议" else "已记录"
         }
         return Feedback(a.id.value, a.version.toInt(), a.input.text.ifBlank { null }, verdict, headline,
             v.feedback.lastOrNull { it.source != CGrade.AI }?.explanation, v.correctChoiceId, a.input.selectedChoiceId, v.acceptedAnswers,
-            null, a.affectsSchedule && a.valid,
+            v.feedback.lastOrNull { it.source == CGrade.OBJECTIVE }?.confusionNote, a.affectsSchedule && a.valid,
             when { !a.valid -> "此题不参与当前复习安排"; practice -> "使用了提示或看过答案，不计作独立回忆"; a.gradeSource != CGrade.OBJECTIVE -> "不直接改变记忆评分"; a.input.skipped -> "不记为遗忘"; else -> "已按本机记忆算法更新" },
             ai?.let { review -> AiReview(review.targetUsage, when (review.targetUsage) { "good" -> "用法良好"; "misused" -> "目标词误用"; "acceptable_unnatural" -> "用法可接受，可更自然"; "equally_valid" -> "同样合理的表达"; else -> "AI 评价" },
                 if (review.dimensions.isEmpty()) listOf(ReviewPoint(review.quotedAnswer, review.explanation, true)) else emptyList(),
@@ -127,7 +155,9 @@ class CodexStudy(private val b: CodexBridge) : StudyApi {
                 dimensions = review.dimensions.map { dimension -> ReviewDimension(when (dimension.dimension) {
                     "target_word" -> "目标词与搭配"; "grammar" -> "语法与结构"; "naturalness" -> "自然度与语气"; "intent" -> "意图表达"; else -> dimension.dimension
                 }, dimension.comment, dimension.quote) }, optimizationNotes = review.optimizationNotes) },
-            v.pendingOperationId?.value?.let(::OperationId), v.canMarkDifficult, v.markedDifficult, v.canRevise)
+            v.pendingOperationId?.value?.let(::OperationId), v.canMarkDifficult, v.markedDifficult, v.canRevise,
+            correctOptionIds = v.correctChoiceIds,
+            answerCorrect = if (a.valid && a.verdict in setOf(CVerdict.CORRECT, CVerdict.INCORRECT)) a.verdict == CVerdict.CORRECT else null)
     }
     override suspend fun submitAnswer(session: SessionId, activity: ActivityId, answer: Answer, request: ClientRequestId): SdkResult<Feedback> = safely {
         val view = session(session)

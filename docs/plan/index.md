@@ -2,7 +2,7 @@
 
 更新日期：2026-11-04（America/Los_Angeles）
 
-当前版本：`v0.4`。本机业务核心已实现，并接入 Claude 完成的原生 Compose 前端。已确认本地存储、离线学习、手机直连 API、暂不做云同步，以及每天学习结束后分析一次、半小时以内预算和记忆质量优先。实现入口为[本地后端契约](../backend/contract.md)，实际验证与限制见[验证记录](../backend/validation.md)。
+当前版本：`v0.5`。原生 Compose 前端已接入本机核心，新增普通 / AI 托管双模式。托管模式的配置、添加与背诵流程由[手机学习方案](mobile-learning.md#ai-托管模式)维护。继续使用本地存储、离线学习、手机直连 API，每日分析一次、半小时以内预算和记忆质量优先。实现入口为[本地后端契约](../backend/contract.md)，实际验证与限制见[验证记录](../backend/validation.md)。
 
 ## 已确认需求
 
@@ -38,6 +38,8 @@
 | U26 | API 预设补充思维程度 | [思维程度](../backend/api-protocols.md#思维程度)、核心 `ApiPreset.reasoningEffort` |
 | U27 | 参考单词详情图片丰富词根词缀、词源故事、词族和英英释义，并融入现有 AI 体系 | [词源与助记](ai-intake.md#词源与助记)、[类型化讲解接口](../backend/explanations.md) |
 | U28 | 学习分析 AI 负责补充题库，在 AI 可调整项目中控制，不另设预生成开关或补题上限 | [API 调用规则](api-presets.md#调用由用户控制) |
+| U29 | 保留普通模式，增加 AI 模式；用户只需首次配置 API、添加新单词组和背诵，其余自动操作；先实装首版 | [AI 托管模式](mobile-learning.md#ai-托管模式) |
+| U30 | API 额度充裕，进一步网络调研并增强 AI 在各学习环节中的作用，形成真人助教般的连续指导 | [随身助教增强](mobile-learning.md#随身助教增强)、[调研依据](../research/sources.md#ai-助教增强调研2026-11-05) |
 
 ## 方向决策状态
 

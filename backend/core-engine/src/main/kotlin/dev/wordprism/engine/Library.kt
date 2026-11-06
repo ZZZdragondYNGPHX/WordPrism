@@ -93,10 +93,21 @@ internal fun Database.ensureTarget(senseId: Id, ability: Ability, groupId: Id?, 
         ?: LearningTarget(id(), senseId, ability, groupId).also { targets[it.id] = it; schedules[it.id] = Schedule(it.id, dueAtMs = now, policyVersion = policy.version) }
 }
 
-internal fun Database.undoLibrary(operation: Operation) {
+internal fun Database.undoLibrary(operation: Operation, revertedKeys: Set<Pair<String, String>> = emptySet()) {
     val entries = undos[operation.id].found("撤销记录")
     val current = captureLibrary()
-    entries.forEach { entry -> requireBusiness(current[entry.bucket to entry.key] == entry.after, "撤销涉及的内容已被后续修改", ErrorCode.VERSION_CONFLICT) }
+    fun content(value: JsonElement?): JsonElement? = (value as? JsonObject)?.let { row ->
+        val explanation = (row["explanation"] as? JsonObject)?.let { saved ->
+            JsonObject(saved - setOf("version", "basedOnSenseVersion") +
+                ("current" to JsonPrimitive(saved["basedOnSenseVersion"] == row["version"])))
+        }
+        JsonObject(row - "version" + if (explanation == null) emptyMap() else mapOf("explanation" to explanation))
+    } ?: value
+    entries.forEach { entry ->
+        val key = entry.bucket to entry.key
+        requireBusiness(current[key] == entry.after || key in revertedKeys && content(current[key]) == content(entry.after),
+            "撤销涉及的内容已被后续修改", ErrorCode.VERSION_CONFLICT)
+    }
     entries.filter { it.bucket == "bindings" && it.before != null }.forEach { entry ->
         val previous = Contract.json.decodeFromJsonElement<Binding>(entry.before!!)
         requireBusiness(presets[previous.presetId]?.enabled == true, "原预设已删除或停用，无法恢复旧绑定", ErrorCode.VERSION_CONFLICT)

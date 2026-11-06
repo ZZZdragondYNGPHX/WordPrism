@@ -35,7 +35,7 @@ class CoreEngine(
                 db.jobs[op.id]?.let { db.jobs[op.id] = it.copy(lease = null) }
             }
             db.usage.replaceAll { _, usage -> if (usage.outcome == "in_flight") usage.copy(outcome = "process_interrupted_unknown", endedAtMs = now()) else usage }
-            db.day(now()); View.Ok()
+            db.day(now()); reconcileManaged(db, now()); View.Ok()
         }
     }
 
@@ -56,12 +56,14 @@ class CoreEngine(
             }
             (request.command as? Command.DeletePreset)?.let { command -> db.credentialRefs[command.preset.id]?.let { credentialsAfterCommit += it } }
             val view = applyCommand(db, request.command, Actor.USER, now())
+            db.tutorAfterEvent(request.command, view, now())
+            reconcileManaged(db, now())
             db.requests[request.key] = SavedRequest(fingerprint, view)
             view to true
         }
         if (applied) {
             (request.command as? Command.CancelOperation)?.let { cancelAfterCommit += it.id }
-            if (request.command is Command.SetSettings || request.command is Command.RestoreBackup || request.command is Command.UndoOperation) {
+            if (request.command is Command.SetSettings || request.command is Command.SetLearningMode || request.command is Command.RestoreBackup || request.command is Command.UndoOperation) {
                 cancelAfterCommit += store.read().operations.values.filter { it.status == OperationStatus.CANCELLED || it.status == OperationStatus.RESTORED_PENDING }.map { it.id }
             }
             cancelAfterCommit.forEach(tasks::cancel)
@@ -115,6 +117,8 @@ class CoreEngine(
             is Query.Recommendations -> View.Recommendations(db.recommendations.values.filter { (query.groupId == null || it.groupId == query.groupId) && db.recommendationAvailable(it) && (it.acceptedOperationId == null || db.operations[it.acceptedOperationId]?.undoneBy != null) }
                 .map(db::recommendationView))
             Query.Settings -> View.Settings(db.settings, db.policy, db.bindings.values.toList())
+            Query.ManagedLearning -> View.ManagedLearning(managedLearningState(db))
+            is Query.Tutoring -> View.Tutoring(db.tutorEntries(query.sessionId))
             Query.Capabilities -> View.Capabilities(db.capabilities())
             Query.PolicyChanges -> View.PolicyChanges(db.changes.values.toList(), db.changes.values.filter { change -> change.undoneBy == null &&
                 db.policy.copy(version = change.after.version) == change.after && db.changes.values.none { it.after.version > change.after.version && it.undoneBy == null } }.map { it.id }.toSet())
@@ -159,7 +163,11 @@ class CoreEngine(
             val reference = id(); var linked = false
             try {
                 credentials.write(reference, secret)
-                val previous = store.transaction { db -> db.presets[presetId].found("预设"); db.credentialRefs.put(presetId, reference) }
+                val previous = store.transaction { db ->
+                    db.presets[presetId].found("预设")
+                    val old = db.credentialRefs.put(presetId, reference)
+                    reconcileManaged(db, now()); old
+                }
                 linked = true; previous?.let(credentials::delete)
             } finally { if (!linked) credentials.delete(reference) }
             View.Ok(presetId)
@@ -319,7 +327,7 @@ class CoreEngine(
                 View.OperationResult(db.queue(command, Feature.PRACTICE_GENERATION, now, actor == Actor.AI))
             }
             is Command.ExplainSense -> {
-                if (actor == Actor.AI) requireBusiness(db.settings.automaticGeneration, "未授权自动补充", ErrorCode.DISABLED)
+                if (actor == Actor.AI) requireBusiness(db.settings.generationEnabled(), "未授权自动补充", ErrorCode.DISABLED)
                 checkRef(command.sense, db.senses[command.sense.id].found("义项").version)
                 View.OperationResult(db.operations.values.asSequence().filter { it.actor == actor && db.jobs[it.id]?.command == command &&
                     (it.status in pendingStatuses || it.status == OperationStatus.RUNNING) }.latestOperation()
@@ -332,6 +340,7 @@ class CoreEngine(
                     ?: db.queue(command, Feature.WRITING_FEEDBACK, now))
             }
             is Command.StartSession -> db.startSession(now, command.continuePastBudget, command.includeIntroductions)
+            is Command.TutorSession -> View.OperationResult(db.requestTutor(command, now))
             is Command.NextActivity -> db.nextActivity(command.sessionId, now)
             is Command.RequestHint -> {
                 val session = db.sessions[command.sessionId].found("会话")
@@ -382,12 +391,17 @@ class CoreEngine(
             is Command.FinishSession -> {
                 val old = db.sessions[command.sessionId].found("会话")
                 val session = if (old.status == SessionStatus.FINISHED) old else db.tick(command.sessionId, TimerMode.PAUSED, now).copy(status = if (command.pause) SessionStatus.PAUSED else SessionStatus.FINISHED)
-                db.sessions[session.id] = session; db.sessionView(session)
+                db.sessions[session.id] = session
+                if (db.settings.learningMode == LearningMode.AI_MANAGED && db.sequence > db.lastAnalyzedSequence) {
+                    db.finishDay(db.day(now).id, DayEndReason.USER_FINISHED, now)
+                }
+                db.sessionView(db.sessions.getValue(session.id))
             }
             is Command.FinishLearningDay -> db.finishDay(command.dayId, DayEndReason.USER_FINISHED, now)
             is Command.DisputeActivity -> dispute(db, command, now)
             is Command.AnalyzeLearning -> View.OperationResult(db.analyze(now, false, null, command.force))
             is Command.SetSettings -> setSettings(db, command, now)
+            is Command.SetLearningMode -> setSettings(db, Command.SetSettings(db.settings.copy(learningMode = command.mode), command.expectedVersion), now)
             is Command.ApplyPolicy -> db.localOperation("apply_policy", now) { op -> listOfNotNull(db.applyPatch(command.patch, command.expectedVersion, actor, op, null, now, memory, command.evaluationId)?.id) }
             is Command.FitMemory -> View.OperationResult(db.queue(command, null, now, actor == Actor.AI))
             is Command.EvaluateParameters -> { memory.validate(command.weights); View.OperationResult(db.queue(command, null, now)) }
@@ -426,7 +440,8 @@ class CoreEngine(
             is Command.RetryOperation -> {
                 val operation = db.operations[command.id].found("操作")
                 requireBusiness(operation.status in setOf(OperationStatus.FAILED, OperationStatus.NEEDS_CONFIGURATION, OperationStatus.RESTORED_PENDING), "当前任务不可重试")
-                requireBusiness(!operation.automatic || db.settings.automaticAnalysis || operation.feature != Feature.LEARNING_ANALYSIS, "请先启用自动分析，或单独发起手动分析", ErrorCode.DISABLED)
+                requireBusiness(!operation.automatic || db.settings.analysisEnabled() || operation.feature != Feature.LEARNING_ANALYSIS, "请先启用自动分析，或单独发起手动分析", ErrorCode.DISABLED)
+                requireBusiness(!operation.managed || !operation.automatic || db.settings.learningMode == LearningMode.AI_MANAGED, "请先开启 AI 托管模式", ErrorCode.DISABLED)
                 // This explicit user action captures the current version of the same saved preset.
                 // Earlier attempts keep their immutable Usage snapshots; queued/running jobs are unchanged.
                 val result = operation.copy(status = OperationStatus.QUEUED, automationEpoch = db.settings.automationEpoch, fault = null, updatedAtMs = now,
@@ -475,16 +490,17 @@ class CoreEngine(
         requireBusiness(value.budgetMinutes in 1..240 && value.lockedCapabilities.all { locked -> locked == "preGenerateLimit" || db.capabilities().any { it.id == locked } }, "用户设置无效")
         validateCallSettings(db, value)
         val previous = db.settings
-        val analysisDisabled = previous.automaticAnalysis && !value.automaticAnalysis
+        val analysisDisabled = previous.analysisEnabled() && !value.analysisEnabled()
+        val modeChanged = previous.learningMode != value.learningMode
         val newlyLocked = value.lockedCapabilities - previous.lockedCapabilities
-        db.settings = value.copy(version = previous.version + 1, automationEpoch = previous.automationEpoch)
+        db.settings = value.copy(version = previous.version + 1, automationEpoch = previous.automationEpoch + if (modeChanged) 1 else 0)
         db.operations.values.filter { op ->
             val parent = op.parentOperationId?.let { db.operations[it] }
             val stoppedAnalysis = analysisDisabled && (op.feature == Feature.LEARNING_ANALYSIS || parent?.feature == Feature.LEARNING_ANALYSIS && parent.automatic)
             val stoppedExplanation = op.feature == Feature.EXPLANATION &&
-                (previous.automaticGeneration && !value.automaticGeneration || "explain_sense" in newlyLocked)
+                (previous.generationEnabled() && !value.generationEnabled() || "explain_sense" in newlyLocked)
             val stoppedPractice = op.feature == Feature.PRACTICE_GENERATION && "generate_activity" in newlyLocked
-            op.automatic && op.status !in terminalStatuses && (stoppedAnalysis || stoppedExplanation || stoppedPractice)
+            op.automatic && op.status !in terminalStatuses && (stoppedAnalysis || stoppedExplanation || stoppedPractice || modeChanged)
         }.forEach { op ->
             db.operations[op.id] = op.copy(status = OperationStatus.CANCELLED, fault = Fault(ErrorCode.DISABLED, "自动调用授权已变化"), updatedAtMs = now)
         }
@@ -520,10 +536,14 @@ class CoreEngine(
         original.undoneBy?.let { return View.OperationResult(db.operations[it].found("撤销")) }
         requireBusiness(original.status == OperationStatus.SUCCEEDED && original.undoable, "此操作不可撤销", ErrorCode.VERSION_CONFLICT)
         val undoId = id()
+        val revertedKeys = mutableSetOf<Pair<String, String>>()
         // Undo separately recorded child actions before reverting the parent's policy.
         original.resultIds.mapNotNull { db.operations[it] }.filter { it.parentOperationId == original.id }.asReversed().forEach { child ->
             if (child.status !in terminalStatuses) db.operations[child.id] = child.copy(status = OperationStatus.CANCELLED, updatedAtMs = now)
-            else if (child.undoable && child.undoneBy == null) undo(db, child.id, now)
+            else if (child.undoable && child.undoneBy == null) {
+                undo(db, child.id, now)
+                revertedKeys += db.undos[child.id].orEmpty().map { it.bucket to it.key }
+            }
         }
         val changes = db.changes.values.filter { it.operationId == original.id && it.undoneBy == null }
         changes.sortedByDescending { it.after.version }.forEach { change ->
@@ -538,7 +558,7 @@ class CoreEngine(
                 requireBusiness(Contract.json.encodeToJsonElement(current) == entry.after, "题目已被修改", ErrorCode.VERSION_CONFLICT)
                 db.activities[current.id] = Contract.json.decodeFromJsonElement(entry.before!!)
                 db.answers.replaceAll { _, answer -> if (answer.activityId == current.id) answer.copy(valid = true) else answer }; db.replay(memory)
-            } else db.undoLibrary(original)
+            } else db.undoLibrary(original, revertedKeys)
         }
         val result = Operation(undoId, "undo", OperationStatus.SUCCEEDED, now, now, resultIds = listOf(original.id), summary = "已撤销；后续真实作答及其历史仍保留")
         db.invalidatePlans(now)

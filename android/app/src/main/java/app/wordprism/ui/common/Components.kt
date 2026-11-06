@@ -1,9 +1,10 @@
 package app.wordprism.ui.common
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,10 +12,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -53,11 +58,16 @@ fun PrismStrip(rows: List<PrismRow>, modifier: Modifier = Modifier, fontSize: Te
     val measurer = rememberTextMeasurer()
     val charWidth = remember(style) { measurer.measure("m", style).size.width.toFloat() }
     val diffCols = remember(rows) { rows.flatMap { r -> r.highlights.flatMap { it.start until it.endExclusive } }.toSet() }
-    val bandAlpha by animateFloatAsStateCompat(if (revealed) 1f else 0f)
+    val bandAlpha = if (revealed) 1f else 0f
     val bandColor = c.action.copy(alpha = if (c.isDark) 0.16f else 0.08f)
 
+    BoxWithConstraints(modifier) {
+    val density = LocalDensity.current
+    val letterWidth = with(density) { (rows.maxOfOrNull { (it.aligned ?: it.lemma).length } ?: 0).times(charWidth).toDp() }
+    val stacked = showGloss && maxWidth < letterWidth + 150.dp
     Column(
-        modifier
+        Modifier.fillMaxWidth()
+            .then(if (!showGloss) Modifier.horizontalScroll(rememberScrollState()) else Modifier)
             .semantics(mergeDescendants = true) {
                 contentDescription = rows.joinToString("；") { r ->
                     val aligned = r.aligned ?: r.lemma
@@ -66,7 +76,7 @@ fun PrismStrip(rows: List<PrismRow>, modifier: Modifier = Modifier, fontSize: Te
                 }
             }
             .drawBehind {
-                diffCols.forEach { col ->
+                if (!stacked) diffCols.forEach { col ->
                     drawRect(
                         Brush.verticalGradient(listOf(bandColor.copy(alpha = 0f), bandColor.copy(alpha = bandColor.alpha * bandAlpha), bandColor.copy(alpha = 0f))),
                         topLeft = Offset(col * charWidth, 0f), size = Size(charWidth, size.height),
@@ -75,7 +85,7 @@ fun PrismStrip(rows: List<PrismRow>, modifier: Modifier = Modifier, fontSize: Te
             },
     ) {
         rows.forEachIndexed { i, row ->
-            val tint by animateColorAsState(if (revealed) c.member(i) else c.ink, if (Wp.reducedMotion) tween(0) else tween(420, delayMillis = 120 * i), label = "tint")
+            val tint = if (revealed) c.member(i) else c.ink
             val text = row.aligned ?: row.lemma
             val annotated = buildAnnotatedString {
                 text.forEachIndexed { idx, ch ->
@@ -84,8 +94,11 @@ fun PrismStrip(rows: List<PrismRow>, modifier: Modifier = Modifier, fontSize: Te
                     else append(ch)
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(annotated, style = style, softWrap = false)
+            if (stacked) Column(Modifier.padding(bottom = 12.dp)) {
+                Text(annotated, style = style, softWrap = false, modifier = Modifier.horizontalScroll(rememberScrollState()))
+                row.gloss?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.muted) }
+            } else Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(annotated, style = style, softWrap = false, modifier = Modifier)
                 if (showGloss && row.gloss != null) {
                     Spacer(Modifier.width(14.dp))
                     Text(row.gloss, style = MaterialTheme.typography.bodyMedium, color = c.muted, maxLines = 2, modifier = Modifier.weight(1f))
@@ -93,11 +106,8 @@ fun PrismStrip(rows: List<PrismRow>, modifier: Modifier = Modifier, fontSize: Te
             }
         }
     }
+    }
 }
-
-@Composable
-private fun animateFloatAsStateCompat(target: Float): State<Float> =
-    androidx.compose.animation.core.animateFloatAsState(target, if (Wp.reducedMotion) tween(0) else tween(500), label = "band")
 
 /** A member lemma in its identity colour (used in lists so the same word keeps the same hue everywhere). */
 @Composable
@@ -135,6 +145,25 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, trailing: @Composa
     }
 }
 
+/** Optional detail stays one tap away; expansion never delays reading or keyboard input. */
+@Composable
+fun SectionDisclosure(title: String, summary: String? = null, initiallyExpanded: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+    var expanded by rememberSaveable(title) { mutableStateOf(initiallyExpanded) }
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().clickable(role = Role.Button) { expanded = !expanded }
+            .heightIn(min = 56.dp).padding(vertical = 12.dp)
+            .semantics { stateDescription = if (expanded) "已展开" else "已收起" }, verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, color = Wp.colors.ink, modifier = Modifier.semantics { heading() })
+                if (!expanded && summary != null) Text(summary, style = MaterialTheme.typography.bodySmall, color = Wp.colors.muted)
+            }
+            Spacer(Modifier.width(12.dp))
+            Icon(if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore, null, tint = Wp.colors.muted)
+        }
+        if (expanded) content()
+    }
+}
+
 @Composable
 fun Hairline(modifier: Modifier = Modifier) = HorizontalDivider(modifier, thickness = 1.dp, color = Wp.colors.hairline)
 
@@ -158,7 +187,7 @@ fun StatusPill(text: String, modifier: Modifier = Modifier, tone: Tone = Tone.Ne
 fun OperationStatus.tone() = when (this) {
     OperationStatus.Succeeded -> Tone.Positive
     OperationStatus.Failed -> Tone.Negative
-    OperationStatus.WaitingNetwork, OperationStatus.NeedsInput -> Tone.Caution
+    OperationStatus.WaitingNetwork, OperationStatus.NeedsInput, OperationStatus.NeedsConfiguration, OperationStatus.RestoredPending -> Tone.Caution
     OperationStatus.Running, OperationStatus.Queued -> Tone.Action
     else -> Tone.Neutral
 }

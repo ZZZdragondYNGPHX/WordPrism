@@ -90,6 +90,8 @@ data class Capability(
 )
 
 interface AdaptationApi {
+    fun observeManagedLearning(): Flow<ManagedLearning>
+    suspend fun setLearningMode(mode: LearningMode, request: ClientRequestId): SdkResult<Unit>
     fun observeSettings(): Flow<AdaptationSettings>
     suspend fun setMode(mode: AnalysisMode): SdkResult<AdaptationSettings>
     suspend fun setDailyBudget(minutes: Int): SdkResult<AdaptationSettings>
@@ -100,3 +102,19 @@ interface AdaptationApi {
     fun observeCapabilities(): Flow<List<Capability>>
     suspend fun setCapabilityLock(capabilityId: String, locked: Boolean): SdkResult<Unit>
 }
+
+@JvmInline @Serializable value class LearningMode(val value: String) {
+    companion object {
+        val Standard = LearningMode("standard")
+        val AiManaged = LearningMode("ai_managed")
+    }
+}
+
+@Serializable data class ManagedLearning(
+    val mode: LearningMode = LearningMode.Standard,
+    val presetId: String? = null,
+    val configurationError: SdkError? = null,
+    val pendingTasks: Int = 0,
+    val attentionTasks: Int = 0,
+    val summary: String = "添加词组后自动备课，学习结束后自动调整",
+)

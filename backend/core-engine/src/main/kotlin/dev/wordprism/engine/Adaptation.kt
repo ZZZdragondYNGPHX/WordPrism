@@ -72,7 +72,9 @@ internal fun Database.capabilities(): List<Capability> {
     return policySpecs.map { (key, spec) -> Capability(key, spec.description, spec.type, values.getValue(key), spec.constraint,
         affectsSchedule = spec.scheduling, userLocked = key in settings.lockedCapabilities) } +
         actionCapabilities.map { capability -> capability.copy(userLocked = capability.id in settings.lockedCapabilities ||
-            capability.id == "explain_sense" && !settings.automaticGeneration) }
+            capability.id == "explain_sense" && !settings.generationEnabled()) } +
+        Capability("tutor_session", "逐题助教、学习记忆与追问", "action", JsonNull,
+            "基于有效作答提供教学建议；不改写评分；切回普通模式停止", userLocked = "tutor_session" in settings.lockedCapabilities)
 }
 
 internal fun Database.applyPatch(patch: PolicyPatch, expectedVersion: Long, actor: Actor, operationId: Id,
@@ -116,7 +118,7 @@ internal fun Database.finishDay(dayId: Id, reason: DayEndReason, now: Long): Vie
         current = original.copy(endedAtMs = now, endReason = reason, endSequence = sequence)
         days[dayId] = current
     }
-    if (settings.automaticAnalysis && current.automaticOperationId == null && sequence > lastAnalyzedSequence) {
+    if (settings.analysisEnabled() && current.automaticOperationId == null && sequence > lastAnalyzedSequence) {
         val operation = analyze(now, true, current.id, false)
         current = current.copy(automaticOperationId = operation.id); days[dayId] = current
     }

@@ -339,6 +339,13 @@
                 },
                 "preGenerationMaxPerDay": {
                     "type": "integer"
+                },
+                "learningMode": {
+                    "type": "string",
+                    "enum": [
+                        "STANDARD",
+                        "AI_MANAGED"
+                    ]
                 }
             },
             "required": [],
@@ -1256,6 +1263,16 @@
                             "type": "null"
                         }
                     ]
+                },
+                "confusionNote": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1459,6 +1476,18 @@
                             "type": "null"
                         }
                     ]
+                },
+                "reinforcementTargets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "completedReinforcements": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
@@ -1496,6 +1525,16 @@
                 },
                 "toMs": {
                     "type": "integer"
+                },
+                "targetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1632,6 +1671,21 @@
                             "type": "null"
                         }
                     ]
+                },
+                "plannerVersion": {
+                    "type": "integer"
+                },
+                "deferredReviewCount": {
+                    "type": "integer"
+                },
+                "deferredNewWordCount": {
+                    "type": "integer"
+                },
+                "unavailableTargetCount": {
+                    "type": "integer"
+                },
+                "estimateSamples": {
+                    "type": "integer"
                 }
             },
             "required": [
@@ -2106,7 +2160,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 },
                 "presetId": {
@@ -2329,7 +2384,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 },
                 "presetId": {
@@ -2365,7 +2421,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 },
                 "preset": {
@@ -2569,7 +2626,8 @@
                                 "EXPLANATION",
                                 "PRACTICE_GENERATION",
                                 "WRITING_FEEDBACK",
-                                "LEARNING_ANALYSIS"
+                                "LEARNING_ANALYSIS",
+                                "TUTORING"
                             ]
                         },
                         {
@@ -2722,6 +2780,9 @@
                     "items": {
                         "$ref": "#/$defs/dev.wordprism.contract.SpellingChoice"
                     }
+                },
+                "managed": {
+                    "type": "boolean"
                 }
             },
             "required": [
@@ -2962,6 +3023,9 @@
                             "$ref": "#/$defs/set_call_policy-variant"
                         },
                         {
+                            "$ref": "#/$defs/set_learning_mode-variant"
+                        },
+                        {
                             "$ref": "#/$defs/set_settings-variant"
                         },
                         {
@@ -2978,6 +3042,9 @@
                         },
                         {
                             "$ref": "#/$defs/test_connection-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/tutor_session-variant"
                         },
                         {
                             "$ref": "#/$defs/unbind_preset-variant"
@@ -3032,6 +3099,36 @@
                 },
                 "retryCycleStartAttempt": {
                     "type": "integer"
+                },
+                "managedKey": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "managedCredentialRef": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "tutorReport": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.TutorReport"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -3874,6 +3971,30 @@
             ],
             "additionalProperties": false
         },
+        "set_learning_mode-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "set_learning_mode"
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "STANDARD",
+                        "AI_MANAGED"
+                    ]
+                },
+                "expectedVersion": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "type",
+                "mode",
+                "expectedVersion"
+            ],
+            "additionalProperties": false
+        },
         "set_settings-variant": {
             "type": "object",
             "properties": {
@@ -4008,6 +4129,62 @@
             ],
             "additionalProperties": false
         },
+        "tutor_session-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "tutor_session"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "moment": {
+                    "type": "string",
+                    "enum": [
+                        "WELCOME",
+                        "COACH",
+                        "QUESTION",
+                        "RECAP"
+                    ]
+                },
+                "presentationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "answer": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "question": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "sessionId",
+                "moment"
+            ],
+            "additionalProperties": false
+        },
         "unbind_preset-variant": {
             "type": "object",
             "properties": {
@@ -4022,7 +4199,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 }
             },
@@ -4112,6 +4290,70 @@
             ],
             "additionalProperties": false
         },
+        "dev.wordprism.contract.TutorReport": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "checkQuestion": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "observation": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "evidence": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                    }
+                },
+                "nextPractice": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "enum": [
+                                "CHOICE",
+                                "RECALL",
+                                "SPELLING",
+                                "PASSAGE",
+                                "WRITING",
+                                "REWRITE",
+                                "FAMILIARITY",
+                                "CONTRAST"
+                            ]
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "nextTargets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "additionalProperties": false
+        },
         "dev.wordprism.engine.SavedRequest": {
             "type": "object",
             "properties": {
@@ -4169,6 +4411,9 @@
                             "$ref": "#/$defs/library_overview-variant"
                         },
                         {
+                            "$ref": "#/$defs/managed_learning-variant"
+                        },
+                        {
                             "$ref": "#/$defs/models-variant"
                         },
                         {
@@ -4209,6 +4454,9 @@
                         },
                         {
                             "$ref": "#/$defs/snapshot-variant"
+                        },
+                        {
+                            "$ref": "#/$defs/tutoring-variant"
                         },
                         {
                             "$ref": "#/$defs/usage-variant"
@@ -4340,6 +4588,16 @@
                 },
                 "source": {
                     "$ref": "#/$defs/dev.wordprism.contract.Provenance"
+                },
+                "introduction": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.SenseIntroduction"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -4350,6 +4608,42 @@
                 "prompt",
                 "choices",
                 "contextKey"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.SenseIntroduction": {
+            "type": "object",
+            "properties": {
+                "spelling": {
+                    "type": "string"
+                },
+                "partOfSpeech": {
+                    "type": "string"
+                },
+                "meaning": {
+                    "type": "string"
+                },
+                "examples": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "support": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.ExplanationContent"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "spelling",
+                "partOfSpeech",
+                "meaning"
             ],
             "additionalProperties": false
         },
@@ -4412,6 +4706,12 @@
                             "type": "null"
                         }
                     ]
+                },
+                "correctChoiceIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
@@ -4875,6 +5175,12 @@
                             "type": "null"
                         }
                     ]
+                },
+                "correctChoiceIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
@@ -5256,6 +5562,72 @@
             ],
             "additionalProperties": false
         },
+        "managed_learning-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "managed_learning"
+                },
+                "state": {
+                    "$ref": "#/$defs/dev.wordprism.contract.ManagedLearningState"
+                }
+            },
+            "required": [
+                "type",
+                "state"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.ManagedLearningState": {
+            "type": "object",
+            "properties": {
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "STANDARD",
+                        "AI_MANAGED"
+                    ]
+                },
+                "presetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "configurationFault": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Fault"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "pendingTasks": {
+                    "type": "integer"
+                },
+                "attentionTasks": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "mode",
+                "presetId",
+                "configurationFault",
+                "pendingTasks",
+                "attentionTasks",
+                "summary"
+            ],
+            "additionalProperties": false
+        },
         "models-variant": {
             "type": "object",
             "properties": {
@@ -5584,7 +5956,8 @@
                         "EXPLANATION",
                         "PRACTICE_GENERATION",
                         "WRITING_FEEDBACK",
-                        "LEARNING_ANALYSIS"
+                        "LEARNING_ANALYSIS",
+                        "TUTORING"
                     ]
                 },
                 "requiresApi": {
@@ -5790,6 +6163,91 @@
             "required": [
                 "type",
                 "snapshot"
+            ],
+            "additionalProperties": false
+        },
+        "tutoring-variant": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "const": "tutoring"
+                },
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/$defs/dev.wordprism.contract.TutorEntry"
+                    }
+                }
+            },
+            "required": [
+                "type",
+                "entries"
+            ],
+            "additionalProperties": false
+        },
+        "dev.wordprism.contract.TutorEntry": {
+            "type": "object",
+            "properties": {
+                "operation": {
+                    "$ref": "#/$defs/dev.wordprism.contract.Operation"
+                },
+                "moment": {
+                    "type": "string",
+                    "enum": [
+                        "WELCOME",
+                        "COACH",
+                        "QUESTION",
+                        "RECAP"
+                    ]
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "presentationId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "answer": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.Ref"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "question": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "report": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/dev.wordprism.contract.TutorReport"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "operation",
+                "moment",
+                "sessionId"
             ],
             "additionalProperties": false
         },

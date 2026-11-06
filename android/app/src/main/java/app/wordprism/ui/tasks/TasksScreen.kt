@@ -39,17 +39,23 @@ class TasksViewModel(sdk: WordPrismSdk, saved: SavedStateHandle) : WpViewModel(s
 }
 
 @Composable
-fun TasksScreen(onBack: () -> Unit) {
+fun TasksScreen(onBack: () -> Unit, feedbackOnly: Boolean = false, openApi: () -> Unit) {
     val vm = wpViewModel { sdk, s -> TasksViewModel(sdk, s) }
     CollectMessages(vm, LocalSnackbar.current)
     val ops by vm.ops.collectAsStateWithLifecycle()
     val c = Wp.colors
+    var filter by rememberSaveable { mutableStateOf(if (feedbackOnly) "feedback" else "all") }
     Column(Modifier.fillMaxSize()) {
         WpTopBar("任务记录", onBack = onBack)
-        val list = ops
+        FlowRow(Modifier.padding(horizontal = Wp.gutter), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("all" to "全部", "active" to "待处理", "feedback" to "表达反馈").forEach { (id, label) ->
+                FilterChip(selected = filter == id, onClick = { filter = id }, label = { Text(label) })
+            }
+        }
+        val list = ops?.filter { when (filter) { "active" -> it.status.isActive; "feedback" -> it.feature == FeatureId.WritingFeedback; else -> true } }
         when {
             list == null -> Loading()
-            list.isEmpty() -> EmptyState("还没有任务", "AI 添加、生成反馈、分析和导入导出会显示在这里。", Modifier.padding(horizontal = Wp.gutter))
+            list.isEmpty() -> EmptyState(if (filter == "feedback") "还没有表达反馈" else if (filter == "active") "没有正在进行的任务" else "还没有任务", if (filter == "feedback") "学习时提交的句子会保存在这里，完成后可以查看分项建议与优化句。" else "AI 添加、生成反馈、分析和导入导出会显示在这里。", Modifier.padding(horizontal = Wp.gutter))
             else -> LazyColumn(contentPadding = PaddingValues(start = Wp.gutter, end = Wp.gutter, bottom = 32.dp), modifier = Modifier.navigationBarsPadding()) {
                 items(list, key = { it.id.value }) { op ->
                     Column(Modifier.padding(vertical = 12.dp)) {
@@ -61,7 +67,7 @@ fun TasksScreen(onBack: () -> Unit) {
                             style = MaterialTheme.typography.bodySmall, color = c.muted)
                         op.resultSummary?.takeIf { op.status == OperationStatus.Succeeded }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 4.dp)) }
                         if (op.feature == FeatureId.WritingFeedback && op.status == OperationStatus.Succeeded) {
-                            var expanded by rememberSaveable(op.id.value) { mutableStateOf(false) }
+                            var expanded by rememberSaveable(op.id.value) { mutableStateOf(feedbackOnly && op.id == list.firstOrNull()?.id) }
                             LaunchedEffect(expanded, op.id) { if (expanded) vm.loadFeedback(op.id) }
                             TextButton(onClick = {
                                 expanded = !expanded
@@ -80,6 +86,7 @@ fun TasksScreen(onBack: () -> Unit) {
                             }
                         }
                         if (op.status.isActive || op.status == OperationStatus.Failed) OperationLine(op, Modifier.padding(top = 6.dp), onCancel = { vm.cancel(op.id) }, onRetry = { vm.retry(op.id) })
+                        if (op.status == OperationStatus.NeedsConfiguration || op.error?.code in setOf(ErrorCode.CredentialMissing, ErrorCode.PresetMissing)) TextButton(onClick = openApi) { Text("去配置 API 预设") }
                         if (OperationAction.Undo in op.actions) TextButton(onClick = { vm.undo(op.id) }, contentPadding = PaddingValues(0.dp)) { Text("撤销") }
                     }
                     Hairline()

@@ -314,6 +314,16 @@
                             "type": "null"
                         }
                     ]
+                },
+                "confusionNote": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -570,6 +580,18 @@
                             "type": "null"
                         }
                     ]
+                },
+                "reinforcementTargets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "completedReinforcements": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             },
             "required": [
@@ -607,6 +629,16 @@
                 },
                 "toMs": {
                     "type": "integer"
+                },
+                "targetId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -743,6 +775,21 @@
                             "type": "null"
                         }
                     ]
+                },
+                "plannerVersion": {
+                    "type": "integer"
+                },
+                "deferredReviewCount": {
+                    "type": "integer"
+                },
+                "deferredNewWordCount": {
+                    "type": "integer"
+                },
+                "unavailableTargetCount": {
+                    "type": "integer"
+                },
+                "estimateSamples": {
+                    "type": "integer"
                 }
             },
             "required": [

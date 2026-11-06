@@ -5,6 +5,13 @@ import kotlinx.coroutines.flow.*
 import java.time.LocalDate
 
 internal class MockInsights(private val c: MockCore) : OverviewApi, AdaptationApi {
+    private val managedLearning = MutableStateFlow(ManagedLearning())
+    override fun observeManagedLearning(): Flow<ManagedLearning> = managedLearning
+    override suspend fun setLearningMode(mode: LearningMode, request: ClientRequestId): SdkResult<Unit> {
+        if (mode !in setOf(LearningMode.Standard, LearningMode.AiManaged)) return SdkResult.Err(SdkError(ErrorCode.Validation, "未知学习模式", false))
+        managedLearning.value = ManagedLearning(mode = mode, summary = "模拟托管模式；不会请求模型")
+        return SdkResult.Ok(Unit)
+    }
 
     init { c.handlers[OperationKind.Analysis] = ::runAnalysis }
 

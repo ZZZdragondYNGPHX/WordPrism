@@ -75,6 +75,8 @@ class PresetViewModel(sdk: WordPrismSdk, private val saved: SavedStateHandle, in
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
+    val sdk = appSdk()
+    val managed by remember(sdk) { sdk.adaptation.observeManagedLearning() }.collectAsStateWithLifecycle(null)
     val vm = wpViewModel(key = "preset-${presetId ?: "new"}") { sdk, s -> PresetViewModel(sdk, s, presetId) }
     CollectMessages(vm, LocalSnackbar.current)
     val p by vm.preset.collectAsStateWithLifecycle()
@@ -91,8 +93,8 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
     var baseUrl by rememberSaveable { mutableStateOf("") }
     var model by rememberSaveable { mutableStateOf("") }
     var reasoningEffort by rememberSaveable { mutableStateOf<String?>(null) }
-    var maxTokens by rememberSaveable { mutableStateOf("1200") }
-    var timeout by rememberSaveable { mutableStateOf("30") }
+    var maxTokens by rememberSaveable { mutableStateOf("8192") }
+    var timeout by rememberSaveable { mutableStateOf("180") }
     // The secret is held only while typing; it is never read back from the backend.
     var secret by remember { mutableStateOf("") }
     var showSecret by remember { mutableStateOf(false) }
@@ -146,6 +148,19 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                 }
             }
             Field("服务地址", baseUrl, { resetModels(); baseUrl = it }, fe("baseUrl"), keyboard = KeyboardType.Uri)
+            val cred = p?.credential
+            OutlinedTextField(
+                secret, { resetModels(); secret = it; removeSecret = false }, singleLine = true, label = { Text("API 密钥") },
+                placeholder = { Text(if (cred?.present == true && !removeSecret) "已保存，留空则不变" else "粘贴密钥") },
+                visualTransformation = if (showSecret) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false, imeAction = ImeAction.Next),
+                trailingIcon = { IconButton(onClick = { showSecret = !showSecret }) { Icon(if (showSecret) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, if (showSecret) "隐藏密钥" else "显示密钥") } },
+                supportingText = { Text("只保存在本机的加密存储中，不会出现在导出文件里") },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+            if (cred?.present == true && secret.isEmpty()) {
+                TextButton(onClick = { resetModels(); removeSecret = !removeSecret }) { Text(if (removeSecret) "保留已保存的密钥" else "删除已保存的密钥") }
+            }
             Field("模型标识", model, { model = it }, fe("model"), placeholder = "服务商提供的模型名称")
             val loadingModels = modelState == ModelCatalogState.Loading
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -172,6 +187,8 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                     else -> "使用当前地址与密钥查询，也可手动填写模型。"
                 }, style = MaterialTheme.typography.bodySmall, color = c.muted)
             }
+            Spacer(Modifier.height(16.dp))
+            SectionDisclosure("高级设置", "输出 ${maxTokens.ifBlank { "由服务商决定" }} tokens · 超时 ${timeout.ifBlank { "不限" }} 秒") {
             val efforts = adapters.firstOrNull { it.id == adapterId }?.reasoningEfforts.orEmpty()
             ExposedDropdownMenuBox(effortMenu, { if (!saving && initialized) effortMenu = it }, Modifier.padding(top = 8.dp)) {
                 OutlinedTextField(
@@ -186,25 +203,13 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                     efforts.forEach { effort -> DropdownMenuItem(text = { Text(effort.label) }, onClick = { reasoningEffort = effort.id; effortMenu = false }) }
                 }
             }
-            val cred = p?.credential
-            OutlinedTextField(
-                secret, { resetModels(); secret = it; removeSecret = false }, singleLine = true, label = { Text("API 密钥") },
-                placeholder = { Text(if (cred?.present == true && !removeSecret) "已保存，留空则不变" else "粘贴密钥") },
-                visualTransformation = if (showSecret) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false, imeAction = ImeAction.Next),
-                trailingIcon = { IconButton(onClick = { showSecret = !showSecret }) { Icon(if (showSecret) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, if (showSecret) "隐藏密钥" else "显示密钥") } },
-                supportingText = { Text("只保存在本机的加密存储中，不会出现在导出文件里") },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            )
-            if (cred?.present == true && secret.isEmpty()) {
-                TextButton(onClick = { resetModels(); removeSecret = !removeSecret }) { Text(if (removeSecret) "保留已保存的密钥" else "删除已保存的密钥") }
-            }
             Row {
                 Field("输出上限（tokens）", maxTokens, { maxTokens = it.filter(Char::isDigit) }, tokenError ?: fe("maxOutputTokens"), placeholder = "留空不限制", keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
                 Spacer(Modifier.width(12.dp))
                 Field("超时（秒）", timeout, { resetModels(); timeout = it.filter(Char::isDigit) }, timeoutError ?: fe("timeoutSeconds"), placeholder = "留空不限制", keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
             }
             Text("留空时不设置输出上限或超时；服务商、模型或系统仍可能限制输出或中断任务。", style = MaterialTheme.typography.bodySmall, color = c.muted)
+            }
             err?.takeIf { it.fieldErrors.isEmpty() }?.let { ErrorNotice(it, Modifier.padding(top = 8.dp)) }
 
             Spacer(Modifier.height(16.dp))
@@ -220,7 +225,7 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                 },
                 enabled = !saving && initialized && tokenError == null && timeoutError == null, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             ) { Text(if (saving) "正在保存…" else "保存") }
-            Text("保存只检查格式，不会联网。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp))
+            Text(if (managed?.mode == LearningMode.AiManaged) "保存后，AI 托管会自动继续等待配置的学习任务，产生的用量可在记录中查看。" else "保存只检查格式，不会联网。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp))
 
             val v = p
             if (v != null) {
@@ -231,7 +236,9 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
                         style = MaterialTheme.typography.bodyMedium, color = if (t.ok) c.positive else c.negative, modifier = Modifier.padding(top = 8.dp))
                 }
                 test?.takeIf { it.status.isActive || it.status == OperationStatus.Failed }?.let { OperationLine(it, Modifier.padding(top = 8.dp)) }
-                OutlinedButton(onClick = vm::test, enabled = test?.status?.isActive != true, modifier = Modifier.padding(top = 8.dp)) { Text("测试连接") }
+                val dirty = name != v.name || adapterId != v.adapterId || baseUrl != v.baseUrl || model != v.model ||
+                    reasoningEffort != v.reasoningEffort || maxTokens.toIntOrNull() != v.maxOutputTokens || timeout.toIntOrNull() != v.timeoutSeconds || secret.isNotEmpty() || removeSecret
+                OutlinedButton(onClick = vm::test, enabled = !dirty && !saving && test?.status?.isActive != true, modifier = Modifier.padding(top = 8.dp)) { Text(if (dirty) "先保存修改，再测试" else "测试连接") }
 
                 SectionTitle("状态")
                 Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {

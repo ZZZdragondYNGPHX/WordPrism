@@ -36,6 +36,41 @@ import dev.wordprism.contract.OperationStatus as CStatus
 
 /** Real SQLite and Rust JNI; the only simulated component is the explicitly scripted LLM. */
 class CoreIntegrationTest {
+    @Test fun tutorQuestionAndReplyPersistThroughSqliteRestartWithoutChangingAnswerGrades() = runBlocking {
+        Harness().use { h ->
+            h.seed(); h.configure()
+            ok(h.sdk.adaptation.setLearningMode(LearningMode.AiManaged, ClientRequestId("tutor-enable")))
+            val session = h.scoredSession(); val current = h.state(session).current!!
+            h.provider.response = { ProviderResponse(Contract.json.parseToJsonElement("""{"message":"先看词尾，再判断词性。","checkQuestion":"你发现了哪个区别？"}"""), 10, 12) }
+            val op = ok(h.sdk.study.askTutor(session, current.id, "请给一个提示", ClientRequestId("ask-tutor")))
+            h.core.tasks.run(CId(op.value))
+            assertEquals("先看词尾，再判断词性。", h.sdk.study.observeTutor(session).first().single { it.operation.id == op }.message)
+            h.restart()
+            val restored = h.sdk.study.observeTutor(session).first().single { it.operation.id == op }
+            assertEquals("请给一个提示", restored.question)
+            assertEquals("你发现了哪个区别？", restored.checkQuestion)
+            assertEquals(session, ok(h.sdk.study.startOrResume(ClientRequestId("resume-after-tutor"))))
+            val answer = h.correct(session)
+            val feedback = ok(h.sdk.study.submitAnswer(session, answer.first, answer.second, ClientRequestId("after-tutor")))
+            assertFalse(feedback.affectsSchedule)
+        }
+    }
+    @Test fun managedModePersistsThroughSqliteRestartAndSharesTheLibrary() = runBlocking {
+        Harness().use { h ->
+            h.seed()
+            val before = h.store.read().words
+            ok(h.sdk.adaptation.setLearningMode(LearningMode.AiManaged, ClientRequestId("managed-on")))
+            assertEquals(LearningMode.AiManaged, h.sdk.adaptation.observeManagedLearning().first().mode)
+            assertNotNull(h.sdk.adaptation.observeManagedLearning().first().configurationError)
+            h.restart()
+            assertEquals(LearningMode.AiManaged, h.sdk.adaptation.observeManagedLearning().first().mode)
+            assertEquals(before, h.store.read().words)
+            ok(h.sdk.adaptation.setLearningMode(LearningMode.Standard, ClientRequestId("managed-off")))
+            assertEquals(LearningMode.Standard, h.sdk.adaptation.observeManagedLearning().first().mode)
+            assertEquals(before, h.store.read().words)
+            assertTrue(h.provider.requests.isEmpty())
+        }
+    }
     private class Credentials : CredentialStore {
         val entries = mutableMapOf<CId, CharArray>()
         override fun has(presetId: CId) = presetId in entries
@@ -384,6 +419,13 @@ class CoreIntegrationTest {
             val result = ok(h.sdk.study.submitAnswer(session, intro.id, Answer.Familiarity(false), ClientRequestId("familiarity")))
             assertFalse(result.affectsSchedule)
             ok(h.sdk.study.advance(session, ClientRequestId("after-intro")))
+            val lesson = h.state(session).current as ActivityView.LearnWord
+            assertTrue(lesson.meaning.isNotBlank())
+            h.restart()
+            assertEquals(lesson, h.state(session).current)
+            assertEquals(session, ok(h.sdk.study.startOrResume(ClientRequestId("resume-lesson"))))
+            ok(h.sdk.study.submitAnswer(session, lesson.id, Answer.Acknowledge, ClientRequestId("understood")))
+            ok(h.sdk.study.advance(session, ClientRequestId("after-lesson")))
             val (id, answer) = h.correct(session)
             val practice = ok(h.sdk.study.submitAnswer(session, id, answer, ClientRequestId("practice")))
             assertFalse(practice.affectsSchedule); assertEquals(Verdict.Practice, practice.verdict)

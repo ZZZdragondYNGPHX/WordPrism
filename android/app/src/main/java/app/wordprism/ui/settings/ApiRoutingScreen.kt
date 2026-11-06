@@ -45,6 +45,10 @@ fun ApiRoutingScreen(onBack: () -> Unit, openPreset: (String?) -> Unit) {
         WpTopBar("功能分配与调用", onBack = onBack)
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter).navigationBarsPadding().padding(bottom = 32.dp)) {
             Text("每项 AI 功能可以用不同的预设。没有单独指定时使用默认预设。更换预设不会改动已经生成的内容。", style = MaterialTheme.typography.bodyMedium, color = c.muted)
+            if (presets.isEmpty()) {
+                Button(onClick = { openPreset(null) }, modifier = Modifier.fillMaxWidth().padding(top = 16.dp).heightIn(min = 52.dp)) { Text("先添加一个预设") }
+                Text("保存后回到这里，设为默认或分配给具体功能，再重试等待中的任务。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 8.dp))
+            }
             val pol = policy
             if (pol != null) {
                 SectionTitle("默认预设")
@@ -69,7 +73,6 @@ fun ApiRoutingScreen(onBack: () -> Unit, openPreset: (String?) -> Unit) {
                 }
                 Hairline()
             }
-            if (presets.isEmpty()) TextButton(onClick = { openPreset(null) }) { Text("先添加一个预设") }
 
             if (pol != null) {
                 SectionTitle("调用控制")
