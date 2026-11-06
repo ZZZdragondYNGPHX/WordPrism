@@ -9,6 +9,9 @@ import dev.wordprism.contract.Request
 import dev.wordprism.contract.View
 import dev.wordprism.contract.WordPrism
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
@@ -46,9 +49,13 @@ class CodexBridge(val core: WordPrism, scope: CoroutineScope, val online: StateF
     fun <T> live(query: Query, map: suspend (View) -> T?): Flow<T?> = live { optionalView(query)?.let { map(it) } }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun <T> live(read: suspend () -> T): Flow<T> {
+    fun <T> live(refreshEveryMs: Long? = null, read: suspend () -> T): Flow<T> {
         val key = Any()
-        return revisions.mapLatest {
+        val triggers = if (refreshEveryMs == null) revisions else merge(revisions, flow {
+            require(refreshEveryMs > 0)
+            while (currentCoroutineContext().isActive) { delay(refreshEveryMs); emit(-1L) }
+        })
+        return triggers.mapLatest {
             try { Result.success(read()).also { issue(key, null) } }
             catch (e: CancellationException) { throw e }
             catch (e: Exception) { issue(key, readError(e)); Result.failure<T>(e) }

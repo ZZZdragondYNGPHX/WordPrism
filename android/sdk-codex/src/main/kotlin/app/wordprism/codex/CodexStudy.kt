@@ -36,16 +36,28 @@ internal fun View.Day.toSdk(): LearningDay {
 
 class CodexStudy(private val b: CodexBridge) : StudyApi {
     private val draftMutex = Mutex()
-    override fun observeLearningDay(): Flow<LearningDay> = b.live { (b.view(Query.GetLearningDay()) as View.Day).toSdk() }
-    override fun observePlan(): Flow<LearningPlan> = b.live {
+    override fun observeLearningDay(): Flow<LearningDay> = b.live(refreshEveryMs = 30_000) { (b.view(Query.GetLearningDay()) as View.Day).toSdk() }
+    override fun observePlan(): Flow<LearningPlan> = b.live(refreshEveryMs = 30_000) {
         val day = b.view(Query.GetLearningDay()) as View.Day; val p = day.plan; val policy = day.summary.policy
         val groups = (b.view(Query.LibrarySummary()) as View.LibrarySummary).library.groups
         val total = policy.mix.values.sum().coerceAtLeast(1)
-        LearningPlan(p?.policyVersion?.toInt() ?: policy.version.toInt(), policy.version.toInt(), p?.reviewCount ?: 0, day.summary.plannedNewWords, ((p?.estimatedMs ?: 0) / 60_000).toInt(),
+        LearningPlan(p?.policyVersion?.toInt() ?: policy.version.toInt(), policy.version.toInt(), p?.reviewCount ?: 0, day.summary.plannedNewWords, (((p?.estimatedMs ?: 0) + 59_999) / 60_000).toInt(),
             policy.mix.filterValues { it > 0 }.map { (kind, amount) -> MixShare(kind.name.lowercase(), kindLabel(kind), amount.toFloat() / total) },
             day.summary.focusGroups.mapNotNull { gid -> groups.firstOrNull { it.group.id == gid }?.let { FocusItem(it.group.title, it.group.purpose, GroupId(gid.value)) } },
-            null, if (p?.estimateSource == "personal_observation") "按实际学习用时估计" else "初始用时估计，随学习记录调整",
-            p?.deferredCount?.takeIf { it > 0 }?.let { "$it 个目标顺延；其中可能有等待可用阅读内容的目标" })
+            null, (when (p?.estimateSource) {
+                "personal_observation" -> "按题型与近期有效用时估计（${p.estimateSamples} 次记录）"
+                "mixed_observation" -> "结合近期有效用时估计（${p.estimateSamples} 次记录），部分题型样本不足"
+                else -> "用时样本不足，暂用初始估计，随学习记录更新"
+            }) +
+                if ((p?.estimatedMs ?: 0) > policy.plannedMinutes * 60_000L) "；有待学内容，已在每日预算内增加安排" else "",
+            p?.takeIf { it.deferredCount > 0 }?.let {
+                buildList {
+                    if (it.deferredReviewCount > 0) add("${it.deferredReviewCount} 项到期复习待安排")
+                    if (it.deferredNewWordCount > 0) add("${it.deferredNewWordCount} 个新词待学")
+                    if (it.unavailableTargetCount > 0) add("${it.unavailableTargetCount} 项练习等待可用内容")
+                    if (isEmpty()) add("${it.deferredCount} 项能力练习待安排")
+                }.joinToString("；") + "。同一词的不同能力分别安排。"
+            })
     }
     private suspend fun session(id: SessionId) = b.view(Query.GetSession(CId(id.value))) as View.SessionState
     override suspend fun startOrResume(request: ClientRequestId): SdkResult<SessionId> = safely {

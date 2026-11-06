@@ -297,7 +297,8 @@ fun validateDatabase(db: Database, memory: dev.wordprism.memory.MemoryKernel) {
     valid(db.sessions.values.all { s -> (s.currentActivityId == null || s.currentActivityId in db.activities) &&
         (s.lastAnswerId == null || db.answers[s.lastAnswerId]?.sessionId == s.id) && s.completedTargets.all { it in s.targetIds } }, "会话进度无效")
     valid(db.timeSpans.all { (id, span) -> id == span.id && span.sessionId in db.sessions && span.dayId in db.days && span.fromMs <= span.toMs &&
-        span.fromMs >= db.days.getValue(span.dayId).opensAtMs && span.toMs <= db.days.getValue(span.dayId).closesAtMs }, "计时间隔无效")
+        span.fromMs >= db.days.getValue(span.dayId).opensAtMs && span.toMs <= db.days.getValue(span.dayId).closesAtMs &&
+        (span.targetId == null || span.targetId in db.targets) }, "计时间隔无效")
     valid(db.feedback.values.all { it.answerId in db.answers && "${it.answerId.value}:${it.answerVersion}" in db.answerVersions }, "反馈引用无效")
     valid(db.difficultyMarks.all { (id, mark) -> id == mark.id && "${mark.answerId.value}:${mark.answerVersion}" in db.answerVersions }, "难度标记引用无效")
     valid(db.bindings.values.all { it.presetId in db.presets } && db.jobs.keys.all { it in db.operations }, "配置或任务引用无效")

@@ -7,6 +7,7 @@ import java.time.ZoneId
 import kotlin.math.roundToLong
 
 internal const val DAY_MS = 86_400_000L
+internal const val PLANNER_VERSION = 2
 internal val introductionKinds = setOf(ActivityKind.FAMILIARITY, ActivityKind.CONTRAST)
 internal fun Database.day(now: Long): LearningDay {
     days.values.find { now >= it.opensAtMs && now < it.closesAtMs }?.let { return it }
@@ -35,7 +36,9 @@ internal fun Database.activeTarget(target: LearningTarget, usingPolicy: Training
 
 internal fun Database.plan(day: LearningDay, now: Long, extra: Boolean = false): LearningPlan {
     val totalBudget = settings.budgetMinutes * 60_000L
-    val remaining = (minOf(totalBudget, policy.plannedMinutes * 60_000L) - studyTime(day.id)).coerceAtLeast(0)
+    // plannedMinutes is the preferred duration; queued work may use the user's remaining budget.
+    // Daily new/review limits still bound the load, and no time beyond the budget is implicit.
+    val remaining = (totalBudget - studyTime(day.id)).coerceAtLeast(0)
     val budget = if (extra) policy.sessionTargetLimit * 60_000L else remaining
     val learningAnswers = answers.values.filter { activities[it.activityId]?.kind !in introductionKinds }
     val studied = learningAnswers.filter { answerDayId(it) == day.id }.map { it.targetId }.toSet()
@@ -43,19 +46,15 @@ internal fun Database.plan(day: LearningDay, now: Long, extra: Boolean = false):
     val newStudied = studied.count { firstAnswers[it]?.let { first -> answerDayId(first) == day.id } == true }
     val newRemaining = (policy.newTargetLimit - newStudied).coerceAtLeast(0)
     val reviewRemaining = (policy.reviewTargetLimit - (studied.size - newStudied)).coerceAtLeast(0)
-    val due = targets.values.filter { activeTarget(it) && it.id !in studied && (schedules[it.id]?.dueAtMs ?: 0) <= now }
+    val due = targets.values.filter { activeTarget(it) && it.id !in studied && (schedules[it.id]?.dueAtMs ?: 0) <= now &&
+        policy.mix.filterKeys { kind -> kind.ability() == it.ability }.values.sum() > 0 }
     val candidates = due.filter { target -> when (target.ability) {
         Ability.READING -> activities.values.any { it.targetId == target.id && !it.disputed && reusable(it, policy, now) }
         Ability.RECOGNITION -> senses[target.senseId]?.let { tested -> senses.values.any { it.wordId != tested.wordId && normalize(it.meaning) != normalize(tested.meaning) } } == true
         else -> true
     } }
-    val completedSessions = sessions.values.filter { it.completedTargets.isNotEmpty() }
-    val observedPerTarget = completedSessions.sumOf { it.studyMs }.toDouble() / completedSessions.sumOf { it.completedTargets.size }.coerceAtLeast(1)
-    val estimateSource = if (completedSessions.sumOf { it.completedTargets.size } >= 8 && observedPerTarget > 0) "personal_observation" else "initial_estimate"
-    fun cost(target: LearningTarget): Long {
-        val base = when (target.ability) { Ability.READING -> 150_000L; Ability.EXPRESSION -> 120_000L; Ability.RECALL, Ability.SPELLING -> 50_000L; else -> 35_000L }
-        return if (estimateSource == "personal_observation") maxOf(base, observedPerTarget.toLong().coerceIn(15_000, 240_000)) else base
-    }
+    val estimates = durationEstimates(now)
+    fun cost(target: LearningTarget): Long = estimates.cost(target.ability)
     val failures = answers.values.filter { it.valid && it.verdict == Verdict.INCORRECT }.groupingBy { it.targetId }.eachCount()
     val ordered = candidates.sortedWith(compareBy<LearningTarget> { if (it.id in firstAnswers) 0 else 1 }
         .thenBy { if (it.id in policy.focusTargets) 0 else 1 }.thenByDescending { failures[it.id] ?: 0 }
@@ -78,13 +77,26 @@ internal fun Database.plan(day: LearningDay, now: Long, extra: Boolean = false):
     }
     val knownWords = answers.values.filter { it.valid && !it.input.skipped }.mapNotNull { senses[targets[it.targetId]?.senseId]?.wordId }.toSet()
     val newWords = selected.mapNotNull { senses[it.senseId]?.wordId }.toSet() - knownWords
+    val selectedIds = selected.map { it.id }.toSet()
+    val deferred = due.filter { it.id !in selectedIds }
     return LearningPlan(id(), day.id, policy.version, selected.map { it.id }, new, reviews, due.size - selected.size,
-        spent, estimateSource, totalBudget, now, newWords.size).also { plans[it.id] = it; days[day.id] = day.copy(planId = it.id) }
+        spent, estimates.source(selected.map { it.ability }.toSet()), totalBudget, now, newWords.size, PLANNER_VERSION,
+        deferred.count { (schedules[it.id]?.reviews ?: 0) > 0 },
+        (deferred.mapNotNull { senses[it.senseId]?.wordId }.toSet() - knownWords).size,
+        due.size - candidates.size, estimates.sampleCount).also { plans[it.id] = it; days[day.id] = day.copy(planId = it.id) }
 }
+
+/** A session actively continued across midnight can finish its visible question. A cold/paused
+ * session from a previous day must not replace today's freshly scheduled queue. */
+internal fun Session.belongsTo(day: LearningDay): Boolean = dayId == day.id ||
+    (status == SessionStatus.ACTIVE && timerAtMs?.let { it in day.opensAtMs until day.closesAtMs } == true)
 
 internal fun Database.startSession(now: Long, extra: Boolean, introductions: Boolean = false): View.SessionState {
     val day = day(now)
-    val existing = sessions.values.filter { it.status != SessionStatus.FINISHED }.maxByOrNull { it.timerAtMs ?: days[it.dayId]?.opensAtMs ?: 0 }
+    sessions.values.filter { it.status != SessionStatus.FINISHED && !it.belongsTo(day) }.forEach {
+        sessions[it.id] = tick(it.id, TimerMode.PAUSED, now).copy(status = SessionStatus.FINISHED)
+    }
+    val existing = sessions.values.filter { it.status != SessionStatus.FINISHED && it.belongsTo(day) }.maxByOrNull { it.timerAtMs ?: days[it.dayId]?.opensAtMs ?: 0 }
     if (existing != null && (existing.awaitingAdvance || existing.targetIds.any { it !in existing.completedTargets })) {
         requireBusiness(extra || existing.extraBudgetDayId == day.id || existing.currentActivityId != null || studyTime(day.id) < settings.budgetMinutes * 60_000L,
             "已达到当日预算；继续学习需要本次明确选择", ErrorCode.BUDGET_EXCEEDED)
@@ -93,7 +105,7 @@ internal fun Database.startSession(now: Long, extra: Boolean, introductions: Boo
     }
     existing?.let { sessions[it.id] = tick(it.id, TimerMode.PAUSED, now).copy(status = SessionStatus.FINISHED) }
     requireBusiness(extra || studyTime(day.id) < settings.budgetMinutes * 60_000L, "已达到当日预算；继续学习需要本次明确选择", ErrorCode.BUDGET_EXCEEDED)
-    val currentPlan = day.planId?.let { plans[it] }?.takeIf { it.policyVersion == policy.version && !extra } ?: plan(day, now, extra)
+    val currentPlan = day.planId?.let { plans[it] }?.takeIf { it.policyVersion == policy.version && it.plannerVersion == PLANNER_VERSION && !extra } ?: plan(day, now, extra)
     val done = answers.values.filter { answerDayId(it) == day.id && activities[it.activityId]?.kind !in introductionKinds }.map { it.targetId }.toSet()
     val selected = currentPlan.targetIds.filter { it !in done && targets[it]?.let { t -> activeTarget(t) } == true }.take(policy.sessionTargetLimit)
     val session = Session(id(), day.id, currentPlan.id, policy.version, targetIds = selected,
@@ -115,6 +127,8 @@ internal fun Database.sessionView(session: Session): View.SessionState {
 internal fun Database.nextActivity(sessionId: Id, now: Long): View.SessionState {
     var session = sessions[sessionId].found("会话")
     requireBusiness(session.status == SessionStatus.ACTIVE, "会话未在进行中")
+    // Flush the previous question/feedback before changing targets, so its time stays attributed.
+    session = tick(session.id, session.timerMode, now)
     if (session.currentActivityId != null) return sessionView(session)
     if (session.awaitingAdvance) {
         session = session.copy(awaitingAdvance = false, revisingAnswerId = null)
@@ -177,12 +191,15 @@ internal fun Database.localActivity(target: LearningTarget, kind: ActivityKind, 
 internal fun Database.tick(sessionId: Id, mode: TimerMode, now: Long): Session {
     val session = sessions[sessionId].found("会话")
     val elapsed = session.timerAtMs?.let { (now - it).coerceIn(0, 90_000) } ?: 0L
+    val timedTarget = session.currentActivityId?.let { activities[it]?.targetId }
+        ?: session.lastAnswerId?.takeIf { session.awaitingAdvance }?.let { answers[it]?.targetId }
+        ?: session.targetIds.firstOrNull { it !in session.completedTargets }
     if (elapsed > 0 && session.timerMode != TimerMode.PAUSED) {
         var cursor = session.timerAtMs!!; val end = cursor + elapsed
         while (cursor < end) {
             val day = day(cursor); val to = minOf(end, day.closesAtMs)
-            val previous = timeSpans.values.find { it.sessionId == sessionId && it.dayId == day.id && it.mode == session.timerMode && it.toMs == cursor }
-            val span = previous?.copy(toMs = to) ?: TimeSpan(id(), sessionId, day.id, session.timerMode, cursor, to)
+            val previous = timeSpans.values.find { it.sessionId == sessionId && it.dayId == day.id && it.mode == session.timerMode && it.targetId == timedTarget && it.toMs == cursor }
+            val span = previous?.copy(toMs = to) ?: TimeSpan(id(), sessionId, day.id, session.timerMode, cursor, to, timedTarget)
             timeSpans[span.id] = span; cursor = to
         }
     }

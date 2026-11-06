@@ -12,7 +12,7 @@
 
 应用要求 Android 8.0 / API 26 以上，打包 `arm64-v8a` 与 `x86_64`。Debug APK 可直接安装，release 当前为未签名构建。首次启动是空词库，可在“设置 → 导入与导出”导入[三个示例词的正式内容包](docs/backend/packages/example-content.wordprism)，离线开始学习。AI 功能需要在 API 预设中填写自己的连接与凭证；连接测试也会调用供应商。
 
-可直接下载 [v0.4.0-test.6 测试版 APK](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/tag/v0.4.0-test.6)，新增融入 AI 学习流程的词源与助记，并修复真实请求暴露的可选字段解析、题面遗漏和重开后任务显示问题。可覆盖安装上一测试版。仓库为私有，需要登录有访问权的 GitHub 账号。新附 [hospital 讲解示例包](docs/backend/packages/example-explanation.wordprism)，可离线体验分段讲解与词族选择。
+可直接下载 [v0.4.0-test.8 测试版 APK](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/tag/v0.4.0-test.8)，修复重点辨析的窄屏排版、跨天旧会话覆盖当天计划及积压数量混淆；计划与负荷预测按近期有效学习用时计算，有待学内容时可在每日预算内增加安排。可覆盖安装上一测试版。仓库为私有，需要登录有访问权的 GitHub 账号。[hospital 讲解示例包](docs/backend/packages/example-explanation.wordprism)可离线体验分段讲解与词族选择。
 
 在预设中输入地址与密钥后，点击“拉取模型”，搜索、选择思维程度并保存；再配置默认预设或按功能绑定。旧任务失败时，先保存修改后的预设，再在任务中点击“重试”。本轮已验证 Responses / `gpt-6-luna / MAX / 16384 tokens / 180 秒` 的实际讲解；`MAX / 8000` 仍可能因推理用量耗尽额度，连接测试成功不能代替业务验证。应用会保留失败记录和用量，不保存截断内容或静默增加付费请求。
 

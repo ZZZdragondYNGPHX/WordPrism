@@ -74,7 +74,7 @@ class CoreEngine(
         if (query is Query.GetLearningDay && query.id == null) {
             return@guarded store.transaction { db ->
                 val day = db.day(now())
-                if (day.planId == null) db.plan(day, now())
+                if (day.planId?.let { db.plans[it]?.plannerVersion } != PLANNER_VERSION) db.plan(day, now())
                 db.dayView(db.days[day.id]!!)
             }
         }

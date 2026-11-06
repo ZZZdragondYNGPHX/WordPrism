@@ -125,17 +125,7 @@ fun TodayScreen(
         if (p.focus.isNotEmpty()) {
             SectionTitle("重点辨析")
             p.focus.forEach { f ->
-                Row(
-                    Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
-                        .clickable(enabled = f.groupId != null) { f.groupId?.let { openGroup(it.value) } }
-                        .padding(vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    val parts = f.label.split("→").map { it.trim() }
-                    MemberWords(parts, Modifier.weight(1f))
-                    Text(f.reason, style = MaterialTheme.typography.bodySmall, color = c.muted)
-                    if (f.groupId != null) Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, "打开词组", tint = c.muted)
-                }
+                FocusRow(f, openGroup)
                 Hairline()
             }
         }
@@ -190,6 +180,27 @@ fun TodayScreen(
             confirmButton = { TextButton(onClick = { confirmEnd = false; vm.endDay() }) { Text("结束今天") } },
             dismissButton = { TextButton(onClick = { confirmEnd = false }) { Text("继续学习") } },
         )
+    }
+}
+
+@Composable
+internal fun FocusRow(focus: FocusItem, openGroup: (String) -> Unit) {
+    val c = Wp.colors
+    Row(
+        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)
+            .clickable(enabled = focus.groupId != null) { focus.groupId?.let { openGroup(it.value) } }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            val parts = focus.label.split(Regex("\\s*(?:→|/)\\s*")).filter { it.isNotBlank() }
+            MemberWords(parts, Modifier.fillMaxWidth())
+            Text(focus.reason, style = MaterialTheme.typography.bodySmall, color = c.muted)
+        }
+        if (focus.groupId != null) {
+            Spacer(Modifier.width(12.dp))
+            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, "打开词组", tint = c.muted)
+        }
     }
 }
 

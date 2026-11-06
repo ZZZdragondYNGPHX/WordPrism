@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.advanceTimeBy
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.InputStream
@@ -60,6 +63,24 @@ private class FakeCore : WordPrism {
 
 class CodexAdapterTest {
     private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Default)
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    @Test fun timeSensitiveReadsRefreshWithoutDatabaseWritesAndStopOnCancellation() = kotlinx.coroutines.test.runTest {
+        val bridge = CodexBridge(FakeCore(), backgroundScope)
+        var reads = 0
+        val values = mutableListOf<Int>()
+        val job = backgroundScope.launch { bridge.live(refreshEveryMs = 30_000) { ++reads }.collect { values += it } }
+        runCurrent()
+        assertTrue(values.isNotEmpty())
+        val initial = reads
+        advanceTimeBy(30_001)
+        runCurrent()
+        assertTrue(reads > initial)
+        job.cancel()
+        val stopped = reads
+        advanceTimeBy(60_001)
+        assertEquals(stopped, reads)
+    }
 
     @Test fun catalogMapsAnUnsavedConnectionAndErasesItsSecretWithoutSavingAnything() = runBlocking {
         val core = FakeCore(); val api = CodexPresets(CodexBridge(core, scope))

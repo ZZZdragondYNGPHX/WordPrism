@@ -138,6 +138,12 @@ object Contract {
     val estimateSource: String, val budgetMs: Long, val createdAtMs: Long,
     /** Distinct previously unstudied words at planning time; null only for legacy plans. */
     val newWordCount: Int? = null,
+    /** Planner revision allows current-day cached plans to adopt corrected scheduling rules. */
+    val plannerVersion: Int = 0,
+    val deferredReviewCount: Int = 0,
+    val deferredNewWordCount: Int = 0,
+    val unavailableTargetCount: Int = 0,
+    val estimateSamples: Int = 0,
 )
 @Serializable data class LearningDay(
     val id: Id, val date: String, val zoneId: String, val opensAtMs: Long, val closesAtMs: Long,

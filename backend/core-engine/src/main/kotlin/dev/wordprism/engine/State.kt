@@ -23,7 +23,8 @@ internal fun <T> T?.found(name: String): T = this ?: fail(ErrorCode.NOT_FOUND, "
 )
 @Serializable data class StoredPreview(val preview: PackagePreview, val manifest: PackageManifest, val modules: Map<String, JsonElement>)
 @Serializable data class ArchivedModule(val version: Int, val required: Boolean, val dependencies: List<String>, val data: JsonElement)
-@Serializable data class TimeSpan(val id: Id, val sessionId: Id, val dayId: Id, val mode: TimerMode, val fromMs: Long, val toMs: Long)
+@Serializable data class TimeSpan(val id: Id, val sessionId: Id, val dayId: Id, val mode: TimerMode, val fromMs: Long, val toMs: Long,
+    val targetId: Id? = null)
 
 /** All writes happen within StateStore.transaction; a failed block must roll back entirely. */
 @Serializable data class Database(

@@ -34,6 +34,12 @@ JSON 使用 `type` 判别、枚举原名和字符串 ID。进程内 Kotlin 客�
 
 具体签名、默认值与完整操作集合以类型源为准。派生状态不由前端自行猜测：例如计划的 `newCount` 是新学习**目标**数量，`DaySummary.plannedNewWords` 才是去重的新词数量；接触基本义后可显示“学习中”，但不会凭空产生 FSRS 复习或独立回忆证据。
 
+有待学内容时，日计划可超过策略的 `plannedMinutes`，但仍受用户当日剩余预算、每日新学/复习上限和启用题型约束；优先复习，再安排新学。`LearningPlan` 分别提供 `deferredReviewCount`（已有记忆排程的到期目标）、`deferredNewWordCount`（待学新词去重数）和 `unavailableTargetCount`（等待可用内容的目标）；这些口径可能重叠，不可相加解释为逾期词数。未启用题型不计入待安排量。`plannerVersion` 用于更新当前日的旧缓存计划，原计划及历史作答保留。
+
+计划用时与七日负荷预测共用后端 `durationEstimates`：从有效 `STUDY` 区间统计每个目标的讲解、作答及反馈用时，排除等待、后台、跳过及尚未结束的当前题。每种能力取最近 60 天内最多 30 个样本的中位数；不足 3 个时结合个人总体速度和冷启动先验，达到 3 个后不再以初始秒数为下限。旧备份没有目标计时归属时，以实际学习区间和提交边界近似重建。`estimateSource` 区分初始、混合与个人估计，`estimateSamples` 给出本次采用的记录数；UI 明示样本不足，估计不等于实际耗时。
+
+当天暂停的会话按原题续接；前一天暂停或冷启动恢复的队列不再替代新一天的计划，开始学习时归档旧会话。已在跨午夜继续作答的活动会话可保留当前上下文，时间和作答仍按发生日记录。Android 的学习日与计划订阅在可观察期间每 30 秒刷新，使跨天更新不依赖额外写入。
+
 `Protocols` 提供 Chat Completions 与原生 Responses 的稳定 ID、名称和说明；预设选择、调用与用量共用上述接口。协议请求映射、错误语义和兼容样例统一维护在[LLM 协议接入](api-protocols.md)。
 
 `ApiPreset.reasoningEffort: ReasoningEffort?` 默认 `null`，目录字段 `ProtocolInfo.reasoningEfforts` 提供可选值；表示适配器可发送的档位，不承诺模型均支持。旧行和备份缺字段时保持默认，任务和用量保留当次配置。见[思维程度及同源样例](api-protocols.md#思维程度)。

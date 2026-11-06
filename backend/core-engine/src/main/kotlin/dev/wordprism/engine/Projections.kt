@@ -107,7 +107,7 @@ internal fun Database.daySummary(day: LearningDay): DaySummary {
         timeSpans.values.filter { it.dayId == day.id && it.mode == TimerMode.WAITING }.sumOf { it.toMs - it.fromMs } +
             sessions.values.filter { it.dayId == day.id }.sumOf { legacyTime(it, TimerMode.WAITING) },
         budgetState(day), answers.values.filter { answerDayId(it) == day.id && activities[it.activityId]?.kind !in introductionKinds }.map { it.targetId }.distinct().size,
-        sessions.values.lastOrNull { it.status != SessionStatus.FINISHED && (it.dayId == day.id || it.targetIds.any { tid -> tid !in it.completedTargets }) }?.id,
+        sessions.values.lastOrNull { it.status != SessionStatus.FINISHED && it.belongsTo(day) }?.id,
         day.endedAtMs == null, settings.automaticAnalysis, state, day.planId?.let { plans[it]?.policyVersion }?.let(policyVersions::get) ?: policy,
         policy.focusTargets.mapNotNull { targets[it]?.groupId }.distinct(),
         when { day.endReason == DayEndReason.PLAN_COMPLETED -> "plan_completed"; day.endedAtMs != null -> "ended"
@@ -129,6 +129,7 @@ internal fun Database.snapshotDetails(now: Long, fromMs: Long, confusions: List<
     val expressionFeedback = feedback.values.filter { it.source == GradeSource.AI && answers[it.answerId]?.let { a ->
         a.valid && a.atMs in fromMs..now && a.version == it.answerVersion } == true }
     val classifiedUsage = expressionFeedback.filter { it.targetUsage in setOf("good", "appropriate", "equally_valid", "acceptable_unnatural", "misused") }
+    val estimates = durationEstimates(now)
     return SnapshotDetails(
         addedWords = words.values.count { !it.archived && it.source.atMs in fromMs..now },
         acceptedRecommendations = recommendations.values.count { r -> r.acceptedOperationId?.let { operations[it] }?.let { it.undoneBy == null && it.updatedAtMs in fromMs..now } == true },
@@ -143,8 +144,8 @@ internal fun Database.snapshotDetails(now: Long, fromMs: Long, confusions: List<
         },
         forecast = (1L..7L).map { offset ->
             val date = today.plusDays(offset); val start = date.atStartOfDay(zone).toInstant().toEpochMilli(); val end = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-            val due = overdue.count { schedules[it.id]?.dueAtMs?.let { due -> due in start until end } == true }
-            LoadForecast(date.toString(), due, due * 60_000L)
+            val due = overdue.filter { schedules[it.id]?.dueAtMs?.let { due -> due in start until end } == true }
+            LoadForecast(date.toString(), due.size, due.sumOf { estimates.cost(it.ability) })
         },
         overdueTargets = overdue.count { (schedules[it.id]?.dueAtMs ?: now) < today.atStartOfDay(zone).toInstant().toEpochMilli() },
         confusions = confusions.map { c -> ConfusionDetail(c.targetId, c.selectedSenseId,
