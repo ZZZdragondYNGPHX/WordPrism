@@ -10,6 +10,11 @@ internal fun CoreEngine.reconcileManaged(db: Database, now: Long) {
     if (db.settings.learningMode != LearningMode.AI_MANAGED) return
     db.operations.values.toList().filter { it.feature == Feature.TUTORING && it.status in pendingStatuses + OperationStatus.RUNNING }.forEach { op ->
         val command = db.jobs[op.id]?.command as? Command.TutorSession ?: return@forEach
+        if (command.moment != TutorMoment.QUESTION && op.actor == Actor.AI) {
+            db.operations[op.id] = op.copy(status = OperationStatus.CANCELLED,
+                fault = Fault(ErrorCode.DISABLED, "助教已改为结束后手动调用，请点击本轮总结"), updatedAtMs = now)
+            return@forEach
+        }
         val target = command.answer?.let { db.answers[it.id]?.targetId }?.let(db.targets::get)
         if (target != null && !db.activeTarget(target) || db.sessions[command.sessionId]?.targetIds.orEmpty().none { db.targets[it]?.let(db::activeTarget) == true }) {
             db.operations[op.id] = op.copy(status = OperationStatus.CANCELLED, fault = Fault(ErrorCode.DISABLED, "相关学习内容已归档或撤销"), updatedAtMs = now)

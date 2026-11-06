@@ -9,6 +9,30 @@ import kotlin.test.*
 import org.junit.jupiter.api.Test
 
 class TutoringTest {
+    @Test fun `learning never calls tutor until explicit end of session review and repeats reuse it`() = runBlocking {
+        val h = setup(); val shown = h.question(); h.answer(shown)
+        assertTrue(h.store.read().operations.values.none { it.feature == Feature.TUTORING })
+        h.command(Command.FinishSession(shown.session.id, pause = true))
+        assertTrue(h.store.read().operations.values.none { it.feature == Feature.TUTORING })
+        val view = h.core.query(Query.Tutoring()).value as View.Tutoring
+        assertEquals(shown.session.id, view.reviewSessionId)
+        val command = Command.TutorSession(shown.session.id, TutorMoment.RECAP)
+        val first = (h.command(command) as View.OperationResult).operation
+        assertEquals(Actor.USER, first.actor)
+        assertEquals(first.id, (h.command(command) as View.OperationResult).operation.id)
+        h.reply(TutorReport("本轮先巩固词尾区别。")); h.core.tasks.run(first.id)
+        assertEquals(first.id, (h.command(command) as View.OperationResult).operation.id)
+        assertEquals(1, h.provider.requests.size)
+    }
+
+    @Test fun `upgrade cancels legacy unattended tutor jobs but preserves requested questions`() = runBlocking {
+        val h = setup(); h.answer(); val legacy = h.tutor(TutorMoment.COACH)
+        h.core.recover()
+        assertEquals(OperationStatus.CANCELLED, h.store.read().operations.getValue(legacy.id).status)
+        h.core.tasks.run(legacy.id)
+        assertTrue(h.provider.requests.isEmpty())
+    }
+
     @Test fun `tutor can prioritize only remaining lesson goals and preserves historical grades`() = runBlocking {
         val h = setup(); val answer = h.answer().answer; val op = h.tutor(TutorMoment.COACH)
         val before = h.store.read(); val session = before.sessions.getValue(answer.sessionId)
@@ -25,8 +49,10 @@ class TutoringTest {
         val s = h.store.read().settings
         h.command(Command.SetLearningMode(LearningMode.AI_MANAGED, s.version))
     }
-    private suspend fun Harness.tutor(moment: TutorMoment): Operation = store.read().let { db ->
-        db.operations.values.last { (db.jobs[it.id]?.command as? Command.TutorSession)?.moment == moment }
+    // Historical coach reports remain readable and validated; new learning events never enqueue them.
+    private suspend fun Harness.tutor(moment: TutorMoment): Operation = store.transaction { db ->
+        val answer = db.answers.values.maxBy { it.sequence }
+        db.requestTutor(Command.TutorSession(answer.sessionId, moment, answer = Ref(answer.id, answer.version)), clock.millis(), automatic = true)
     }
     private fun Harness.reply(report: TutorReport) {
         provider.response = { ProviderResponse(Contract.json.encodeToJsonElement(report), 12, 24) }
@@ -137,7 +163,7 @@ class TutoringTest {
         h.command(Command.FinishSession(shown.session.id, pause = true))
         h.command(Command.FinishSession(shown.session.id, pause = true))
         val db = h.store.read(); val moments = db.jobs.values.mapNotNull { (it.command as? Command.TutorSession)?.moment }
-        assertEquals(1, moments.count { it == TutorMoment.COACH }); assertEquals(1, moments.count { it == TutorMoment.RECAP })
+        assertEquals(1, moments.count { it == TutorMoment.COACH }); assertEquals(0, moments.count { it == TutorMoment.RECAP })
         assertEquals(1, h.provider.requests.size); assertEquals(OperationStatus.FAILED, db.operations.getValue(op.id).status)
     }
 }

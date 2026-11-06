@@ -29,6 +29,42 @@ import androidx.compose.ui.unit.dp
 import app.wordprism.sdk.*
 import app.wordprism.ui.common.*
 import app.wordprism.ui.theme.Wp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
+
+@Composable
+internal fun TutorReviewButton(sessionId: SessionId, openApi: () -> Unit) {
+    val sdk = appSdk()
+    val scope = rememberCoroutineScope()
+    val snackbar = LocalSnackbar.current
+    var submitting by remember { mutableStateOf(false) }
+    var opened by rememberSaveable(sessionId.value) { mutableStateOf(false) }
+    val messages by remember(sdk, sessionId) { sdk.study.observeTutor(sessionId) }.collectAsStateWithLifecycle(emptyList())
+    fun action(run: suspend () -> SdkResult<*>) { scope.launch { val result = run(); if (result is SdkResult.Err) snackbar.showSnackbar(result.error.message) } }
+    OutlinedButton(onClick = {
+        if (!submitting) {
+            submitting = true
+            scope.launch {
+                try {
+                    when (val result = sdk.study.reviewWithTutor(sessionId, newRequest())) {
+                        is SdkResult.Ok -> opened = true
+                        is SdkResult.Err -> snackbar.showSnackbar(result.error.message)
+                    }
+                } finally { submitting = false }
+            }
+        }
+    }, enabled = !submitting, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+        Icon(Icons.Outlined.AutoAwesome, null, Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(if (submitting) "正在提交…" else "本轮助教总结")
+    }
+    Text("点击后才调用；同一轮已有总结可直接查看。", style = MaterialTheme.typography.bodySmall,
+        color = Wp.colors.muted, modifier = Modifier.padding(top = 6.dp, bottom = 12.dp))
+    if (opened) TutorSheet("recap:${sessionId.value}", messages.filter { it.moment == "recap" }, canAsk = false,
+        assisted = false, submitting = submitting, onAsk = { _, _ -> },
+        onCancel = { id -> action { sdk.operations.cancel(id) } }, onRetry = { id -> action { sdk.operations.retry(id, newRequest()) } },
+        openApi = openApi, onClose = { opened = false })
+}
 
 @Composable
 internal fun TutorInline(message: TutorMessage?, onOpen: () -> Unit) {

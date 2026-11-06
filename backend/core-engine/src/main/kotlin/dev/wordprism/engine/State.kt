@@ -118,6 +118,139 @@ object StateCodec {
         val migrated = if (version == 1) JsonObject(input + ("schemaVersion" to JsonPrimitive(2))) else input
         return Contract.json.decodeFromJsonElement(migrated)
     }
+    /** Stored rows are immutable values; only scalar properties and top-level maps are writable. */
+    fun fork(db: Database): Database = db.copy(
+        words = db.words.toMutableMap(),
+        senses = db.senses.toMutableMap(),
+        groups = db.groups.toMutableMap(),
+        memberships = db.memberships.toMutableMap(),
+        targets = db.targets.toMutableMap(),
+        schedules = db.schedules.toMutableMap(),
+        activities = db.activities.toMutableMap(),
+        activityVersions = db.activityVersions.toMutableMap(),
+        answers = db.answers.toMutableMap(),
+        answerVersions = db.answerVersions.toMutableMap(),
+        presentations = db.presentations.toMutableMap(),
+        exposures = db.exposures.toMutableMap(),
+        feedback = db.feedback.toMutableMap(),
+        difficultyMarks = db.difficultyMarks.toMutableMap(),
+        sessions = db.sessions.toMutableMap(),
+        timeSpans = db.timeSpans.toMutableMap(),
+        days = db.days.toMutableMap(),
+        plans = db.plans.toMutableMap(),
+        drafts = db.drafts.toMutableMap(),
+        policyVersions = db.policyVersions.toMutableMap(),
+        changes = db.changes.toMutableMap(),
+        snapshots = db.snapshots.toMutableMap(),
+        evaluations = db.evaluations.toMutableMap(),
+        presets = db.presets.toMutableMap(),
+        credentialRefs = db.credentialRefs.toMutableMap(),
+        presetVersions = db.presetVersions.toMutableMap(),
+        bindings = db.bindings.toMutableMap(),
+        usage = db.usage.toMutableMap(),
+        recommendations = db.recommendations.toMutableMap(),
+        operations = db.operations.toMutableMap(),
+        jobs = db.jobs.toMutableMap(),
+        requests = db.requests.toMutableMap(),
+        undos = db.undos.toMutableMap(),
+        previews = db.previews.toMutableMap(),
+        importedPackages = db.importedPackages.toMutableMap(),
+        archivedModules = db.archivedModules.toMutableMap(),
+    )
+
+    data class Changes(val writes: List<Row>, val deletes: List<Pair<String, String>>)
+    /** Serialize changed records only; large histories and undo payloads stay untouched. */
+    fun changes(before: Database, after: Database): Changes? {
+        val deletes = mutableListOf<Pair<String, String>>()
+        fun key(value: Any?): String = when (value) { is Id -> value.value; is Enum<*> -> value.name; else -> value.toString() }
+        fun <K, V> delta(bucket: String, old: Map<K, V>, next: Map<K, V>): MutableMap<K, V> {
+            old.keys.filter { it !in next }.forEach { deletes += bucket to key(it) }
+            return next.filter { (k, v) -> old[k] != v || k !in old }.toMutableMap()
+        }
+        val sparse = after.copy(
+            words = delta("words", before.words, after.words),
+            senses = delta("senses", before.senses, after.senses),
+            groups = delta("groups", before.groups, after.groups),
+            memberships = delta("memberships", before.memberships, after.memberships),
+            targets = delta("targets", before.targets, after.targets),
+            schedules = delta("schedules", before.schedules, after.schedules),
+            activities = delta("activities", before.activities, after.activities),
+            activityVersions = delta("activityVersions", before.activityVersions, after.activityVersions),
+            answers = delta("answers", before.answers, after.answers),
+            answerVersions = delta("answerVersions", before.answerVersions, after.answerVersions),
+            presentations = delta("presentations", before.presentations, after.presentations),
+            exposures = delta("exposures", before.exposures, after.exposures),
+            feedback = delta("feedback", before.feedback, after.feedback),
+            difficultyMarks = delta("difficultyMarks", before.difficultyMarks, after.difficultyMarks),
+            sessions = delta("sessions", before.sessions, after.sessions),
+            timeSpans = delta("timeSpans", before.timeSpans, after.timeSpans),
+            days = delta("days", before.days, after.days),
+            plans = delta("plans", before.plans, after.plans),
+            drafts = delta("drafts", before.drafts, after.drafts),
+            policyVersions = delta("policyVersions", before.policyVersions, after.policyVersions),
+            changes = delta("changes", before.changes, after.changes),
+            snapshots = delta("snapshots", before.snapshots, after.snapshots),
+            evaluations = delta("evaluations", before.evaluations, after.evaluations),
+            presets = delta("presets", before.presets, after.presets),
+            credentialRefs = delta("credentialRefs", before.credentialRefs, after.credentialRefs),
+            presetVersions = delta("presetVersions", before.presetVersions, after.presetVersions),
+            bindings = delta("bindings", before.bindings, after.bindings),
+            usage = delta("usage", before.usage, after.usage),
+            recommendations = delta("recommendations", before.recommendations, after.recommendations),
+            operations = delta("operations", before.operations, after.operations),
+            jobs = delta("jobs", before.jobs, after.jobs),
+            requests = delta("requests", before.requests, after.requests),
+            undos = delta("undos", before.undos, after.undos),
+            previews = delta("previews", before.previews, after.previews),
+            importedPackages = delta("importedPackages", before.importedPackages, after.importedPackages),
+            archivedModules = delta("archivedModules", before.archivedModules, after.archivedModules),
+        )
+        val previousRoot = rows(before.copy(
+            words = linkedMapOf(),
+            senses = linkedMapOf(),
+            groups = linkedMapOf(),
+            memberships = linkedMapOf(),
+            targets = linkedMapOf(),
+            schedules = linkedMapOf(),
+            activities = linkedMapOf(),
+            activityVersions = linkedMapOf(),
+            answers = linkedMapOf(),
+            answerVersions = linkedMapOf(),
+            presentations = linkedMapOf(),
+            exposures = linkedMapOf(),
+            feedback = linkedMapOf(),
+            difficultyMarks = linkedMapOf(),
+            sessions = linkedMapOf(),
+            timeSpans = linkedMapOf(),
+            days = linkedMapOf(),
+            plans = linkedMapOf(),
+            drafts = linkedMapOf(),
+            policyVersions = linkedMapOf(),
+            changes = linkedMapOf(),
+            snapshots = linkedMapOf(),
+            evaluations = linkedMapOf(),
+            presets = linkedMapOf(),
+            credentialRefs = linkedMapOf(),
+            presetVersions = linkedMapOf(),
+            bindings = linkedMapOf(),
+            usage = linkedMapOf(),
+            recommendations = linkedMapOf(),
+            operations = linkedMapOf(),
+            jobs = linkedMapOf(),
+            requests = linkedMapOf(),
+            undos = linkedMapOf(),
+            previews = linkedMapOf(),
+            importedPackages = linkedMapOf(),
+            archivedModules = linkedMapOf(),
+        )).associate { it.key to it.payload }
+        val writes = rows(sparse).filter { it.bucket != "_root" || previousRoot[it.key] != it.payload }.toMutableList()
+        if (writes.isEmpty() && deletes.isEmpty()) return null
+        after.revision = before.revision + 1
+        writes.removeAll { it.bucket == "_root" && it.key == "revision" }
+        writes += Row("_root", "revision", after.revision.toString())
+        return Changes(writes, deletes)
+    }
+
     fun clone(db: Database): Database = Contract.json.decodeFromString(Contract.json.encodeToString(db))
 }
 

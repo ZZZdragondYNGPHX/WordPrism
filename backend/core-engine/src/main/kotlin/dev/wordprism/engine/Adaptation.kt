@@ -73,7 +73,7 @@ internal fun Database.capabilities(): List<Capability> {
         affectsSchedule = spec.scheduling, userLocked = key in settings.lockedCapabilities) } +
         actionCapabilities.map { capability -> capability.copy(userLocked = capability.id in settings.lockedCapabilities ||
             capability.id == "explain_sense" && !settings.generationEnabled()) } +
-        Capability("tutor_session", "逐题助教、学习记忆与追问", "action", JsonNull,
+        Capability("tutor_session", "手动课后总结、学习记忆与追问", "action", JsonNull,
             "基于有效作答提供教学建议；不改写评分；切回普通模式停止", userLocked = "tutor_session" in settings.lockedCapabilities)
 }
 
@@ -124,7 +124,16 @@ internal fun Database.finishDay(dayId: Id, reason: DayEndReason, now: Long): Vie
     }
     return dayView(current)
 }
-internal fun Database.dayView(day: LearningDay) = View.Day(day, day.planId?.let { plans[it] }, studyTime(day.id), day.automaticOperationId?.let { operations[it] }, daySummary(day))
+internal fun Database.dayAnalysis(day: LearningDay): Operation? {
+    val original = day.automaticOperationId?.let(operations::get)
+    if (original?.status in pendingStatuses + OperationStatus.RUNNING) return original
+    // A successful manual retry covers the same evidence without rewriting the original failure.
+    return operations.values.filter { it.feature == Feature.LEARNING_ANALYSIS && it.status == OperationStatus.SUCCEEDED &&
+        it.undoneBy == null && day.endedAtMs != null && it.updatedAtMs >= day.endedAtMs!! &&
+        it.throughSequence >= (day.endSequence ?: original?.throughSequence ?: Long.MAX_VALUE) }
+        .maxByOrNull { it.updatedAtMs } ?: original
+}
+internal fun Database.dayView(day: LearningDay) = View.Day(day, day.planId?.let { plans[it] }, studyTime(day.id), dayAnalysis(day), daySummary(day))
 
 internal fun Database.analyze(now: Long, automatic: Boolean, dayId: Id?, force: Boolean): Operation {
     if (!force) operations.values.filter { it.feature == Feature.LEARNING_ANALYSIS && it.throughSequence == sequence &&

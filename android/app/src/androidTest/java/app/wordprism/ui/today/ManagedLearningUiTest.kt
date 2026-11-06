@@ -48,6 +48,7 @@ class ManagedLearningUiTest {
         compose.waitUntil(10_000) { compose.onAllNodes(studyAction).fetchSemanticsNodes().isNotEmpty() }
         compose.onNode(studyAction).performScrollTo().performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("暂停并退出（进度已保存）").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("问助教").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("问助教").performClick()
         compose.onNodeWithContentDescription("问助教，或说说你的理解").performTextInput("请只给一个提示")
         compose.onNodeWithContentDescription("发送给助教").performClick()
@@ -55,8 +56,20 @@ class ManagedLearningUiTest {
         assertTrue(runBlocking { app.sdk.study.observeTutor().first() }.any { it.question == "请只给一个提示" })
         compose.onNodeWithContentDescription("关闭助教").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("关闭助教").fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithText("认识").performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("认识").fetchSemanticsNodes().isEmpty() }
         compose.onNodeWithContentDescription("暂停并退出（进度已保存）").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("继续背诵").fetchSemanticsNodes().isNotEmpty() }
+        assertTrue(runBlocking { app.sdk.study.observeTutor().first() }.none { it.moment != "question" })
+        compose.onNodeWithText("本轮助教总结").performScrollTo().performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("关闭助教").fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(1, runBlocking { app.sdk.study.observeTutor().first() }.count { it.moment == "recap" })
+        compose.onNodeWithContentDescription("关闭助教").performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("关闭助教").fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithText("本轮助教总结").performScrollTo().performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("关闭助教").fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(1, runBlocking { app.sdk.study.observeTutor().first() }.count { it.moment == "recap" })
+        compose.onNodeWithContentDescription("关闭助教").performClick()
         compose.activityRule.scenario.recreate()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("AI 托管模式").fetchSemanticsNodes().isNotEmpty() }
         assertEquals(LearningMode.AiManaged, runBlocking { app.sdk.adaptation.observeManagedLearning().first().mode })

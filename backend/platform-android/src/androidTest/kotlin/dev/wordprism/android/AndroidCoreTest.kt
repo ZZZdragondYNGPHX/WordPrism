@@ -21,6 +21,28 @@ import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class AndroidCoreTest {
+    @Test fun analysisWorkerPromotesBeforeRequestAndLeavesMissingCredentialsDormant() = runBlocking<Unit> {
+        val sdk = AndroidWordPrism.open(context)
+        val preset = ApiPreset(Id("foreground-${UUID.randomUUID()}"), name = "Synthetic", baseUrl = "https://example.invalid/v1", model = "test")
+        assertNull(sdk.execute(Request(UUID.randomUUID().toString(), Command.SavePreset(preset))).fault)
+        assertNull(sdk.execute(Request(UUID.randomUUID().toString(), Command.BindPreset(Binding(Feature.LEARNING_ANALYSIS, preset.id)))).fault)
+        val reply = sdk.execute(Request(UUID.randomUUID().toString(), Command.AnalyzeLearning(force = true)))
+        val op = (reply.value as View.OperationResult).operation
+        val manager = WorkManager.getInstance(context)
+        withTimeout(20_000) {
+            while (true) {
+                val work = manager.getWorkInfosForUniqueWork("wordprism:${op.id.value}").get()
+                if (work.any { it.state == androidx.work.WorkInfo.State.SUCCEEDED }) break
+                delay(100)
+            }
+        }
+        val current = (sdk.query(Query.GetOperation(op.id)).value as View.OperationResult).operation
+        assertEquals(OperationStatus.NEEDS_CONFIGURATION, current.status)
+        assertEquals(0, current.attempt)
+        sdk.execute(Request(UUID.randomUUID().toString(), Command.CancelOperation(op.id)))
+        sdk.execute(Request(UUID.randomUUID().toString(), Command.UnbindPreset(Feature.LEARNING_ANALYSIS)))
+        sdk.execute(Request(UUID.randomUUID().toString(), Command.DeletePreset(Ref(preset.id, 1))))
+    }
     private val context get() = ApplicationProvider.getApplicationContext<Context>()
     @Test fun configurationBlockedTasksStayDormantUntilExplicitRetry() = runBlocking<Unit> {
         val sdk = AndroidWordPrism.open(context)

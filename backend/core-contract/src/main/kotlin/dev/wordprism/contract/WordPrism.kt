@@ -149,7 +149,7 @@ import kotlinx.serialization.Serializable
     ) : View
     @Serializable @SerialName("settings") data class Settings(val settings: UserSettings, val policy: TrainingPolicy, val bindings: List<Binding>) : View
     @Serializable @SerialName("managed_learning") data class ManagedLearning(val state: ManagedLearningState) : View
-    @Serializable @SerialName("tutoring") data class Tutoring(val entries: List<TutorEntry>) : View
+    @Serializable @SerialName("tutoring") data class Tutoring(val entries: List<TutorEntry>, val reviewSessionId: Id? = null) : View
     @Serializable @SerialName("capabilities") data class Capabilities(val capabilities: List<Capability>) : View
     @Serializable @SerialName("policy_changes") data class PolicyChanges(val changes: List<PolicyChange>, val undoableIds: Set<Id> = emptySet()) : View
     @Serializable @SerialName("presets") data class Presets(val presets: List<PresetView>, val bindings: List<Binding>) : View

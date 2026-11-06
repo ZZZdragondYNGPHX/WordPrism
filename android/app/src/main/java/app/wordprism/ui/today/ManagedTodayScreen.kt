@@ -21,6 +21,7 @@ import app.wordprism.sdk.*
 import app.wordprism.ui.common.*
 import app.wordprism.ui.theme.Wp
 import app.wordprism.ui.theme.WpType
+import app.wordprism.ui.study.TutorReviewButton
 import kotlinx.coroutines.launch
 
 @Composable
@@ -72,6 +73,9 @@ fun ManagedTodayScreen(
     val sdk = appSdk()
     val adaptation by remember(sdk) { sdk.adaptation.observeSettings() }.collectAsStateWithLifecycle(null)
     val tutoring by remember(sdk) { sdk.study.observeTutor() }.collectAsStateWithLifecycle(emptyList())
+    val reviewSession by remember(sdk) { sdk.study.observeTutorReviewSession() }.collectAsStateWithLifecycle(null)
+    val scope = rememberCoroutineScope()
+    val snackbar = LocalSnackbar.current
     val d = day
     val p = plan
     if (d == null || p == null) { Loading(); return }
@@ -160,6 +164,23 @@ fun ManagedTodayScreen(
 
         Spacer(Modifier.height(20.dp))
         Hairline()
+        reviewSession?.let { session ->
+            Spacer(Modifier.height(20.dp))
+            TutorReviewButton(session) { openPreset(managed.presetId) }
+        }
+        d.dailyAnalysis.operationId?.let { operationId ->
+            val operation by remember(sdk, operationId) { sdk.operations.observe(operationId) }.collectAsStateWithLifecycle(null)
+            Spacer(Modifier.height(16.dp))
+            Text("每日学习分析", style = MaterialTheme.typography.titleSmall, color = c.ink)
+            operation?.let { op ->
+                OperationLine(op, Modifier.padding(top = 8.dp), onRetry = {
+                    scope.launch { val result = sdk.operations.retry(op.id, newRequest()); if (result is SdkResult.Err) snackbar.showSnackbar(result.error.message) }
+                }, onCancel = {
+                    scope.launch { val result = sdk.operations.cancel(op.id); if (result is SdkResult.Err) snackbar.showSnackbar(result.error.message) }
+                })
+                if (op.error != null) TextButton(onClick = { openPreset(op.presetId ?: managed.presetId) }) { Text("检查 API 配置") }
+            }
+        }
         tutoring.firstOrNull { it.moment == "recap" && it.message != null }?.let { recap ->
             Spacer(Modifier.height(20.dp))
             Text("助教的课后小结", style = MaterialTheme.typography.titleMedium, color = c.ink)

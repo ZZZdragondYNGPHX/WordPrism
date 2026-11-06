@@ -35,6 +35,13 @@ internal fun View.Day.toSdk(): LearningDay {
 }
 
 class CodexStudy(private val b: CodexBridge) : StudyApi {
+    override fun observeTutorReviewSession(): Flow<SessionId?> = b.live(Query.Tutoring()) {
+        (it as View.Tutoring).reviewSessionId?.value?.let(::SessionId)
+    }
+    override suspend fun reviewWithTutor(session: SessionId, request: ClientRequestId): SdkResult<OperationId> =
+        b.exec(request, Command.TutorSession(CId(session.value), dev.wordprism.contract.TutorMoment.RECAP)) {
+            OperationId((it as View.OperationResult).operation.id.value)
+        }
     override fun observeTutor(session: SessionId?): Flow<List<TutorMessage>> = b.live {
         (b.view(Query.Tutoring(session?.value?.let(::CId))) as View.Tutoring).entries.map { entry ->
             TutorMessage(entry.operation.toSdk(), entry.moment.name.lowercase(), SessionId(entry.sessionId.value),

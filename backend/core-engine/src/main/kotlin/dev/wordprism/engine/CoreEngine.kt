@@ -56,7 +56,6 @@ class CoreEngine(
             }
             (request.command as? Command.DeletePreset)?.let { command -> db.credentialRefs[command.preset.id]?.let { credentialsAfterCommit += it } }
             val view = applyCommand(db, request.command, Actor.USER, now())
-            db.tutorAfterEvent(request.command, view, now())
             reconcileManaged(db, now())
             db.requests[request.key] = SavedRequest(fingerprint, view)
             view to true
@@ -118,7 +117,7 @@ class CoreEngine(
                 .map(db::recommendationView))
             Query.Settings -> View.Settings(db.settings, db.policy, db.bindings.values.toList())
             Query.ManagedLearning -> View.ManagedLearning(managedLearningState(db))
-            is Query.Tutoring -> View.Tutoring(db.tutorEntries(query.sessionId))
+            is Query.Tutoring -> View.Tutoring(db.tutorEntries(query.sessionId), db.tutorReviewSession())
             Query.Capabilities -> View.Capabilities(db.capabilities())
             Query.PolicyChanges -> View.PolicyChanges(db.changes.values.toList(), db.changes.values.filter { change -> change.undoneBy == null &&
                 db.policy.copy(version = change.after.version) == change.after && db.changes.values.none { it.after.version > change.after.version && it.undoneBy == null } }.map { it.id }.toSet())

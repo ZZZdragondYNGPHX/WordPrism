@@ -6,6 +6,22 @@ import kotlin.system.measureNanoTime
 import kotlin.test.*
 
 class CommitSerializationTest {
+    @Test fun `record delta preserves every unchanged bucket and isolates rollback`() {
+        val before = Database()
+        repeat(100) { i -> val id = Id("word-$i"); before.words[id] = Word(id, spelling = "word$i", normalized = "word$i") }
+        val original = StateCodec.rows(before).associateBy { it.bucket to it.key }
+        val after = StateCodec.fork(before)
+        after.words.remove(Id("word-0"))
+        after.words[Id("word-1")] = after.words.getValue(Id("word-1")).copy(notes = "updated")
+        after.settings = after.settings.copy(budgetMinutes = 20)
+        val delta = assertNotNull(StateCodec.changes(before, after))
+        assertEquals(3, delta.writes.size) // one word, settings, revision; no history re-encoding
+        assertEquals(listOf("words" to "word-0"), delta.deletes)
+        val restoredRows = original.toMutableMap().apply { delta.deletes.forEach(::remove); delta.writes.forEach { put(it.bucket to it.key, it) } }
+        assertEquals(after, StateCodec.decode(restoredRows.values.toList()))
+        assertEquals(100, before.words.size); assertEquals(0L, before.revision)
+        assertNull(StateCodec.changes(after, StateCodec.fork(after)))
+    }
     @Test fun `commit snapshot preserves changes deletions and no-op revision`() {
         val db = Database()
         db.words[Id("a")] = Word(Id("a"), spelling = "linen", normalized = "linen")

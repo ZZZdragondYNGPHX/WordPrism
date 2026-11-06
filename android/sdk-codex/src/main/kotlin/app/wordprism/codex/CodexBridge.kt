@@ -187,6 +187,7 @@ fun COperation.toSdk(): Operation {
         feature = feature?.toSdk(),
         presetName = preset?.name,
         presetVersion = preset?.version?.toInt(),
+        presetId = preset?.id?.value,
         actions = actions,
         error = fault?.toSdk(),
         resultSummary = summary.ifBlank { null },

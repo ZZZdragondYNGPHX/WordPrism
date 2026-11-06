@@ -22,6 +22,7 @@ data class Operation(
     val updatedAt: EpochMillis,
     /** Known provider usage (may be unknown even when the operation was cancelled). */
     val usage: UsageFigure? = null,
+    val presetId: String? = null,
 )
 
 @Serializable

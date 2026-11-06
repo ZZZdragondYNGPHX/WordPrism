@@ -72,7 +72,7 @@ JSON 使用 `type` 判别、枚举原名和字符串 ID。进程内 Kotlin 客�
 
 ## 随身助教
 
-`Feature.TUTORING` 复用现有持久任务、预设、实际用量与取消机制。`TutorSession(sessionId, moment, presentationId?, answer?, question?)` 的 `QUESTION` 由用户提交；`WELCOME / COACH / RECAP` 只由学习事件触发，按模式周期、会话、阶段与作答版本去重。`Query.Tutoring(sessionId?)` 返回最近 80 条 `TutorEntry`，含操作状态、用户提问及类型化 `TutorReport`。样例见 `fixtures/tutor-session.request.json` 与 `fixtures/tutoring.json`。
+`Feature.TUTORING` 复用现有持久任务、预设、实际用量与取消机制。`TutorSession(sessionId, moment, presentationId?, answer?, question?)` 的 `QUESTION / RECAP` 由用户明确提交；学习事件不再自动创建助教请求。`RECAP` 要求会话已暂停或完成，由核心选择最新有效作答，按模式周期、会话及作答版本去重。`WELCOME / COACH` 仅保留历史数据兼容，不能由用户命令新建。`Query.Tutoring(sessionId?)` 返回最近 80 条 `TutorEntry`，含操作状态、用户提问及类型化 `TutorReport`，并通过 `reviewSessionId` 提供最近可总结的结束/暂停会话。样例见 `fixtures/tutor-session.request.json` 与 `fixtures/tutoring.json`。
 
 提交前求助须符合提示策略，并先记录辅助曝光；题目切换或已经作答后到达的旧提示拒绝应用。助教观察必须引用提示中提供且仍有效的答案版本，答案修订或题目争议使旧记忆失效。当前题面使用公开卡片，不传入评分题的标准答案字段。相关记忆、近期作答与表达反馈供后续教学、讲解、出题及分析复用，不视为确定的学习能力。
 

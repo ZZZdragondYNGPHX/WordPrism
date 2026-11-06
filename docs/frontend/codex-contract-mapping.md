@@ -65,6 +65,8 @@ Chat Completions 与原生 Responses 通过相同预设页面配置。`observeAd
 
 `AdaptationApi.observeManagedLearning()` 对应 `Query.ManagedLearning`，`setLearningMode()` 对应带版本检查的 `SetLearningMode`。托管首页复用同一个 `TodayViewModel`、日计划和学习入口；模式、任务计数和配置错误由核心返回，不使用前端计时器模拟。`LearnWord.support / Contrast.support` 映射当前有效的讲解分段，进入作答后不显示。完整行为见[托管契约](../backend/contract.md#学习模式与托管执行)，最新执行结果见[验证记录](../backend/validation.md)。
 
+`StudyApi.observeTutorReviewSession()` 提供最近可总结会话，`reviewWithTutor()` 显式提交 `TutorSession(RECAP)`；结束页与首页仅在点击按钮时调用。每日分析显示实际任务错误、重试及对应预设编辑入口。
+
 `StudyApi.observeTutor(sessionId?)` 映射 `Query.Tutoring`；`askTutor()` 使用当前展示及已提交反馈的真实答案版本调用 `TutorSession(QUESTION)`。`StudyViewModel` 保留请求身份并只在持久提交成功后清空相同草稿；模式关闭、取消、重试和配置状态沿用业务操作。学习页显示当前题目或答案版本的助教内容，未作答的评分题不展示开场讲解。托管首页使用真实日计划和最近小结，不伪造 AI 进度。
 
 `TutorSheet` 使用原生 Material 底部面板，区分用户气泡、助教正文和理解追问；输入采用 `TextFieldValue` 保留 IME 状态，明确发送时提交可见文本，等待期间仍可编辑。48 dp 发送/关闭触点、窄屏提示横向滚动及键盘下紧凑标题复用现有主题。界面取材与边界见[资料 R61–R63](../research/sources.md#r61)。

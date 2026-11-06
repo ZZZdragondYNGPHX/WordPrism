@@ -18,10 +18,20 @@ internal fun Database.tutorEntries(sessionId: Id? = null): List<TutorEntry> = op
         TutorEntry(op, command.moment, command.sessionId, command.presentationId, command.answer, command.question, report)
     }.take(80).toList()
 
-internal fun Database.requestTutor(command: Command.TutorSession, now: Long, automatic: Boolean = false): Operation {
+internal fun Database.tutorReviewSession(): Id? = sessions.values.filter { it.status != SessionStatus.ACTIVE }
+    .mapNotNull { session -> answers.values.filter { it.sessionId == session.id && it.valid && !it.input.skipped }
+        .maxByOrNull { it.sequence }?.let { session.id to it.sequence } }.maxByOrNull { it.second }?.first
+
+internal fun Database.requestTutor(input: Command.TutorSession, now: Long, automatic: Boolean = false): Operation {
     requireBusiness(settings.learningMode == LearningMode.AI_MANAGED && "tutor_session" !in settings.lockedCapabilities,
         "请先开启 AI 托管模式与助教能力", ErrorCode.DISABLED)
-    val session = sessions[command.sessionId].found("会话")
+    val session = sessions[input.sessionId].found("会话")
+    val command = if (!automatic && input.moment == TutorMoment.RECAP) {
+        requireBusiness(session.status != SessionStatus.ACTIVE, "请先结束或暂停这轮学习")
+        val answer = answers.values.filter { it.sessionId == session.id && validEvidence(Ref(it.id, it.version)) && !it.input.skipped }
+            .maxByOrNull { it.sequence }.found("本轮有效学习记录")
+        input.copy(answer = Ref(answer.id, answer.version), presentationId = null, question = null)
+    } else input
     command.answer?.let { ref ->
         requireBusiness(validEvidence(ref) && answers[ref.id]?.sessionId == session.id, "作答已变化", ErrorCode.VERSION_CONFLICT)
     }
@@ -37,37 +47,16 @@ internal fun Database.requestTutor(command: Command.TutorSession, now: Long, aut
             exposures[presentation] = (exposures[presentation] ?: Exposure()).copy(hintUsed = true)
         }
         operations.values.firstOrNull { jobs[it.id]?.command == command && it.status in pendingStatuses + OperationStatus.RUNNING }?.let { return it }
-    } else requireBusiness(automatic, "助教阶段由学习流程触发")
-    val key = "${settings.automationEpoch}:tutor:${session.id.value}:${command.moment}:${command.answer?.id?.value}:${command.answer?.version}"
-    if (automatic) jobs.entries.firstOrNull { it.value.managedKey == key }?.key?.let { return operations.getValue(it) }
+    } else requireBusiness(automatic || command.moment == TutorMoment.RECAP, "请在本轮结束后点击助教总结")
+    val key = "${settings.automationEpoch}:${if (automatic) "tutor" else "requested-tutor"}:${session.id.value}:${command.moment}:${command.answer?.id?.value}:${command.answer?.version}"
+    val deduplicate = automatic || command.moment == TutorMoment.RECAP
+    if (deduplicate) jobs.entries.firstOrNull { it.value.managedKey == key }?.key?.let { return operations.getValue(it) }
     // Even learner-initiated tutoring is fenced when managed mode is disabled.
     val op = queue(command, Feature.TUTORING, now, automatic = true)
-    jobs[op.id] = jobs.getValue(op.id).copy(managedKey = if (automatic) key else null)
-    return op
-}
-
-internal fun Database.tutorAfterEvent(command: Command, view: View, now: Long) {
-    if (settings.learningMode != LearningMode.AI_MANAGED || "tutor_session" in settings.lockedCapabilities) return
-    fun recap(session: Session) {
-        answers.values.filter { it.sessionId == session.id && it.valid && !it.input.skipped && activities[it.activityId]?.kind !in introductionKinds }
-            .maxByOrNull { it.sequence }?.let { answer ->
-                requestTutor(Command.TutorSession(session.id, TutorMoment.RECAP, answer = Ref(answer.id, answer.version)), now, automatic = true)
-            }
-    }
-    when (command) {
-        is Command.StartSession -> (view as? View.SessionState)?.session?.let {
-            requestTutor(Command.TutorSession(it.id, TutorMoment.WELCOME), now, automatic = true)
-        }
-        is Command.SubmitAnswer, is Command.ReviseAnswer -> (view as? View.AnswerResult)?.answer?.let { answer ->
-            if (!answer.input.skipped && activities[answer.activityId]?.kind !in introductionKinds && answer.valid) {
-                requestTutor(Command.TutorSession(answer.sessionId, TutorMoment.COACH, answer = Ref(answer.id, answer.version)), now, automatic = true)
-            }
-        }
-        is Command.FinishSession -> (view as? View.SessionState)?.session?.let(::recap)
-        is Command.FinishLearningDay -> sessions.values.filter { it.dayId == command.dayId }.forEach(::recap)
-        is Command.NextActivity -> (view as? View.SessionState)?.session?.takeIf { it.status == SessionStatus.FINISHED }?.let(::recap)
-        else -> Unit
-    }
+    jobs[op.id] = jobs.getValue(op.id).copy(managedKey = if (deduplicate) key else null)
+    val requested = op.copy(actor = if (automatic) Actor.AI else Actor.USER)
+    operations[op.id] = requested
+    return requested
 }
 
 /** Persisted, evidence-linked interpretations are shared by teaching, generation and daily analysis. */

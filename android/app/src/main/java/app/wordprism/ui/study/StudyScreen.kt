@@ -105,7 +105,8 @@ fun StudyScreen(sessionId: String, onExit: () -> Unit, openApi: () -> Unit, open
 
         when {
             s == null -> Loading()
-            s.status == SessionStatus.Completed || s.current == null -> SessionDone(s, day, { vm.pause(onExit) }, openFeedback) { confirmEndDay = true }
+            s.status == SessionStatus.Completed || s.current == null -> SessionDone(s, day, { vm.pause(onExit) }, openFeedback,
+                tutor = { if (managed?.mode == LearningMode.AiManaged && s.done > 0) TutorReviewButton(s.id, openApi) }) { confirmEndDay = true }
             else -> {
                 val act = s.current!!
                 key(act.id) {
@@ -533,7 +534,7 @@ private fun BudgetNote(d: LearningDay) {
 }
 
 @Composable
-private fun SessionDone(s: SessionState, day: LearningDay?, onExit: () -> Unit, openFeedback: () -> Unit, onEndDay: () -> Unit) {
+private fun SessionDone(s: SessionState, day: LearningDay?, onExit: () -> Unit, openFeedback: () -> Unit, tutor: @Composable () -> Unit, onEndDay: () -> Unit) {
     val c = Wp.colors
     Column(Modifier.fillMaxSize().padding(Wp.gutter).navigationBarsPadding()) {
         Spacer(Modifier.height(32.dp))
@@ -546,6 +547,7 @@ private fun SessionDone(s: SessionState, day: LearningDay?, onExit: () -> Unit, 
             Text(it.dailyAnalysis.label, style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 12.dp))
         }
         Spacer(Modifier.weight(1f))
+        tutor()
         TextButton(onClick = openFeedback, modifier = Modifier.fillMaxWidth()) { Text("查看表达反馈") }
         Button(onClick = onExit, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text("回到今天") }
         if (day?.canEndDay == true && day.status != DayStatus.PlanCompleted) {

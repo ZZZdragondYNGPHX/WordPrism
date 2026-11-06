@@ -5793,6 +5793,16 @@
                     "items": {
                         "$ref": "#/$defs/dev.wordprism.contract.TutorEntry"
                     }
+                },
+                "reviewSessionId": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

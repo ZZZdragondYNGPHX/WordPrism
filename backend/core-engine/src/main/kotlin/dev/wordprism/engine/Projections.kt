@@ -92,7 +92,7 @@ internal fun Database.budgetState(day: LearningDay): BudgetState {
 }
 
 internal fun Database.daySummary(day: LearningDay): DaySummary {
-    val op = day.automaticOperationId?.let(operations::get)
+    val op = dayAnalysis(day)
     val plan = day.planId?.let(plans::get)
     val state = when {
         !settings.analysisEnabled() -> "disabled"

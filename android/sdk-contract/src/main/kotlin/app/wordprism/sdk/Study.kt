@@ -293,6 +293,9 @@ data class Hint(val text: String, val note: String)
 )
 
 interface StudyApi {
+    fun observeTutorReviewSession(): Flow<SessionId?> = kotlinx.coroutines.flow.flowOf(null)
+    suspend fun reviewWithTutor(session: SessionId, request: ClientRequestId): SdkResult<OperationId> =
+        SdkResult.Err(SdkError(ErrorCode("unsupported"), "当前后端不支持助教总结", false))
     fun observeTutor(session: SessionId? = null): Flow<List<TutorMessage>> = kotlinx.coroutines.flow.flowOf(emptyList())
     suspend fun askTutor(session: SessionId, activity: ActivityId, question: String, request: ClientRequestId): SdkResult<OperationId> =
         SdkResult.Err(SdkError(ErrorCode("unsupported"), "当前后端不支持随身助教", false))
