@@ -1,9 +1,11 @@
 package app.wordprism.ui.library
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -14,7 +16,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -120,79 +121,163 @@ fun GroupScreen(groupId: String, onBack: () -> Unit, openApi: () -> Unit, openWo
             if (group != null) IconButton(onClick = { renaming = true }) { Icon(Icons.Outlined.Edit, "重命名词组") }
         }
         val g = group
-        if (g == null) { Loading(); return@Column }
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter).navigationBarsPadding().padding(bottom = 32.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                StatusPill(g.relation.label(), tone = Tone.Action)
-                Spacer(Modifier.width(10.dp))
-                g.purpose?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.muted) }
-            }
-            Spacer(Modifier.height(20.dp))
-            PrismStrip(g.members.map { it.prismRow() })
-            g.oneLineDifference?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 16.dp)) }
-            SourceNote(g.source, Modifier.padding(top = 6.dp))
-
-            g.members.forEachIndexed { i, m ->
-                Spacer(Modifier.height(24.dp))
+        if (g == null) {
+            Loading()
+            return@Column
+        }
+        Column(
+            Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Wp.gutter)
+                .navigationBarsPadding()
+                .padding(bottom = 32.dp),
+        ) {
+            Spacer(Modifier.height(14.dp))
+            Panel(accentLipColor = c.action) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(10.dp).clip(RoundedCornerShape(3.dp)).background(c.member(i)))
+                    StatusPill(g.relation.label(), tone = Tone.Action)
                     Spacer(Modifier.width(10.dp))
-                    Text(m.lemma, style = WpType.word.copy(fontSize = WpType.word.fontSize * 0.8f), color = c.ink, modifier = Modifier.weight(1f))
-                    StatusPill(m.status.label(), tone = m.status.tone())
-                    var memberMenu by remember { mutableStateOf(false) }
-                    Box {
-                        IconButton(onClick = { memberMenu = true }) { Icon(Icons.Outlined.MoreVert, "${m.lemma} 的更多操作") }
-                        DropdownMenu(memberMenu, onDismissRequest = { memberMenu = false }) {
-                            DropdownMenuItem(text = { Text("编辑释义与笔记") }, onClick = { memberMenu = false; editing = m.wordId.value })
-                            DropdownMenuItem(text = { Text("从词组移出") }, enabled = g.members.size > 1, onClick = { memberMenu = false; removing = m.wordId.value })
+                    g.purpose?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.muted, modifier = Modifier.weight(1f)) }
+                }
+                Spacer(Modifier.height(16.dp))
+                PrismStrip(g.members.map { it.prismRow() })
+                g.oneLineDifference?.let {
+                    Text(it, style = MaterialTheme.typography.bodyLarge, color = c.ink, modifier = Modifier.padding(top = 14.dp))
+                }
+                SourceNote(g.source, Modifier.padding(top = 6.dp))
+            }
+
+            SectionTitle("成员词汇")
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                g.members.forEachIndexed { i, m ->
+                    Panel(
+                        padding = PaddingValues(16.dp),
+                        accentLipColor = c.member(i),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(10.dp).background(c.member(i), CircleShape))
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                m.lemma,
+                                style = WpType.word.copy(fontSize = WpType.word.fontSize * 0.82f),
+                                color = c.ink,
+                                modifier = Modifier.weight(1f),
+                            )
+                            StatusPill(m.status.label(), tone = m.status.tone())
+                            var memberMenu by remember { mutableStateOf(false) }
+                            Box {
+                                IconButton(onClick = { memberMenu = true }) { Icon(Icons.Outlined.MoreVert, "${m.lemma} 的更多操作") }
+                                DropdownMenu(memberMenu, onDismissRequest = { memberMenu = false }) {
+                                    DropdownMenuItem(
+                                        text = { Text("编辑释义与笔记") },
+                                        onClick = { memberMenu = false; editing = m.wordId.value },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("从词组移出") },
+                                        enabled = g.members.size > 1,
+                                        onClick = { memberMenu = false; removing = m.wordId.value },
+                                    )
+                                }
+                            }
+                        }
+                        m.senses.forEach { s ->
+                            Text(
+                                "${s.partOfSpeech}  ${s.glossZh}",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = c.ink,
+                                modifier = Modifier.padding(top = 6.dp),
+                            )
+                        }
+                        if (m.collocations.isNotEmpty()) {
+                            Text(
+                                "搭配：" + m.collocations.joinToString("，"),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = c.muted,
+                                modifier = Modifier.padding(top = 6.dp),
+                            )
+                        }
+                        if (m.examples.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = c.sunk.copy(alpha = if (c.isDark) 0.65f else 0.42f),
+                                border = BorderStroke(0.5.dp, c.hairline),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    m.examples.forEach { ex ->
+                                        Column {
+                                            Text(ex.text, style = WpType.english.copy(fontSize = WpType.english.fontSize * 0.9f), color = c.ink)
+                                            ex.translationZh?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.muted) }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        m.note?.let { Text("笔记：$it", style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 8.dp)) }
+                        m.joinReason?.let { Text("归组理由：$it", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp)) }
+                        TextButton(onClick = { openWord(m.wordId.value) }, contentPadding = PaddingValues(0.dp)) {
+                            Text("查看完整讲解 ›")
                         }
                     }
                 }
-                m.senses.forEach { s -> Text("${s.partOfSpeech}  ${s.glossZh}", style = MaterialTheme.typography.bodyLarge, color = c.ink, modifier = Modifier.padding(start = 20.dp, top = 4.dp)) }
-                Column(Modifier.padding(start = 20.dp)) {
-                    if (m.collocations.isNotEmpty()) Text("搭配：" + m.collocations.joinToString("，"), style = MaterialTheme.typography.bodyMedium, color = c.muted, modifier = Modifier.padding(top = 4.dp))
-                    m.examples.forEach { ex ->
-                        Text(ex.text, style = WpType.english.copy(fontSize = WpType.english.fontSize * 0.9f), color = c.ink, modifier = Modifier.padding(top = 8.dp))
-                        ex.translationZh?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.muted) }
-                    }
-                    m.note?.let { Text("笔记：$it", style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 8.dp)) }
-                    m.joinReason?.let { Text("归组理由：$it", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp)) }
-                    TextButton(onClick = { openWord(m.wordId.value) }) { Text("查看完整讲解") }
-                }
-                Spacer(Modifier.height(12.dp)); Hairline()
             }
 
             // --------------------------------------------------------- recommendations
             SectionTitle("相似词推荐")
-            Text("推荐的词不会自动加入，选中后才会加入这个词组；加入后可以撤销。查看推荐不调用 API。", style = MaterialTheme.typography.bodySmall, color = c.muted)
-            val items = recs?.items.orEmpty()
-            if (items.isEmpty()) Text("暂时没有推荐", style = MaterialTheme.typography.bodyMedium, color = c.muted, modifier = Modifier.padding(vertical = 12.dp))
-            items.forEach { r ->
-                Row(
-                    Modifier.fillMaxWidth().toggleable(r.id in selected, role = Role.Checkbox, enabled = acceptOp?.status?.isActive != true) { vm.toggle(r.id) }
-                        .heightIn(min = 56.dp).padding(vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Checkbox(checked = r.id in selected, onCheckedChange = null)
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(r.lemma + (r.glossZh?.let { "  $it" } ?: ""), style = MaterialTheme.typography.bodyLarge, color = c.ink)
-                        Text(r.reason + if (r.alreadyInLibrary) "（已在词库中，直接复用）" else "", style = MaterialTheme.typography.bodySmall, color = c.muted)
+            InsetGroupCard {
+                Column(Modifier.padding(16.dp)) {
+                    Text("推荐的词不会自动加入，选中后才会加入这个词组；加入后可以撤销。查看推荐不调用 API。", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                    val items = recs?.items.orEmpty()
+                    if (items.isEmpty()) {
+                        Text("暂时没有推荐", style = MaterialTheme.typography.bodyMedium, color = c.muted, modifier = Modifier.padding(vertical = 12.dp))
+                    }
+                    items.forEach { r ->
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .toggleable(r.id in selected, role = Role.Checkbox, enabled = acceptOp?.status?.isActive != true) { vm.toggle(r.id) }
+                                .heightIn(min = 56.dp)
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(checked = r.id in selected, onCheckedChange = null)
+                            Spacer(Modifier.width(10.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(r.lemma + (r.glossZh?.let { "  $it" } ?: ""), style = MaterialTheme.typography.bodyLarge, color = c.ink)
+                                Text(r.reason + if (r.alreadyInLibrary) "（已在词库中，直接复用）" else "", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                            }
+                        }
+                    }
+                    acceptOp?.takeIf { it.status.isActive || it.status == OperationStatus.Failed }?.let {
+                        OperationLine(it, Modifier.padding(vertical = 8.dp), onCancel = { vm.cancel(it.id) })
+                    }
+                    if (selected.isNotEmpty()) {
+                        ApiDisclosure(acceptReq, Modifier.padding(top = 4.dp), onConfigure = openApi)
+                        Button(
+                            onClick = vm::acceptSelected,
+                            enabled = acceptOp?.status?.isActive != true,
+                            shape = CircleShape,
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 50.dp),
+                        ) {
+                            Text("加入所选的 ${selected.size} 个词")
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    recOp?.takeIf { it.status.isActive || it.status == OperationStatus.Failed }?.let {
+                        OperationLine(it, Modifier.padding(bottom = 8.dp), onCancel = { vm.cancel(it.id) })
+                    }
+                    ApiDisclosure(recReq, onConfigure = openApi)
+                    OutlinedButton(
+                        onClick = vm::findMore,
+                        enabled = recOp?.status?.isActive != true,
+                        shape = CircleShape,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 48.dp),
+                    ) {
+                        Icon(Icons.Outlined.TravelExplore, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("让 AI 再找一些")
                     }
                 }
-            }
-            acceptOp?.takeIf { it.status.isActive || it.status == OperationStatus.Failed }?.let { OperationLine(it, Modifier.padding(vertical = 8.dp), onCancel = { vm.cancel(it.id) }) }
-            if (selected.isNotEmpty()) {
-                ApiDisclosure(acceptReq, Modifier.padding(top = 4.dp), onConfigure = openApi)
-                Button(onClick = vm::acceptSelected, enabled = acceptOp?.status?.isActive != true, modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 52.dp)) {
-                    Text("加入所选的 ${selected.size} 个词")
-                }
-            }
-            Spacer(Modifier.height(16.dp))
-            recOp?.takeIf { it.status.isActive || it.status == OperationStatus.Failed }?.let { OperationLine(it, Modifier.padding(bottom = 8.dp), onCancel = { vm.cancel(it.id) }) }
-            ApiDisclosure(recReq, onConfigure = openApi)
-            OutlinedButton(onClick = vm::findMore, enabled = recOp?.status?.isActive != true, modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 48.dp)) {
-                Icon(Icons.Outlined.TravelExplore, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("让 AI 再找一些")
             }
         }
     }
@@ -239,17 +324,33 @@ private fun WordEditSheet(m: GroupMember, vm: GroupViewModel, onDismiss: () -> U
         if (error?.code == ErrorCode.VersionConflict) word?.let { w -> baseVersion = w.version } // keep what the user typed; saving again confirms it
     }
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = Wp.colors.surface) {
-        Column(Modifier.padding(horizontal = Wp.gutter).padding(bottom = 24.dp).imePadding()) {
+        Column(Modifier.imePadding().verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter).padding(bottom = 24.dp)) {
             Text("编辑 ${m.lemma}", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(16.dp))
-            OutlinedTextField(gloss, { gloss = it }, label = { Text("中文释义") }, isError = error?.fieldErrors?.containsKey("glossZh") == true,
-                supportingText = { error?.fieldErrors?.get("glossZh")?.let { Text(it) } }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(note, { note = it }, label = { Text("我的笔记") }, minLines = 2, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+            OutlinedTextField(
+                gloss,
+                { gloss = it },
+                label = { Text("中文释义") },
+                shape = RoundedCornerShape(16.dp),
+                isError = error?.fieldErrors?.containsKey("glossZh") == true,
+                supportingText = { error?.fieldErrors?.get("glossZh")?.let { Text(it) } },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                note,
+                { note = it },
+                label = { Text("我的笔记") },
+                shape = RoundedCornerShape(16.dp),
+                minLines = 2,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
             error?.takeIf { it.fieldErrors.isEmpty() }?.let { ErrorNotice(it, Modifier.padding(top = 8.dp)) }
             Spacer(Modifier.height(16.dp))
             Button(
                 onClick = { baseVersion?.let { v -> vm.saveWord(m.wordId, v, m.senses.firstOrNull(), gloss, note, onDismiss) } },
-                enabled = baseVersion != null, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                enabled = baseVersion != null,
+                shape = CircleShape,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             ) { Text("保存") }
         }
     }

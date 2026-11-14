@@ -2,6 +2,8 @@ package app.wordprism.ui.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -27,7 +29,10 @@ class RoutingViewModel(sdk: WordPrismSdk, saved: SavedStateHandle) : WpViewModel
     val usage = sdk.presets.observeUsage(OverviewWindow.Month).state(emptyList())
     fun bind(f: FeatureId, p: PresetId?) = viewModelScope.launch { sdk.presets.bindFeature(f, p).let { if (it is SdkResult.Err) sayError(it.error) } }
     fun setPolicy(p: CallPolicy) = viewModelScope.launch {
-        when (val r = sdk.presets.setCallPolicy(p)) { is SdkResult.Ok -> {}; is SdkResult.Err -> sayError(r.error) }
+        when (val r = sdk.presets.setCallPolicy(p)) {
+            is SdkResult.Ok -> {}
+            is SdkResult.Err -> sayError(r.error)
+        }
     }
 }
 
@@ -41,58 +46,95 @@ fun ApiRoutingScreen(onBack: () -> Unit, openPreset: (String?) -> Unit) {
     val usage by vm.usage.collectAsStateWithLifecycle()
     val c = Wp.colors
 
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().imePadding()) {
         WpTopBar("功能分配与调用", onBack = onBack)
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter).navigationBarsPadding().padding(bottom = 32.dp)) {
+        Column(
+            Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Wp.gutter)
+                .navigationBarsPadding()
+                .padding(bottom = 32.dp),
+        ) {
+            Spacer(Modifier.height(14.dp))
             Text("每项 AI 功能可以用不同的预设。没有单独指定时使用默认预设。更换预设不会改动已经生成的内容。", style = MaterialTheme.typography.bodyMedium, color = c.muted)
             if (presets.isEmpty()) {
-                Button(onClick = { openPreset(null) }, modifier = Modifier.fillMaxWidth().padding(top = 16.dp).heightIn(min = 52.dp)) { Text("先添加一个预设") }
+                Button(
+                    onClick = { openPreset(null) },
+                    shape = CircleShape,
+                    modifier = Modifier.fillMaxWidth().padding(top = 14.dp).heightIn(min = 52.dp),
+                ) { Text("先添加一个预设") }
                 Text("保存后回到这里，设为默认或分配给具体功能，再重试等待中的任务。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 8.dp))
             }
             val pol = policy
             if (pol != null) {
                 SectionTitle("默认预设")
-                PresetPicker(pol.defaultPresetId, presets, allowNone = true, noneLabel = "不设默认") { vm.setPolicy(pol.copy(defaultPresetId = it)) }
+                Panel {
+                    PresetPicker(pol.defaultPresetId, presets, allowNone = true, noneLabel = "不设默认") { vm.setPolicy(pol.copy(defaultPresetId = it)) }
+                }
             }
             SectionTitle("各项功能")
             val list = bindings
-            if (list == null) Loading() else list.forEach { b ->
-                Column(Modifier.padding(vertical = 10.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text(b.label, style = MaterialTheme.typography.bodyLarge, color = c.ink)
-                            Text(b.description, style = MaterialTheme.typography.bodySmall, color = c.muted)
+            if (list == null) Loading()
+            else InsetGroupCard {
+                list.forEachIndexed { idx, b ->
+                    Column(Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(b.label, style = MaterialTheme.typography.bodyLarge, color = c.ink)
+                                Text(b.description, style = MaterialTheme.typography.bodySmall, color = c.muted)
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            StatusPill(
+                                b.state.label(),
+                                tone = when (b.state) {
+                                    ApiReadiness.Ready -> Tone.Positive
+                                    ApiReadiness.QueuedOffline -> Tone.Caution
+                                    else -> Tone.Negative
+                                },
+                            )
                         }
-                        StatusPill(b.state.label(), tone = when (b.state) { ApiReadiness.Ready -> Tone.Positive; ApiReadiness.QueuedOffline -> Tone.Caution; else -> Tone.Negative })
+                        Spacer(Modifier.height(8.dp))
+                        PresetPicker(if (b.usesDefault) null else b.presetId, presets, allowNone = true, noneLabel = "使用默认预设") { vm.bind(b.feature, it) }
+                        if (b.state == ApiReadiness.NeedsCredential && b.presetId != null) {
+                            TextButton(onClick = { openPreset(b.presetId!!.value) }, contentPadding = PaddingValues(0.dp)) {
+                                Text("为「${presets.firstOrNull { it.id == b.presetId }?.name}」填写密钥")
+                            }
+                        }
                     }
-                    Spacer(Modifier.height(6.dp))
-                    PresetPicker(if (b.usesDefault) null else b.presetId, presets, allowNone = true, noneLabel = "使用默认预设") { vm.bind(b.feature, it) }
-                    if (b.state == ApiReadiness.NeedsCredential && b.presetId != null) {
-                        TextButton(onClick = { openPreset(b.presetId!!.value) }) { Text("为「${presets.firstOrNull { it.id == b.presetId }?.name}」填写密钥") }
-                    }
+                    if (idx < list.lastIndex) InsetDivider()
                 }
-                Hairline()
             }
 
             if (pol != null) {
                 SectionTitle("调用控制")
-                Text("学习分析会根据学习情况补充题库；可在“AI 调整”中锁定此项。", style = MaterialTheme.typography.bodySmall, color = c.muted)
-                NumberSetting("每日请求上限", pol.dailyRequestLimit?.toString().orEmpty(), "留空表示不限制。到达上限后，新的 AI 操作会提示额度用完") {
-                    vm.setPolicy(pol.copy(dailyRequestLimit = it.toIntOrNull()))
+                Panel {
+                    Text("学习分析会根据学习情况补充题库；可在“AI 调整”中锁定此项。", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                    Spacer(Modifier.height(8.dp))
+                    NumberSetting("每日请求上限", pol.dailyRequestLimit?.toString().orEmpty(), "留空表示不限制。到达上限后，新的 AI 操作会提示额度用完") {
+                        vm.setPolicy(pol.copy(dailyRequestLimit = it.toIntOrNull()))
+                    }
+                    Hairline()
+                    NumberSetting("失败后自动重试次数", pol.maxRetries.toString(), "0–3 次。超时且结果未知时不会无限重试") {
+                        it.toIntOrNull()?.let { n -> vm.setPolicy(pol.copy(maxRetries = n)) }
+                    }
+                    Hairline()
+                    Text("备用预设", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 12.dp))
+                    Text("主预设失败时改用它。不设置时不会自动换到其他付费预设。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(bottom = 8.dp))
+                    PresetPicker(pol.fallbackPresetId, presets, allowNone = true, noneLabel = "不使用备用") { vm.setPolicy(pol.copy(fallbackPresetId = it)) }
                 }
-                NumberSetting("失败后自动重试次数", pol.maxRetries.toString(), "0–3 次。超时且结果未知时不会无限重试") { it.toIntOrNull()?.let { n -> vm.setPolicy(pol.copy(maxRetries = n)) } }
-                Text("备用预设", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 12.dp))
-                Text("主预设失败时改用它。不设置时不会自动换到其他付费预设。", style = MaterialTheme.typography.bodySmall, color = c.muted)
-                PresetPicker(pol.fallbackPresetId, presets, allowNone = true, noneLabel = "不使用备用") { vm.setPolicy(pol.copy(fallbackPresetId = it)) }
             }
 
             SectionTitle("近 30 天用量")
-            if (usage.isEmpty()) Text("还没有用量记录", style = MaterialTheme.typography.bodyMedium, color = c.muted)
-            usage.forEach { u ->
-                KeyValue("${u.featureLabel}${u.presetName?.let { "（$it）" } ?: ""}",
-                    "${u.usage.requests} 次" + (u.usage.outputTokens?.let { "，${(u.usage.inputTokens ?: 0) + it} tokens" } ?: "") + (u.usage.estimatedCost?.let { "，约 $it" } ?: "") + if (u.unknownUsage) "，部分未知" else "")
+            Panel {
+                if (usage.isEmpty()) Text("还没有用量记录", style = MaterialTheme.typography.bodyMedium, color = c.muted)
+                usage.forEach { u ->
+                    KeyValue(
+                        "${u.featureLabel}${u.presetName?.let { "（$it）" } ?: ""}",
+                        "${u.usage.requests} 次" + (u.usage.outputTokens?.let { "，${(u.usage.inputTokens ?: 0) + it} tokens" } ?: "") + (u.usage.estimatedCost?.let { "，约 $it" } ?: "") + if (u.unknownUsage) "，部分未知" else "",
+                    )
+                }
+                Text("费用只在有可靠价目时估算；取消或失败的请求也可能已产生用量。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp))
             }
-            Text("费用只在有可靠价目时估算；取消或失败的请求也可能已产生用量。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp))
         }
     }
 }
@@ -103,11 +145,20 @@ private fun PresetPicker(current: PresetId?, presets: List<ApiPreset>, allowNone
     var open by remember { mutableStateOf(false) }
     val label = presets.firstOrNull { it.id == current }?.let { it.name + if (!it.credential.present) "（缺少密钥）" else "" } ?: noneLabel
     ExposedDropdownMenuBox(open, { open = it }) {
-        OutlinedTextField(label, {}, readOnly = true, singleLine = true, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(open) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable))
+        OutlinedTextField(
+            label,
+            {},
+            readOnly = true,
+            singleLine = true,
+            shape = RoundedCornerShape(16.dp),
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(open) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+        )
         ExposedDropdownMenu(open, { open = false }) {
             if (allowNone) DropdownMenuItem(text = { Text(noneLabel) }, onClick = { open = false; onPick(null) })
-            presets.forEach { p -> DropdownMenuItem(text = { Text(p.name + "（${p.model}）") }, onClick = { open = false; onPick(p.id) }, enabled = p.enabled) }
+            presets.forEach { p ->
+                DropdownMenuItem(text = { Text(p.name + "（${p.model}）") }, onClick = { open = false; onPick(p.id) }, enabled = p.enabled)
+            }
         }
     }
 }
@@ -115,15 +166,18 @@ private fun PresetPicker(current: PresetId?, presets: List<ApiPreset>, allowNone
 @Composable
 private fun NumberSetting(title: String, value: String, help: String, onCommit: (String) -> Unit) {
     var text by rememberSaveable(value) { mutableStateOf(value) }
-    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(help, style = MaterialTheme.typography.bodySmall, color = Wp.colors.muted)
         }
         Spacer(Modifier.width(12.dp))
         OutlinedTextField(
-            text, { text = it.filter(Char::isDigit).take(4) }, singleLine = true, modifier = Modifier.width(92.dp)
-                .onFocusChanged { if (!it.isFocused && text != value) onCommit(text) },
+            text,
+            { text = it.filter(Char::isDigit).take(4) },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier.width(92.dp).onFocusChanged { if (!it.isFocused && text != value) onCommit(text) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
     }

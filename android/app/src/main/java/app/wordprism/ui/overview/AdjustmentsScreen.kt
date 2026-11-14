@@ -3,6 +3,7 @@ package app.wordprism.ui.overview
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
@@ -52,7 +53,8 @@ class AdjustmentsViewModel(sdk: WordPrismSdk, private val saved: SavedStateHandl
         val before = settings.value?.lastRun?.operationId
         when (val r = sdk.adaptation.analyzeNow(force, saved.requestIdFor("analyze"))) {
             is SdkResult.Ok -> {
-                saved.clearRequestId("analyze"); saved["op"] = r.value.value
+                saved.clearRequestId("analyze")
+                saved["op"] = r.value.value
                 if (r.value == before && !force) say("数据和上次分析时一样，已沿用上次的结果。需要的话可以选择重新分析")
             }
             is SdkResult.Err -> sayError(r.error)
@@ -89,81 +91,136 @@ fun AdjustmentsScreen(onBack: () -> Unit, openApi: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         WpTopBar("AI 调整", onBack = onBack)
         val st = s
-        if (st == null) { Loading(); return@Column }
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter).navigationBarsPadding().padding(bottom = 32.dp)) {
-            Text("AI 会读取学习总览，调整学习计划，并根据学习情况补充题库。新题会作为单独任务生成，可以查看进度。", style = MaterialTheme.typography.bodyMedium, color = c.muted)
-
-            // ------------------------------------------------------ mode
-            Spacer(Modifier.height(20.dp))
-            val on = st.mode == AnalysisMode.DailyAfterDayEnd
-            Row(
-                Modifier.fillMaxWidth().toggleable(on, enabled = !aiMode, role = Role.Switch) { vm.setMode(it) }.padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text("每天学习结束后自动分析", style = MaterialTheme.typography.titleMedium, color = c.ink)
-                    Text(if (aiMode) "托管模式自动开启；有新作答时退出即自动分析，每天最多一次。切回普通模式可手动控制。" else "每天最多一次。暂停或退出不会触发；没有新数据时跳过", style = MaterialTheme.typography.bodySmall, color = c.muted)
+        if (st == null) {
+            Loading()
+            return@Column
+        }
+        Column(
+            Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Wp.gutter)
+                .navigationBarsPadding()
+                .padding(bottom = 32.dp),
+        ) {
+            Spacer(Modifier.height(14.dp))
+            Panel(accentLipColor = c.ai) {
+                Text(
+                    "AI 会读取学习总览，调整学习计划，并根据学习情况补充题库。新题会作为单独任务生成，可以查看进度。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = c.muted,
+                )
+                Spacer(Modifier.height(12.dp))
+                val on = st.mode == AnalysisMode.DailyAfterDayEnd
+                Row(
+                    Modifier.fillMaxWidth().toggleable(on, enabled = !aiMode, role = Role.Switch) { vm.setMode(it) }.padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("每天学习结束后自动分析", style = MaterialTheme.typography.titleMedium, color = c.ink)
+                        Text(
+                            if (aiMode) "托管模式自动开启；有新作答时退出即自动分析，每天最多一次。切回普通模式可手动控制。"
+                            else "每天最多一次。暂停或退出不会触发；没有新数据时跳过",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = c.muted,
+                        )
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    Switch(checked = on, onCheckedChange = null, enabled = !aiMode)
                 }
-                Switch(checked = on, onCheckedChange = null, enabled = !aiMode)
+                Spacer(Modifier.height(8.dp))
+                ApiDisclosure(st.requirement, onConfigure = openApi)
             }
-            ApiDisclosure(st.requirement, onConfigure = openApi)
 
             // ------------------------------------------------------ manual
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(14.dp))
             op?.let { o ->
                 Panel(Modifier.padding(bottom = 12.dp)) {
                     Text(o.title, style = MaterialTheme.typography.titleMedium, color = c.ink)
                     Spacer(Modifier.height(6.dp))
                     OperationLine(o, onCancel = { vm.cancel(o.id) })
-                    o.resultSummary?.takeIf { o.status == OperationStatus.Succeeded }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 6.dp)) }
+                    o.resultSummary?.takeIf { o.status == OperationStatus.Succeeded }?.let {
+                        Text(it, style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.padding(top = 6.dp))
+                    }
                 }
             }
             Row {
-                Button(onClick = { vm.analyze(false) }, enabled = op?.status?.isActive != true, modifier = Modifier.weight(1f).heightIn(min = 52.dp)) { Text("现在分析") }
+                Button(
+                    onClick = { vm.analyze(false) },
+                    enabled = op?.status?.isActive != true,
+                    shape = CircleShape,
+                    colors = ButtonDefaults.buttonColors(containerColor = c.ai),
+                    modifier = Modifier.weight(1f).heightIn(min = 50.dp),
+                ) { Text("现在分析") }
                 Spacer(Modifier.width(8.dp))
-                OutlinedButton(onClick = { showReanalyze = true }, enabled = op?.status?.isActive != true, modifier = Modifier.heightIn(min = 52.dp)) { Text("重新分析") }
+                OutlinedButton(
+                    onClick = { showReanalyze = true },
+                    enabled = op?.status?.isActive != true,
+                    shape = CircleShape,
+                    modifier = Modifier.heightIn(min = 50.dp),
+                ) { Text("重新分析") }
             }
             Text("手动分析不占用每日自动分析的次数。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp))
 
             // ------------------------------------------------------ budget (user-owned)
             SectionTitle("每日时间预算")
-            var budget by remember(st.dailyBudgetMinutes) { mutableFloatStateOf(st.dailyBudgetMinutes.toFloat()) }
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text("${budget.toInt()}", style = WpType.figure, color = c.ink)
-                Text(" 分钟以内", style = MaterialTheme.typography.bodyLarge, color = c.muted, modifier = Modifier.padding(bottom = 4.dp))
+            Panel {
+                var budget by remember(st.dailyBudgetMinutes) { mutableFloatStateOf(st.dailyBudgetMinutes.toFloat()) }
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("${budget.toInt()}", style = WpType.figure, color = c.ink)
+                    Text(" 分钟以内", style = MaterialTheme.typography.bodyLarge, color = c.muted, modifier = Modifier.padding(bottom = 4.dp))
+                }
+                Slider(
+                    value = budget,
+                    onValueChange = { budget = it },
+                    onValueChangeFinished = { vm.setBudget(budget.toInt()) },
+                    valueRange = st.budgetRange.start.toFloat()..(st.budgetRange.endExclusive - 1).toFloat(),
+                    steps = ((st.budgetRange.endExclusive - 1 - st.budgetRange.start) / 5) - 1,
+                    modifier = Modifier.semantics { contentDescription = "每日时间预算" },
+                )
+                Text("预算由你决定。AI 只在预算内安排，质量优先，可能少学或提前结束。", style = MaterialTheme.typography.bodySmall, color = c.muted)
             }
-            Slider(
-                value = budget, onValueChange = { budget = it }, onValueChangeFinished = { vm.setBudget(budget.toInt()) },
-                valueRange = st.budgetRange.start.toFloat()..(st.budgetRange.endExclusive - 1).toFloat(), steps = ((st.budgetRange.endExclusive - 1 - st.budgetRange.start) / 5) - 1,
-                modifier = Modifier.semantics { contentDescription = "每日时间预算" },
-            )
-            Text("预算由你决定。AI 只在预算内安排，质量优先，可能少学或提前结束。", style = MaterialTheme.typography.bodySmall, color = c.muted)
 
             // ------------------------------------------------------ change history
             SectionTitle("调整记录")
             val list = changes
             when {
                 list == null -> Loading()
-                list.isEmpty() -> Text("还没有调整。结束一天的学习或手动分析后，这里会显示实际生效的改动。", style = MaterialTheme.typography.bodyMedium, color = c.muted)
-                else -> list.forEach { cs -> ChangeCard(cs) { undoTarget = cs.id.value }; Spacer(Modifier.height(12.dp)) }
+                list.isEmpty() -> Panel {
+                    Text("还没有调整。结束一天的学习或手动分析后，这里会显示实际生效的改动。", style = MaterialTheme.typography.bodyMedium, color = c.muted)
+                }
+                else -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    list.forEach { cs -> ChangeCard(cs) { undoTarget = cs.id.value } }
+                }
             }
 
             // ------------------------------------------------------ capabilities & locks
             SectionTitle("AI 可以调整的项目")
             Text("锁定后，AI 不会更改这一项。带锁的灰色项目始终由你决定。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(bottom = 8.dp))
-            caps.forEach { cap ->
-                Row(
-                    Modifier.fillMaxWidth().toggleable(cap.lockedByUser, enabled = cap.lockable, role = Role.Switch) { vm.lock(cap.id, it) }
-                        .padding(vertical = 10.dp).semantics { stateDescription = if (cap.lockedByUser) "已锁定" else "AI 可调整" },
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(cap.label, style = MaterialTheme.typography.bodyLarge, color = if (cap.lockable) c.ink else c.muted)
-                        Text("当前 ${cap.currentValue}${cap.range?.let { "，范围 $it" } ?: ""}${if (cap.affectsSchedule) "，影响复习时间" else ""}", style = MaterialTheme.typography.bodySmall, color = c.muted)
+            InsetGroupCard {
+                caps.forEachIndexed { idx, cap ->
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .toggleable(cap.lockedByUser, enabled = cap.lockable, role = Role.Switch) { vm.lock(cap.id, it) }
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .semantics { stateDescription = if (cap.lockedByUser) "已锁定" else "AI 可调整" },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(cap.label, style = MaterialTheme.typography.bodyLarge, color = if (cap.lockable) c.ink else c.muted)
+                            Text(
+                                "当前 ${cap.currentValue}${cap.range?.let { "，范围 $it" } ?: ""}${if (cap.affectsSchedule) "，影响复习时间" else ""}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = c.muted,
+                            )
+                        }
+                        Icon(
+                            if (cap.lockedByUser) Icons.Outlined.Lock else Icons.Outlined.LockOpen,
+                            null,
+                            tint = if (cap.lockedByUser) c.ink else c.muted,
+                        )
                     }
-                    Icon(if (cap.lockedByUser) Icons.Outlined.Lock else Icons.Outlined.LockOpen, null, tint = if (cap.lockedByUser) c.ink else c.muted)
+                    if (idx < caps.lastIndex) InsetDivider()
                 }
-                Hairline()
             }
         }
     }
@@ -203,14 +260,29 @@ private fun ChangeCard(cs: ChangeSet, onUndo: () -> Unit) {
     }
     Panel {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text((if (cs.trigger == "auto") "每日自动" else "手动") + "，" + cs.createdAt.dayAndClock(), style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.weight(1f))
+            Text(
+                (if (cs.trigger == "auto") "每日自动" else "手动") + "，" + cs.createdAt.dayAndClock(),
+                style = MaterialTheme.typography.bodySmall,
+                color = c.muted,
+                modifier = Modifier.weight(1f),
+            )
             StatusPill(statusText, tone = tone)
         }
-        Text(cs.summary, style = MaterialTheme.typography.titleMedium, color = if (cs.status == ChangeStatus.Undone) c.muted else c.ink, modifier = Modifier.padding(top = 6.dp))
+        Text(
+            cs.summary,
+            style = MaterialTheme.typography.titleMedium,
+            color = if (cs.status == ChangeStatus.Undone) c.muted else c.ink,
+            modifier = Modifier.padding(top = 6.dp),
+        )
         if (cs.changes.isNotEmpty()) {
             Spacer(Modifier.height(10.dp))
             cs.changes.forEach { ch ->
-                Row(Modifier.fillMaxWidth().padding(vertical = 4.dp).semantics(mergeDescendants = true) { contentDescription = "${ch.label}，从 ${ch.before} 改为 ${ch.after}，${ch.scope}" }, verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 4.dp).semantics(mergeDescendants = true) {
+                        contentDescription = "${ch.label}，从 ${ch.before} 改为 ${ch.after}，${ch.scope}"
+                    },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(ch.label, style = MaterialTheme.typography.bodyMedium, color = c.ink, modifier = Modifier.weight(1f))
                     Text(ch.before, style = MaterialTheme.typography.bodyMedium.merge(WpType.tabular), color = c.muted)
                     Text("  改为  ", style = MaterialTheme.typography.bodySmall, color = c.muted)
@@ -225,7 +297,8 @@ private fun ChangeCard(cs: ChangeSet, onUndo: () -> Unit) {
         Text("生效：${cs.effectiveFrom}。依据的数据截至 ${cs.snapshotAsOf.dayAndClock()}", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 8.dp))
         if (cs.status == ChangeStatus.Applied) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                cs.undo.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.weight(1f)) } ?: Spacer(Modifier.weight(1f))
+                cs.undo.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.weight(1f)) }
+                    ?: Spacer(Modifier.weight(1f))
                 if (cs.undo.available) TextButton(onClick = onUndo) { Text("撤销") }
             }
         }

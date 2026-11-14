@@ -2,6 +2,8 @@ package app.wordprism.ui.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -10,6 +12,7 @@ import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -129,127 +132,227 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
 
     Column(Modifier.fillMaxSize().imePadding()) {
         WpTopBar(if (savedId == null) "新建 API 预设" else "编辑预设", onBack = onBack)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter).padding(bottom = 24.dp)) {
-            Field("名称", name, { name = it }, fe("name"), placeholder = "例如：日常整理")
-            ExposedDropdownMenuBox(protocolMenu, { protocolMenu = it }, Modifier.padding(top = 8.dp)) {
+        Column(
+            Modifier.weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Wp.gutter)
+                .padding(bottom = 28.dp),
+        ) {
+            Spacer(Modifier.height(14.dp))
+            Panel(accentLipColor = c.action) {
+                Field("名称", name, { name = it }, fe("name"), placeholder = "例如：日常整理")
+                ExposedDropdownMenuBox(protocolMenu, { protocolMenu = it }, Modifier.padding(top = 8.dp)) {
+                    OutlinedTextField(
+                        adapters.firstOrNull { it.id == adapterId }?.label ?: adapterId,
+                        {},
+                        readOnly = true,
+                        shape = RoundedCornerShape(16.dp),
+                        label = { Text("接口协议") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(protocolMenu) },
+                        supportingText = { Text(fe("adapterId") ?: adapters.firstOrNull { it.id == adapterId }?.notes.orEmpty()) },
+                        isError = fe("adapterId") != null,
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                    )
+                    ExposedDropdownMenu(protocolMenu, { protocolMenu = false }) {
+                        adapters.forEach { a ->
+                            DropdownMenuItem(
+                                text = { Text(a.label) },
+                                onClick = {
+                                    resetModels()
+                                    adapterId = a.id
+                                    if (baseUrl.isBlank()) baseUrl = a.defaultBaseUrl.orEmpty()
+                                    protocolMenu = false
+                                },
+                            )
+                        }
+                    }
+                }
+                Field("服务地址", baseUrl, { resetModels(); baseUrl = it }, fe("baseUrl"), keyboard = KeyboardType.Uri)
+                val cred = p?.credential
                 OutlinedTextField(
-                    adapters.firstOrNull { it.id == adapterId }?.label ?: adapterId, {}, readOnly = true, label = { Text("接口协议") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(protocolMenu) },
-                    supportingText = { Text(fe("adapterId") ?: adapters.firstOrNull { it.id == adapterId }?.notes.orEmpty()) }, isError = fe("adapterId") != null,
-                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                    secret,
+                    { resetModels(); secret = it; removeSecret = false },
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    label = { Text("API 密钥") },
+                    placeholder = { Text(if (cred?.present == true && !removeSecret) "已保存，留空则不变" else "粘贴密钥") },
+                    visualTransformation = if (showSecret) VisualTransformation.None else PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false, imeAction = ImeAction.Next),
+                    trailingIcon = {
+                        IconButton(onClick = { showSecret = !showSecret }) {
+                            Icon(if (showSecret) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, if (showSecret) "隐藏密钥" else "显示密钥")
+                        }
+                    },
+                    supportingText = { Text("只保存在本机的加密存储中，不会出现在导出文件里") },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 )
-                ExposedDropdownMenu(protocolMenu, { protocolMenu = false }) {
-                    adapters.forEach { a -> DropdownMenuItem(text = { Text(a.label) }, onClick = {
-                        resetModels()
-                        adapterId = a.id
-                        if (baseUrl.isBlank()) baseUrl = a.defaultBaseUrl.orEmpty()
-                        protocolMenu = false
-                    }) }
+                if (cred?.present == true && secret.isEmpty()) {
+                    TextButton(onClick = { resetModels(); removeSecret = !removeSecret }, contentPadding = PaddingValues(0.dp)) {
+                        Text(if (removeSecret) "保留已保存的密钥" else "删除已保存的密钥")
+                    }
                 }
-            }
-            Field("服务地址", baseUrl, { resetModels(); baseUrl = it }, fe("baseUrl"), keyboard = KeyboardType.Uri)
-            val cred = p?.credential
-            OutlinedTextField(
-                secret, { resetModels(); secret = it; removeSecret = false }, singleLine = true, label = { Text("API 密钥") },
-                placeholder = { Text(if (cred?.present == true && !removeSecret) "已保存，留空则不变" else "粘贴密钥") },
-                visualTransformation = if (showSecret) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false, imeAction = ImeAction.Next),
-                trailingIcon = { IconButton(onClick = { showSecret = !showSecret }) { Icon(if (showSecret) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility, if (showSecret) "隐藏密钥" else "显示密钥") } },
-                supportingText = { Text("只保存在本机的加密存储中，不会出现在导出文件里") },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            )
-            if (cred?.present == true && secret.isEmpty()) {
-                TextButton(onClick = { resetModels(); removeSecret = !removeSecret }) { Text(if (removeSecret) "保留已保存的密钥" else "删除已保存的密钥") }
-            }
-            Field("模型标识", model, { model = it }, fe("model"), placeholder = "服务商提供的模型名称")
-            val loadingModels = modelState == ModelCatalogState.Loading
-            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = {
-                    modelPicker = false
-                    vm.models.fetch(ModelCatalogDraft(baseUrl, adapterId, timeout.toIntOrNull(),
-                        presetId = savedId?.takeUnless { removeSecret }?.let(::PresetId), expectedVersion = p?.version),
-                        secret.takeIf { it.isNotEmpty() }?.toCharArray())
-                }, enabled = !loadingModels && !saving && initialized && baseUrl.isNotBlank() && timeoutError == null) {
-                    if (loadingModels) { CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp); Spacer(Modifier.width(8.dp)) }
-                    Text(if (loadingModels) "正在拉取…" else if (modelState is ModelCatalogState.Ready) "重新拉取" else "拉取模型")
+                Field("模型标识", model, { model = it }, fe("model"), placeholder = "服务商提供的模型名称")
+                val loadingModels = modelState == ModelCatalogState.Loading
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(top = 6.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            modelPicker = false
+                            vm.models.fetch(
+                                ModelCatalogDraft(
+                                    baseUrl,
+                                    adapterId,
+                                    timeout.toIntOrNull(),
+                                    presetId = savedId?.takeUnless { removeSecret }?.let(::PresetId),
+                                    expectedVersion = p?.version,
+                                ),
+                                secret.takeIf { it.isNotEmpty() }?.toCharArray(),
+                            )
+                        },
+                        enabled = !loadingModels && !saving && initialized && baseUrl.isNotBlank() && timeoutError == null,
+                        shape = CircleShape,
+                    ) {
+                        if (loadingModels) {
+                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(8.dp))
+                        }
+                        Text(if (loadingModels) "正在拉取…" else if (modelState is ModelCatalogState.Ready) "重新拉取" else "拉取模型")
+                    }
+                    if (loadingModels) TextButton(onClick = { modelPicker = false; vm.models.cancel() }) { Text("取消拉取") }
+                    (modelState as? ModelCatalogState.Ready)?.models?.takeIf { it.isNotEmpty() }?.let { list ->
+                        TextButton(onClick = { modelPicker = true }) { Text("选择模型（${list.size}）") }
+                    }
                 }
-                if (loadingModels) TextButton(onClick = { modelPicker = false; vm.models.cancel() }) { Text("取消拉取") }
-                (modelState as? ModelCatalogState.Ready)?.models?.takeIf { it.isNotEmpty() }?.let { list ->
-                    TextButton(onClick = { modelPicker = true }) { Text("选择模型（${list.size}）") }
+                when (val state = modelState) {
+                    is ModelCatalogState.Failed -> ErrorNotice(state.error, Modifier.padding(top = 6.dp))
+                    else -> Text(
+                        when {
+                            state == ModelCatalogState.Cancelled -> "已取消拉取，可重试或手动填写模型。"
+                            state is ModelCatalogState.Ready && state.models.isEmpty() -> "服务商返回了空列表，可手动填写模型标识。"
+                            state is ModelCatalogState.Ready -> "已拉取 ${state.models.size} 个模型，选择后点击保存。"
+                            else -> "使用当前地址与密钥查询，也可手动填写模型。"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.muted,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
                 }
-            }
-            when (val state = modelState) {
-                is ModelCatalogState.Failed -> ErrorNotice(state.error)
-                else -> Text(when {
-                    state == ModelCatalogState.Cancelled -> "已取消拉取，可重试或手动填写模型。"
-                    state is ModelCatalogState.Ready && state.models.isEmpty() -> "服务商返回了空列表，可手动填写模型标识。"
-                    state is ModelCatalogState.Ready -> "已拉取 ${state.models.size} 个模型，选择后点击保存。"
-                    else -> "使用当前地址与密钥查询，也可手动填写模型。"
-                }, style = MaterialTheme.typography.bodySmall, color = c.muted)
-            }
-            Spacer(Modifier.height(16.dp))
-            SectionDisclosure("高级设置", "输出 ${maxTokens.ifBlank { "由服务商决定" }} tokens · 超时 ${timeout.ifBlank { "不限" }} 秒") {
-            val efforts = adapters.firstOrNull { it.id == adapterId }?.reasoningEfforts.orEmpty()
-            ExposedDropdownMenuBox(effortMenu, { if (!saving && initialized) effortMenu = it }, Modifier.padding(top = 8.dp)) {
-                OutlinedTextField(
-                    efforts.firstOrNull { it.id == reasoningEffort }?.label ?: reasoningEffort ?: "默认（由模型决定）", {},
-                    readOnly = true, enabled = !saving && initialized, label = { Text("思维程度") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(effortMenu) },
-                    supportingText = { Text("较高程度可能增加等待和 token 用量；支持档位由模型决定。") },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-                )
-                ExposedDropdownMenu(effortMenu, { effortMenu = false }) {
-                    DropdownMenuItem(text = { Text("默认（由模型决定）") }, onClick = { reasoningEffort = null; effortMenu = false })
-                    efforts.forEach { effort -> DropdownMenuItem(text = { Text(effort.label) }, onClick = { reasoningEffort = effort.id; effortMenu = false }) }
-                }
-            }
-            Row {
-                Field("输出上限（tokens）", maxTokens, { maxTokens = it.filter(Char::isDigit) }, tokenError ?: fe("maxOutputTokens"), placeholder = "留空不限制", keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
-                Spacer(Modifier.width(12.dp))
-                Field("超时（秒）", timeout, { resetModels(); timeout = it.filter(Char::isDigit) }, timeoutError ?: fe("timeoutSeconds"), placeholder = "留空不限制", keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
-            }
-            Text("留空时不设置输出上限或超时；服务商、模型或系统仍可能限制输出或中断任务。", style = MaterialTheme.typography.bodySmall, color = c.muted)
-            }
-            err?.takeIf { it.fieldErrors.isEmpty() }?.let { ErrorNotice(it, Modifier.padding(top = 8.dp)) }
 
-            Spacer(Modifier.height(16.dp))
-            Button(
-                onClick = {
-                    resetModels()
-                    vm.save(PresetDraft(
-                        id = savedId?.let(::PresetId), expectedVersion = p?.version, name = name, adapterId = adapterId, baseUrl = baseUrl, model = model,
-                        maxOutputTokens = maxTokens.toIntOrNull(), timeoutSeconds = timeout.toIntOrNull(),
-                        credential = when { secret.isNotEmpty() -> secret; removeSecret -> ""; else -> null },
-                        reasoningEffort = reasoningEffort,
-                    )) { secret = ""; removeSecret = false }
-                },
-                enabled = !saving && initialized && tokenError == null && timeoutError == null, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
-            ) { Text(if (saving) "正在保存…" else "保存") }
-            Text(if (managed?.mode == LearningMode.AiManaged) "保存后，AI 托管会自动继续等待配置的学习任务，产生的用量可在记录中查看。" else "保存只检查格式，不会联网。", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 6.dp))
+                Spacer(Modifier.height(10.dp))
+                SectionDisclosure("高级设置", "输出 ${maxTokens.ifBlank { "由服务商决定" }} tokens · 超时 ${timeout.ifBlank { "不限" }} 秒") {
+                    val efforts = adapters.firstOrNull { it.id == adapterId }?.reasoningEfforts.orEmpty()
+                    ExposedDropdownMenuBox(effortMenu, { if (!saving && initialized) effortMenu = it }, Modifier.padding(top = 8.dp)) {
+                        OutlinedTextField(
+                            efforts.firstOrNull { it.id == reasoningEffort }?.label ?: reasoningEffort ?: "默认（由模型决定）",
+                            {},
+                            readOnly = true,
+                            enabled = !saving && initialized,
+                            shape = RoundedCornerShape(16.dp),
+                            label = { Text("思维程度") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(effortMenu) },
+                            supportingText = { Text("较高程度可能增加等待和 token 用量；支持档位由模型决定。") },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                        )
+                        ExposedDropdownMenu(effortMenu, { effortMenu = false }) {
+                            DropdownMenuItem(text = { Text("默认（由模型决定）") }, onClick = { reasoningEffort = null; effortMenu = false })
+                            efforts.forEach { effort ->
+                                DropdownMenuItem(text = { Text(effort.label) }, onClick = { reasoningEffort = effort.id; effortMenu = false })
+                            }
+                        }
+                    }
+                    Row {
+                        Field("输出上限（tokens）", maxTokens, { maxTokens = it.filter(Char::isDigit) }, tokenError ?: fe("maxOutputTokens"), placeholder = "留空不限制", keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
+                        Spacer(Modifier.width(12.dp))
+                        Field("超时（秒）", timeout, { resetModels(); timeout = it.filter(Char::isDigit) }, timeoutError ?: fe("timeoutSeconds"), placeholder = "留空不限制", keyboard = KeyboardType.Number, modifier = Modifier.weight(1f))
+                    }
+                    Text("留空时不设置输出上限或超时；服务商、模型或系统仍可能限制输出或中断任务。", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                }
+                err?.takeIf { it.fieldErrors.isEmpty() }?.let { ErrorNotice(it, Modifier.padding(top = 8.dp)) }
+
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        resetModels()
+                        vm.save(
+                            PresetDraft(
+                                id = savedId?.let(::PresetId),
+                                expectedVersion = p?.version,
+                                name = name,
+                                adapterId = adapterId,
+                                baseUrl = baseUrl,
+                                model = model,
+                                maxOutputTokens = maxTokens.toIntOrNull(),
+                                timeoutSeconds = timeout.toIntOrNull(),
+                                credential = when {
+                                    secret.isNotEmpty() -> secret
+                                    removeSecret -> ""
+                                    else -> null
+                                },
+                                reasoningEffort = reasoningEffort,
+                            ),
+                        ) { secret = ""; removeSecret = false }
+                    },
+                    enabled = !saving && initialized && tokenError == null && timeoutError == null,
+                    shape = CircleShape,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                ) { Text(if (saving) "正在保存…" else "保存") }
+                Text(
+                    if (managed?.mode == LearningMode.AiManaged) "保存后，AI 托管会自动继续等待配置的学习任务，产生的用量可在记录中查看。"
+                    else "保存只检查格式，不会联网。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.muted,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
 
             val v = p
             if (v != null) {
-                SectionTitle("连接测试")
-                Text("使用已保存的预设发送一次真实请求，可能产生用量。", style = MaterialTheme.typography.bodySmall, color = c.muted)
-                v.lastTest?.let { t ->
-                    Text((if (t.ok) "正常" else "失败") + "：${t.message}（${t.at.dayAndClock()}${t.latencyMs?.let { "，$it ms" } ?: ""}）",
-                        style = MaterialTheme.typography.bodyMedium, color = if (t.ok) c.positive else c.negative, modifier = Modifier.padding(top = 8.dp))
-                }
-                test?.takeIf { it.status.isActive || it.status == OperationStatus.Failed }?.let { OperationLine(it, Modifier.padding(top = 8.dp)) }
-                val dirty = name != v.name || adapterId != v.adapterId || baseUrl != v.baseUrl || model != v.model ||
-                    reasoningEffort != v.reasoningEffort || maxTokens.toIntOrNull() != v.maxOutputTokens || timeout.toIntOrNull() != v.timeoutSeconds || secret.isNotEmpty() || removeSecret
-                OutlinedButton(onClick = vm::test, enabled = !dirty && !saving && test?.status?.isActive != true, modifier = Modifier.padding(top = 8.dp)) { Text(if (dirty) "先保存修改，再测试" else "测试连接") }
-
-                SectionTitle("状态")
-                Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text("启用这个预设", style = MaterialTheme.typography.bodyLarge)
-                        Text(if (v.boundFeatures.isEmpty()) "未单独绑定功能，可在调用控制中设为默认" else "被 ${v.boundFeatures.size} 项功能单独绑定", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                SectionTitle("连接测试与状态")
+                Panel {
+                    Text("使用已保存的预设发送一次真实请求，可能产生用量。", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                    v.lastTest?.let { t ->
+                        Text(
+                            (if (t.ok) "正常" else "失败") + "：${t.message}（${t.at.dayAndClock()}${t.latencyMs?.let { "，$it ms" } ?: ""}）",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (t.ok) c.positive else c.negative,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
                     }
-                    Switch(v.enabled, vm::setEnabled)
+                    test?.takeIf { it.status.isActive || it.status == OperationStatus.Failed }?.let {
+                        OperationLine(it, Modifier.padding(top = 8.dp))
+                    }
+                    val dirty = name != v.name || adapterId != v.adapterId || baseUrl != v.baseUrl || model != v.model ||
+                        reasoningEffort != v.reasoningEffort || maxTokens.toIntOrNull() != v.maxOutputTokens || timeout.toIntOrNull() != v.timeoutSeconds || secret.isNotEmpty() || removeSecret
+                    OutlinedButton(
+                        onClick = vm::test,
+                        enabled = !dirty && !saving && test?.status?.isActive != true,
+                        shape = CircleShape,
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) { Text(if (dirty) "先保存修改，再测试" else "测试连接") }
+
+                    Hairline(Modifier.padding(vertical = 14.dp))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("启用这个预设", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                if (v.boundFeatures.isEmpty()) "未单独绑定功能，可在调用控制中设为默认" else "被 ${v.boundFeatures.size} 项功能单独绑定",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = c.muted,
+                            )
+                        }
+                        Switch(v.enabled, vm::setEnabled)
+                    }
+                    val scope = rememberCoroutineScope()
+                    TextButton(
+                        onClick = { scope.launch { confirmDelete = vm.impact() } },
+                        colors = ButtonDefaults.textButtonColors(contentColor = c.negative),
+                        contentPadding = PaddingValues(0.dp),
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) { Text("删除预设") }
                 }
-                val scope = rememberCoroutineScope()
-                TextButton(onClick = { scope.launch { confirmDelete = vm.impact() } }, colors = ButtonDefaults.textButtonColors(contentColor = c.negative), modifier = Modifier.padding(top = 12.dp)) { Text("删除预设") }
             }
         }
     }
@@ -263,11 +366,13 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
             onDismissRequest = { confirmDelete = null },
             title = { Text("删除「${p?.name}」？") },
             text = {
-                Text(buildString {
-                    if (impact.boundFeatures.isNotEmpty()) append("这些功能会变成待配置：${impact.boundFeatures.joinToString("、")}。\n")
-                    if (impact.runningOperations > 0) append("有 ${impact.runningOperations} 个任务正在使用它，会按原预设完成或失败。\n")
-                    append(impact.note)
-                })
+                Text(
+                    buildString {
+                        if (impact.boundFeatures.isNotEmpty()) append("这些功能会变成待配置：${impact.boundFeatures.joinToString("、")}。\n")
+                        if (impact.runningOperations > 0) append("有 ${impact.runningOperations} 个任务正在使用它，会按原预设完成或失败。\n")
+                        append(impact.note)
+                    },
+                )
             },
             confirmButton = { TextButton(onClick = { confirmDelete = null; vm.delete(onBack) }) { Text("删除", color = c.negative) } },
             dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("取消") } },
@@ -276,9 +381,22 @@ fun PresetEditScreen(presetId: String?, onBack: () -> Unit) {
 }
 
 @Composable
-private fun Field(label: String, value: String, onChange: (String) -> Unit, error: String?, modifier: Modifier = Modifier, placeholder: String? = null, keyboard: KeyboardType = KeyboardType.Text) {
+private fun Field(
+    label: String,
+    value: String,
+    onChange: (String) -> Unit,
+    error: String?,
+    modifier: Modifier = Modifier,
+    placeholder: String? = null,
+    keyboard: KeyboardType = KeyboardType.Text,
+) {
     OutlinedTextField(
-        value, onChange, singleLine = true, label = { Text(label) }, isError = error != null,
+        value,
+        onChange,
+        singleLine = true,
+        shape = RoundedCornerShape(16.dp),
+        label = { Text(label) },
+        isError = error != null,
         placeholder = placeholder?.let { { Text(it) } },
         supportingText = error?.let { { Text(it) } },
         keyboardOptions = KeyboardOptions(keyboardType = keyboard, autoCorrectEnabled = false, imeAction = ImeAction.Next),

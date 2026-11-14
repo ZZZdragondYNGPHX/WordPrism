@@ -1,8 +1,11 @@
 package app.wordprism.ui.library
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -63,7 +66,8 @@ class WordViewModel(sdk: WordPrismSdk, private val saved: SavedStateHandle, id: 
         viewModelScope.launch {
             acceptOperation.filterNotNull().collect { op ->
                 if (op.status == OperationStatus.Succeeded && saved.get<String>("announcedAcceptance") != op.id.value) {
-                    saved["announcedAcceptance"] = op.id.value; saved["selected"] = emptyList<String>()
+                    saved["announcedAcceptance"] = op.id.value
+                    saved["selected"] = emptyList<String>()
                     say(op.resultSummary ?: "所选词已加入", op.id.takeIf { OperationAction.Undo in op.actions })
                 }
             }
@@ -143,114 +147,187 @@ fun WordScreen(wordId: String, onBack: () -> Unit, openApi: () -> Unit, openGrou
         when {
             page == null -> Loading()
             word == null -> EmptyState("没有找到这个词", "请返回词库重新选择。")
-            else -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter)
-                .navigationBarsPadding().padding(bottom = 32.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(word.lemma, style = WpType.word, color = c.ink, modifier = Modifier.weight(1f))
-                    Spacer(Modifier.width(10.dp)); StatusPill(word.status.label(), tone = word.status.tone())
-                }
-                if (word.senses.size > 1) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    word.senses.forEachIndexed { index, s ->
-                        FilterChip(selected = s.id == current?.id, onClick = { vm.selectSense(s.id) },
-                            label = { Text("义项 ${index + 1} · ${s.partOfSpeech}") })
+            else -> Column(
+                Modifier.fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = Wp.gutter)
+                    .navigationBarsPadding()
+                    .padding(bottom = 32.dp),
+            ) {
+                Spacer(Modifier.height(14.dp))
+                Panel(accentLipColor = c.action) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(word.lemma, style = WpType.word, color = c.ink, modifier = Modifier.weight(1f))
+                        Spacer(Modifier.width(10.dp))
+                        StatusPill(word.status.label(), tone = word.status.tone())
                     }
-                }
-                current?.let { s ->
-                    SelectionContainer { Text("${s.partOfSpeech}  ${s.glossZh}", style = MaterialTheme.typography.bodyLarge, color = c.ink, modifier = Modifier.padding(top = 10.dp)) }
-                    if (s.examples.isNotEmpty()) {
-                        SectionTitle("已有例句")
-                        s.examples.forEach { ex -> SelectionContainer { Text(ex.text, style = WpType.english, color = c.ink, modifier = Modifier.padding(bottom = 10.dp)) } }
+                    if (word.senses.size > 1) {
+                        Spacer(Modifier.height(10.dp))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            word.senses.forEachIndexed { index, s ->
+                                FilterChip(
+                                    selected = s.id == current?.id,
+                                    onClick = { vm.selectSense(s.id) },
+                                    shape = CircleShape,
+                                    label = { Text("义项 ${index + 1} · ${s.partOfSpeech}") },
+                                )
+                            }
+                        }
                     }
-                }
-                word.note?.let { SelectionContainer { Text("我的笔记：$it", color = c.ink, modifier = Modifier.padding(top = 12.dp)) } }
-                if (word.groups.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    word.groups.forEach { g -> TextButton(onClick = { openGroup(g.id.value) }) { Text(g.title) } }
-                }
-                Spacer(Modifier.height(20.dp)); Hairline()
-                SectionTitle("理解与记忆")
-                support?.operation?.let { op ->
-                    OperationLine(op, onCancel = { vm.cancel(op.id) }, onRetry = { vm.retry(op.id) })
-                    if (OperationAction.Undo in op.actions) TextButton(onClick = { vm.undo(op.id) }) { Text("撤销这次讲解") }
-                    Spacer(Modifier.height(8.dp))
-                }
-                if (support?.stale == true) {
-                    Text("义项已修改，下面是旧版讲解。更新后才会继续用于生成练习。", style = MaterialTheme.typography.bodyMedium, color = c.caution)
-                    Spacer(Modifier.height(12.dp))
-                }
-                if (support?.version == null) {
-                    Text("从构词、词源和记忆联想理解这个义项，还可以发现相关词族。生成后保存在手机上。", style = MaterialTheme.typography.bodyMedium, color = c.muted)
-                } else {
-                    val source = support.source
-                    val sourceText = listOfNotNull(if (source?.isAi == true) "AI 生成" else "已保存讲解",
-                        source?.presetName?.let { "预设「$it」" }, source?.model,
-                        source?.generatedAt?.dayAndClock(), "内容第 ${support.version} 版").joinToString(" · ")
-                    Text(sourceText, style = MaterialTheme.typography.bodySmall, color = c.muted)
-                    key(current?.id) {
-                        val primary = setOf("explanation", "english_definition", "usage")
-                        val order = listOf("explanation", "english_definition", "usage", "examples", "word_parts", "etymology", "mnemonic")
-                        support.sections.sortedBy { order.indexOf(it.id).takeIf { index -> index >= 0 } ?: Int.MAX_VALUE }.forEach { section ->
-                            SectionDisclosure(section.title, initiallyExpanded = section.id in primary) {
-                                SelectionContainer {
-                                    Text(section.text, style = if (section.id in setOf("english_definition", "examples")) WpType.english else MaterialTheme.typography.bodyLarge, color = c.ink)
+                    current?.let { s ->
+                        SelectionContainer {
+                            Text("${s.partOfSpeech}  ${s.glossZh}", style = MaterialTheme.typography.titleMedium, color = c.ink, modifier = Modifier.padding(top = 12.dp))
+                        }
+                        if (s.examples.isNotEmpty()) {
+                            Spacer(Modifier.height(12.dp))
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = c.sunk.copy(alpha = if (c.isDark) 0.65f else 0.45f),
+                                border = BorderStroke(0.5.dp, c.hairline),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    s.examples.forEach { ex ->
+                                        SelectionContainer { Text(ex.text, style = WpType.english, color = c.ink) }
+                                    }
                                 }
-                                section.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 8.dp)) }
-                                Spacer(Modifier.height(16.dp))
-                            }
-                            Hairline()
-                        }
-                    }
-                    SectionTitle("关联词族")
-                    Text("选中后加入词库，可以撤销；不会自动并入当前词组。", style = MaterialTheme.typography.bodySmall, color = c.muted)
-                    if (support.recommendations.isEmpty()) Text(if (support.stale) "更新讲解后再查看词族候选" else "暂无待加入的词族候选", color = c.muted, modifier = Modifier.padding(vertical = 12.dp))
-                    support.family.filter { family -> support.recommendations.none { it.id == family.id } }.forEach { r ->
-                        Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(r.lemma + r.glossZh?.let { "  $it" }.orEmpty(), style = MaterialTheme.typography.bodyLarge, color = c.ink)
-                                Text(r.reason, style = MaterialTheme.typography.bodySmall, color = c.muted)
-                            }
-                            r.wordId?.let { id -> TextButton(onClick = { openWord(id.value) }) { Text("查看词条") } }
-                        }
-                    }
-                    support.recommendations.forEach { r ->
-                        Row(Modifier.fillMaxWidth().toggleable(r.id in selected, role = Role.Checkbox,
-                            enabled = !accepting && acceptOp?.status?.isActive != true) { vm.toggle(r.id) }.heightIn(min = 56.dp).padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(r.id in selected, onCheckedChange = null); Spacer(Modifier.width(10.dp))
-                            Column(Modifier.weight(1f)) {
-                                Text(r.lemma + r.glossZh?.let { "  $it" }.orEmpty(), style = MaterialTheme.typography.bodyLarge, color = c.ink)
-                                Text(r.reason, style = MaterialTheme.typography.bodySmall, color = c.muted)
-                                if (r.alreadyInLibrary) Text("已在词库中，将复用已有内容", style = MaterialTheme.typography.bodySmall, color = c.muted)
                             }
                         }
                     }
-                    if (selected.isNotEmpty()) {
-                        ApiDisclosure(acceptReq, onConfigure = openApi)
-                        Button(onClick = vm::acceptSelected, enabled = !accepting && acceptOp?.status?.isActive != true,
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 52.dp)) {
-                            Text(if (accepting) "正在加入…" else "加入所选的 ${selected.size} 个词")
+                    word.note?.let {
+                        SelectionContainer { Text("我的笔记：$it", color = c.ink, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 12.dp)) }
+                    }
+                    if (word.groups.isNotEmpty()) {
+                        Spacer(Modifier.height(10.dp))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            word.groups.forEach { g ->
+                                CupertinoPill(text = g.title, tint = c.action, onClick = { openGroup(g.id.value) })
+                            }
                         }
                     }
                 }
-                acceptOp?.let { op ->
-                    Spacer(Modifier.height(12.dp))
-                    OperationLine(op, onCancel = { vm.cancel(op.id) }, onRetry = { vm.retry(op.id) })
-                    if (OperationAction.Undo in op.actions) TextButton(onClick = { vm.undo(op.id) }) { Text("撤销加入") }
+
+                SectionTitle("理解与记忆")
+                InsetGroupCard {
+                    Column(Modifier.padding(16.dp)) {
+                        support?.operation?.let { op ->
+                            OperationLine(op, onCancel = { vm.cancel(op.id) }, onRetry = { vm.retry(op.id) })
+                            if (OperationAction.Undo in op.actions) TextButton(onClick = { vm.undo(op.id) }) { Text("撤销这次讲解") }
+                            Spacer(Modifier.height(8.dp))
+                        }
+                        if (support?.stale == true) {
+                            Text("义项已修改，下面是旧版讲解。更新后才会继续用于生成练习。", style = MaterialTheme.typography.bodyMedium, color = c.caution)
+                            Spacer(Modifier.height(12.dp))
+                        }
+                        if (support?.version == null) {
+                            Text("从构词、词源和记忆联想理解这个义项，还可以发现相关词族。生成后保存在手机上。", style = MaterialTheme.typography.bodyMedium, color = c.muted)
+                        } else {
+                            val source = support.source
+                            val sourceText = listOfNotNull(
+                                if (source?.isAi == true) "AI 生成" else "已保存讲解",
+                                source?.presetName?.let { "预设「$it」" },
+                                source?.model,
+                                source?.generatedAt?.dayAndClock(),
+                                "内容第 ${support.version} 版",
+                            ).joinToString(" · ")
+                            Text(sourceText, style = MaterialTheme.typography.bodySmall, color = c.muted)
+                            key(current?.id) {
+                                val primary = setOf("explanation", "english_definition", "usage")
+                                val order = listOf("explanation", "english_definition", "usage", "examples", "word_parts", "etymology", "mnemonic")
+                                support.sections.sortedBy { order.indexOf(it.id).takeIf { index -> index >= 0 } ?: Int.MAX_VALUE }.forEach { section ->
+                                    SectionDisclosure(section.title, initiallyExpanded = section.id in primary) {
+                                        SelectionContainer {
+                                            Text(
+                                                section.text,
+                                                style = if (section.id in setOf("english_definition", "examples")) WpType.english else MaterialTheme.typography.bodyLarge,
+                                                color = c.ink,
+                                            )
+                                        }
+                                        section.note?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 8.dp)) }
+                                        Spacer(Modifier.height(10.dp))
+                                    }
+                                    Hairline()
+                                }
+                            }
+                            SectionTitle("关联词族")
+                            Text("选中后加入词库，可以撤销；不会自动并入当前词组。", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                            if (support.recommendations.isEmpty()) {
+                                Text(
+                                    if (support.stale) "更新讲解后再查看词族候选" else "暂无待加入的词族候选",
+                                    color = c.muted,
+                                    modifier = Modifier.padding(vertical = 12.dp),
+                                )
+                            }
+                            support.family.filter { family -> support.recommendations.none { it.id == family.id } }.forEach { r ->
+                                Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text(r.lemma + r.glossZh?.let { "  $it" }.orEmpty(), style = MaterialTheme.typography.bodyLarge, color = c.ink)
+                                        Text(r.reason, style = MaterialTheme.typography.bodySmall, color = c.muted)
+                                    }
+                                    r.wordId?.let { id -> TextButton(onClick = { openWord(id.value) }) { Text("查看词条") } }
+                                }
+                            }
+                            support.recommendations.forEach { r ->
+                                Row(
+                                    Modifier.fillMaxWidth()
+                                        .toggleable(r.id in selected, role = Role.Checkbox, enabled = !accepting && acceptOp?.status?.isActive != true) { vm.toggle(r.id) }
+                                        .heightIn(min = 56.dp)
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Checkbox(r.id in selected, onCheckedChange = null)
+                                    Spacer(Modifier.width(10.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(r.lemma + r.glossZh?.let { "  $it" }.orEmpty(), style = MaterialTheme.typography.bodyLarge, color = c.ink)
+                                        Text(r.reason, style = MaterialTheme.typography.bodySmall, color = c.muted)
+                                        if (r.alreadyInLibrary) Text("已在词库中，将复用已有内容", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                                    }
+                                }
+                            }
+                            if (selected.isNotEmpty()) {
+                                ApiDisclosure(acceptReq, onConfigure = openApi)
+                                Button(
+                                    onClick = vm::acceptSelected,
+                                    enabled = !accepting && acceptOp?.status?.isActive != true,
+                                    shape = CircleShape,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 50.dp),
+                                ) {
+                                    Text(if (accepting) "正在加入…" else "加入所选的 ${selected.size} 个词")
+                                }
+                            }
+                        }
+                        acceptOp?.let { op ->
+                            Spacer(Modifier.height(12.dp))
+                            OperationLine(op, onCancel = { vm.cancel(op.id) }, onRetry = { vm.retry(op.id) })
+                            if (OperationAction.Undo in op.actions) TextButton(onClick = { vm.undo(op.id) }) { Text("撤销加入") }
+                        }
+                        error?.let { ErrorNotice(it, Modifier.padding(top = 12.dp)) }
+                        Spacer(Modifier.height(16.dp))
+                        ApiDisclosure(requirement, onConfigure = openApi)
+                        OutlinedButton(
+                            onClick = vm::generate,
+                            enabled = current != null && support != null && !sending && support.operation?.status?.isActive != true,
+                            shape = CircleShape,
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 50.dp),
+                        ) {
+                            Text(
+                                when {
+                                    sending -> "正在提交…"
+                                    support?.operation?.status?.isActive == true -> "等待讲解完成"
+                                    support?.stale == true -> "更新 AI 讲解"
+                                    support?.version != null -> "重新生成 AI 讲解"
+                                    else -> "让 AI 补充讲解"
+                                },
+                            )
+                        }
+                        Text(
+                            "已保存的讲解会供 AI 分析和后续练习使用。自动补充可在 AI 调整中控制。",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = c.muted,
+                            modifier = Modifier.padding(top = 10.dp),
+                        )
+                    }
                 }
-                error?.let { ErrorNotice(it, Modifier.padding(top = 12.dp)) }
-                Spacer(Modifier.height(20.dp))
-                ApiDisclosure(requirement, onConfigure = openApi)
-                OutlinedButton(onClick = vm::generate, enabled = current != null && support != null && !sending && support.operation?.status?.isActive != true,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).heightIn(min = 52.dp)) {
-                    Text(when {
-                        sending -> "正在提交…"
-                        support?.operation?.status?.isActive == true -> "等待讲解完成"
-                        support?.stale == true -> "更新 AI 讲解"
-                        support?.version != null -> "重新生成 AI 讲解"
-                        else -> "让 AI 补充讲解"
-                    })
-                }
-                Text("已保存的讲解会供 AI 分析和后续练习使用。自动补充可在 AI 调整中控制。", style = MaterialTheme.typography.bodySmall,
-                    color = c.muted, modifier = Modifier.padding(top = 10.dp))
             }
         }
     }

@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -112,43 +113,78 @@ fun DataScreen(onBack: () -> Unit) {
 
     Column(Modifier.fillMaxSize()) {
         WpTopBar("导入与导出", onBack = onBack)
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter).navigationBarsPadding().padding(bottom = 32.dp)) {
+        Column(
+            Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Wp.gutter)
+                .navigationBarsPadding()
+                .padding(bottom = 32.dp),
+        ) {
+            Spacer(Modifier.height(14.dp))
             Text("只支持 WordPrism 专属数据包（.wordprism）。没有云同步，换手机时用完整备份。", style = MaterialTheme.typography.bodyMedium, color = c.muted)
 
             op?.let { o ->
-                Panel(Modifier.padding(top = 16.dp)) {
+                Panel(Modifier.padding(top = 14.dp)) {
                     Text(o.title, style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(6.dp))
                     OperationLine(o, onCancel = { vm.cancel(o.id) })
-                    o.resultSummary?.takeIf { o.status == OperationStatus.Succeeded }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp)) }
-                    if (OperationAction.Undo in o.actions) TextButton(onClick = { vm.undo(o.id) }) { Text("撤销这次导入") }
+                    o.resultSummary?.takeIf { o.status == OperationStatus.Succeeded }?.let {
+                        Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp))
+                    }
+                    if (OperationAction.Undo in o.actions) TextButton(onClick = { vm.undo(o.id) }, contentPadding = PaddingValues(0.dp)) { Text("撤销这次导入") }
                 }
             }
 
             SectionTitle("完整备份")
-            scopeInfo?.let { s ->
-                Text("包含：" + s.included.joinToString("、"), style = MaterialTheme.typography.bodySmall, color = c.ink)
-                Text("不含：" + s.excluded.joinToString("、"), style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 2.dp))
-            }
-            Button(onClick = {
-                pendingPurpose = PackagePurpose.FullBackup.value
-                coroutine.launch { createDoc.launch(vm.suggestedName(PackagePurpose.FullBackup)) }
-            }, enabled = op?.status?.isActive != true, modifier = Modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 52.dp)) {
-                Icon(Icons.Outlined.Backup, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("导出完整备份")
+            Panel {
+                scopeInfo?.let { s ->
+                    Text("包含：" + s.included.joinToString("、"), style = MaterialTheme.typography.bodySmall, color = c.ink)
+                    Text("不含：" + s.excluded.joinToString("、"), style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 4.dp))
+                }
+                Button(
+                    onClick = {
+                        pendingPurpose = PackagePurpose.FullBackup.value
+                        coroutine.launch { createDoc.launch(vm.suggestedName(PackagePurpose.FullBackup)) }
+                    },
+                    enabled = op?.status?.isActive != true,
+                    shape = CircleShape,
+                    modifier = Modifier.fillMaxWidth().padding(top = 14.dp).heightIn(min = 50.dp),
+                ) {
+                    Icon(Icons.Outlined.Backup, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("导出完整备份")
+                }
             }
 
             SectionTitle("分享词组")
-            Text("包含所选词组的词条、释义、例句、归组、已保存讲解、词族候选和练习内容，不含学习进度、AI 调整记录和 API 配置。", style = MaterialTheme.typography.bodySmall, color = c.muted)
-            OutlinedButton(onClick = { pickGroups = true }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 52.dp)) {
-                Text(if (selected.isEmpty()) "选择要导出的词组" else "已选 ${selected.size} 个词组，导出")
+            Panel {
+                Text("包含所选词组的词条、释义、例句、归组、已保存讲解、词族候选和练习内容，不含学习进度、AI 调整记录和 API 配置。", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                OutlinedButton(
+                    onClick = { pickGroups = true },
+                    shape = CircleShape,
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 50.dp),
+                ) {
+                    Text(if (selected.isEmpty()) "选择要导出的词组" else "已选 ${selected.size} 个词组，导出")
+                }
             }
 
             SectionTitle("导入")
-            Text("先预览会发生什么，再决定是否导入。导入本身不会调用 API。", style = MaterialTheme.typography.bodySmall, color = c.muted)
-            OutlinedButton(onClick = { openDoc.launch(arrayOf("*/*")) }, enabled = !busy, modifier = Modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 52.dp)) {
-                Icon(Icons.Outlined.FileOpen, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(if (busy) "正在读取…" else "选择数据包")
+            Panel {
+                Text("先预览会发生什么，再决定是否导入。导入本身不会调用 API。", style = MaterialTheme.typography.bodySmall, color = c.muted)
+                OutlinedButton(
+                    onClick = { openDoc.launch(arrayOf("*/*")) },
+                    enabled = !busy,
+                    shape = CircleShape,
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp).heightIn(min = 50.dp),
+                ) {
+                    Icon(Icons.Outlined.FileOpen, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (busy) "正在读取…" else "选择数据包")
+                }
             }
-            preview?.let { p -> PreviewCard(p, onCommit = { if (p.replacesLibrary) confirmRestore = true else vm.commit() }, onDismiss = vm::dismissPreview) }
+            preview?.let { p ->
+                PreviewCard(p, onCommit = { if (p.replacesLibrary) confirmRestore = true else vm.commit() }, onDismiss = vm::dismissPreview)
+            }
         }
     }
 
@@ -159,15 +195,21 @@ fun DataScreen(onBack: () -> Unit) {
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     groups.forEach { g ->
-                        Row(Modifier.fillMaxWidth().toggleable(g.id.value in selected, role = Role.Checkbox) { vm.toggleGroup(g.id.value) }.heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(g.id.value in selected, null); Spacer(Modifier.width(8.dp)); Text(g.title)
+                        Row(
+                            Modifier.fillMaxWidth().toggleable(g.id.value in selected, role = Role.Checkbox) { vm.toggleGroup(g.id.value) }.heightIn(min = 48.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(g.id.value in selected, null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(g.title)
                         }
                     }
                 }
             },
             confirmButton = {
                 TextButton(enabled = selected.isNotEmpty(), onClick = {
-                    pickGroups = false; pendingPurpose = PackagePurpose.ContentPack.value
+                    pickGroups = false
+                    pendingPurpose = PackagePurpose.ContentPack.value
                     coroutine.launch { createDoc.launch(vm.suggestedName(PackagePurpose.ContentPack)) }
                 }) { Text("导出 ${selected.size} 个") }
             },
@@ -188,15 +230,17 @@ fun DataScreen(onBack: () -> Unit) {
 @Composable
 private fun PreviewCard(p: ImportPreview, onCommit: () -> Unit, onDismiss: () -> Unit) {
     val c = Wp.colors
-    Panel(Modifier.padding(top = 16.dp)) {
+    Panel(Modifier.padding(top = 16.dp), accentLipColor = if (p.replacesLibrary) c.caution else c.action) {
         Text(p.document.displayName ?: "数据包", style = MaterialTheme.typography.titleMedium)
         Text(
             (if (p.purpose == PackagePurpose.FullBackup) "完整备份" else "词库内容包") + "，格式 ${p.formatVersion}" + (p.createdAt?.let { "，创建于 ${it.dayAndClock()}" } ?: ""),
-            style = MaterialTheme.typography.bodySmall, color = c.muted,
+            style = MaterialTheme.typography.bodySmall,
+            color = c.muted,
         )
         Spacer(Modifier.height(10.dp))
-        if (p.replacesLibrary) Text("会替换当前资料库", style = MaterialTheme.typography.bodyMedium, color = c.caution)
-        else {
+        if (p.replacesLibrary) {
+            Text("会替换当前资料库", style = MaterialTheme.typography.bodyMedium, color = c.caution)
+        } else {
             KeyValue("新增", "${p.counts.newItems}")
             KeyValue("重复（跳过）", "${p.counts.duplicates}")
             if (p.counts.conflicts > 0) KeyValue("同名冲突", "${p.counts.conflicts}", valueColor = c.caution)
@@ -206,15 +250,27 @@ private fun PreviewCard(p: ImportPreview, onCommit: () -> Unit, onDismiss: () ->
         p.modules.forEach { m ->
             Row(Modifier.padding(vertical = 2.dp)) {
                 Text(m.label, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                Text(m.stateLabel, style = MaterialTheme.typography.bodySmall, color = when (m.state) { "ok" -> c.muted; "unsupported_required" -> c.negative; else -> c.caution })
+                Text(
+                    m.stateLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = when (m.state) {
+                        "ok" -> c.muted
+                        "unsupported_required" -> c.negative
+                        else -> c.caution
+                    },
+                )
             }
         }
-        (p.pendingConfiguration + p.warnings).forEach { Text("• $it", style = MaterialTheme.typography.bodySmall, color = c.caution, modifier = Modifier.padding(top = 4.dp)) }
+        (p.pendingConfiguration + p.warnings).forEach {
+            Text("• $it", style = MaterialTheme.typography.bodySmall, color = c.caution, modifier = Modifier.padding(top = 4.dp))
+        }
         p.blockingReason?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.negative, modifier = Modifier.padding(top = 8.dp)) }
         Row(Modifier.padding(top = 12.dp)) {
             TextButton(onClick = onDismiss) { Text("取消") }
             Spacer(Modifier.weight(1f))
-            Button(onClick = onCommit, enabled = p.canCommit) { Text(if (p.replacesLibrary) "恢复备份" else "导入") }
+            Button(onClick = onCommit, enabled = p.canCommit, shape = CircleShape) {
+                Text(if (p.replacesLibrary) "恢复备份" else "导入")
+            }
         }
     }
 }

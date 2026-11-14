@@ -1,10 +1,13 @@
 package app.wordprism.ui.intake
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -64,7 +67,9 @@ class IntakeViewModel(sdk: WordPrismSdk, private val saved: SavedStateHandle, pr
 
     fun resolve(options: List<String>) = viewModelScope.launch {
         val id = opId.value ?: return@launch
-        sdk.intake.resolve(OperationId(id), options, saved.requestIdFor("resolve")).let { if (it is SdkResult.Err) sayError(it.error) else saved.clearRequestId("resolve") }
+        sdk.intake.resolve(OperationId(id), options, saved.requestIdFor("resolve")).let {
+            if (it is SdkResult.Err) sayError(it.error) else saved.clearRequestId("resolve")
+        }
     }
 
     fun cancel() = viewModelScope.launch {
@@ -105,7 +110,11 @@ fun IntakeScreen(prefill: String, onClose: () -> Unit, openGroup: (String) -> Un
     var value by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue("")) }
     var loaded by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        if (!loaded) { val t = vm.initialDraft(prefill); value = TextFieldValue(t, TextRange(t.length)); loaded = true }
+        if (!loaded) {
+            val t = vm.initialDraft(prefill)
+            value = TextFieldValue(t, TextRange(t.length))
+            loaded = true
+        }
     }
     val focus = remember { FocusRequester() }
     LaunchedEffect(loaded) { if (loaded && st == null) runCatching { focus.requestFocus() } }
@@ -119,38 +128,54 @@ fun IntakeScreen(prefill: String, onClose: () -> Unit, openGroup: (String) -> Un
     Column(Modifier.fillMaxSize().imePadding()) {
         WpTopBar("AI 添加", onBack = onClose)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Wp.gutter)) {
+            Spacer(Modifier.height(14.dp))
             val s = st
             if (s == null) {
-                Text("用自己的话说出分不清的词。中英文混着写也可以。", style = MaterialTheme.typography.bodyLarge, color = c.muted)
-                Spacer(Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = { value = it; vm.draft(it.text) },
-                    placeholder = { Text("例如：linear 和 liner 我总是搞混") },
-                    minLines = 4,
-                    textStyle = MaterialTheme.typography.bodyLarge,
-                    // Enter adds a line; the IME's confirm key never submits (protects Chinese IME composition).
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
-                    supportingText = { Text("草稿会自动保存") },
-                    modifier = Modifier.fillMaxWidth().focusRequester(focus),
-                )
-                Spacer(Modifier.height(8.dp))
-                Text("试试这样说", style = MaterialTheme.typography.bodySmall, color = c.muted)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    examples.forEach { e -> SuggestionChip(onClick = { value = TextFieldValue(e, TextRange(e.length)); vm.draft(e) }, label = { Text(e) }) }
+                Panel(accentLipColor = c.ai) {
+                    CupertinoPill(text = "用自己的话添加", icon = Icons.Outlined.AutoAwesome, tint = c.ai)
+                    Spacer(Modifier.height(10.dp))
+                    Text("用自己的话说出分不清的词，中英文混着写也可以。", style = MaterialTheme.typography.bodyLarge, color = c.ink)
+                    Spacer(Modifier.height(14.dp))
+                    OutlinedTextField(
+                        value = value,
+                        onValueChange = { value = it; vm.draft(it.text) },
+                        placeholder = { Text("例如：linear 和 liner 我总是搞混") },
+                        minLines = 4,
+                        textStyle = MaterialTheme.typography.bodyLarge,
+                        shape = RoundedCornerShape(16.dp),
+                        // Enter adds a line; the IME's confirm key never submits (protects Chinese IME composition).
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
+                        supportingText = { Text("草稿会自动保存") },
+                        modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text("试试这样说", style = MaterialTheme.typography.labelMedium, color = c.muted)
+                    Spacer(Modifier.height(6.dp))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        examples.forEach { e ->
+                            SuggestionChip(
+                                onClick = { value = TextFieldValue(e, TextRange(e.length)); vm.draft(e) },
+                                shape = CircleShape,
+                                border = BorderStroke(0.5.dp, c.hairline),
+                                label = { Text(e) },
+                            )
+                        }
+                    }
                 }
             } else {
-                Text("你说的", style = MaterialTheme.typography.bodySmall, color = c.muted)
-                Text(s.input, style = MaterialTheme.typography.bodyLarge, color = c.ink, modifier = Modifier.padding(top = 4.dp, bottom = 16.dp))
-                Hairline()
-                Spacer(Modifier.height(16.dp))
-                when {
-                    s.pendingChoice != null -> ChoiceBlock(s.pendingChoice!!, onResolve = vm::resolve, onCancel = vm::cancel)
-                    s.outcome != null -> OutcomeBlock(s, openGroup, vm::undoResult)
-                    else -> OperationLine(s.operation, onCancel = vm::cancel, onRetry = vm::retry)
-                }
-                if (s.operation.status == OperationStatus.Failed && s.operation.error?.code in setOf(ErrorCode.PresetMissing, ErrorCode.CredentialMissing)) {
-                    TextButton(onClick = openApi) { Text("去配置 API 预设") }
+                Panel(accentLipColor = c.ai) {
+                    Text("你说的", style = MaterialTheme.typography.labelMedium, color = c.muted)
+                    Text(s.input, style = MaterialTheme.typography.bodyLarge, color = c.ink, modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
+                    Hairline()
+                    Spacer(Modifier.height(14.dp))
+                    when {
+                        s.pendingChoice != null -> ChoiceBlock(s.pendingChoice!!, onResolve = vm::resolve, onCancel = vm::cancel)
+                        s.outcome != null -> OutcomeBlock(s, openGroup, vm::undoResult)
+                        else -> OperationLine(s.operation, onCancel = vm::cancel, onRetry = vm::retry)
+                    }
+                    if (s.operation.status == OperationStatus.Failed && s.operation.error?.code in setOf(ErrorCode.PresetMissing, ErrorCode.CredentialMissing)) {
+                        TextButton(onClick = openApi) { Text("去配置 API 预设") }
+                    }
                 }
             }
         }
@@ -166,14 +191,25 @@ fun IntakeScreen(prefill: String, onClose: () -> Unit, openGroup: (String) -> Un
                             // An explicit click commits the visible text, just as on the study screen.
                             // IMEs can retain composition even after the keyboard has been hidden.
                             val text = value.text
-                            value = value.copy(composition = null); focusManager.clearFocus()
+                            value = value.copy(composition = null)
+                            focusManager.clearFocus()
                             vm.submit(text)
                         },
                         enabled = !submitting && value.text.isNotBlank(),
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    ) { Icon(Icons.Outlined.AutoAwesome, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(if (submitting) "正在提交…" else "交给 AI 整理") }
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(containerColor = c.ai),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp),
+                    ) {
+                        Icon(Icons.Outlined.AutoAwesome, null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (submitting) "正在提交…" else "交给 AI 整理", style = MaterialTheme.typography.titleMedium)
+                    }
                 }
-                s.operation.status.isTerminal -> OutlinedButton(onClick = { vm.startOver(); value = TextFieldValue("") }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                s.operation.status.isTerminal -> OutlinedButton(
+                    onClick = { vm.startOver(); value = TextFieldValue("") },
+                    shape = CircleShape,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                ) {
                     Text(if (s.operation.status == OperationStatus.Succeeded) "再添加一组" else "重新输入")
                 }
                 else -> {}
@@ -187,7 +223,12 @@ private fun ChoiceBlock(choice: IntakeChoice, onResolve: (List<String>) -> Unit,
     val c = Wp.colors
     var picked by rememberSaveable { mutableStateOf(listOf<String>()) }
     Text(choice.prompt, style = MaterialTheme.typography.titleMedium, color = c.ink)
-    Text(if (choice.allowMultiple) "可以选多个，词可以同时属于几个词组" else "选一项", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
+    Text(
+        if (choice.allowMultiple) "可以选多个，词可以同时属于几个词组" else "选一项",
+        style = MaterialTheme.typography.bodySmall,
+        color = c.muted,
+        modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
+    )
     Column(Modifier.selectableGroup()) {
         choice.options.forEach { o ->
             val on = o.id in picked
@@ -214,7 +255,7 @@ private fun ChoiceBlock(choice: IntakeChoice, onResolve: (List<String>) -> Unit,
     Row {
         TextButton(onClick = onCancel) { Text("取消这次添加") }
         Spacer(Modifier.weight(1f))
-        Button(onClick = { onResolve(picked) }, enabled = picked.isNotEmpty()) { Text("确定") }
+        Button(onClick = { onResolve(picked) }, enabled = picked.isNotEmpty(), shape = CircleShape) { Text("确定") }
     }
 }
 
@@ -238,7 +279,10 @@ private fun OutcomeBlock(s: IntakeState, openGroup: (String) -> Unit, onUndo: ()
                     IntakeEffectKind.CreatedGroup, IntakeEffectKind.JoinedGroup, IntakeEffectKind.ReusedGroup -> Icons.Outlined.Workspaces
                     IntakeEffectKind.SavedUngrouped -> Icons.Outlined.Inbox
                     else -> Icons.Outlined.Spellcheck
-                }, null, tint = c.muted, modifier = Modifier.size(18.dp).padding(top = 2.dp),
+                },
+                null,
+                tint = c.muted,
+                modifier = Modifier.size(18.dp).padding(top = 2.dp),
             )
             Spacer(Modifier.width(10.dp))
             Column {
@@ -247,13 +291,15 @@ private fun OutcomeBlock(s: IntakeState, openGroup: (String) -> Unit, onUndo: ()
             }
         }
     }
-    s.operation.presetName?.let { Text("由预设「$it」生成，内容可以在词组里修改", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 10.dp)) }
+    s.operation.presetName?.let {
+        Text("由预设「$it」生成，内容可以在词组里修改", style = MaterialTheme.typography.bodySmall, color = c.muted, modifier = Modifier.padding(top = 10.dp))
+    }
     if (!undone) {
         Spacer(Modifier.height(16.dp))
         Row {
-            s.outcome!!.groupId?.let { gid -> Button(onClick = { openGroup(gid.value) }) { Text("打开词组") } }
+            s.outcome!!.groupId?.let { gid -> Button(onClick = { openGroup(gid.value) }, shape = CircleShape) { Text("打开词组") } }
             Spacer(Modifier.width(8.dp))
-            if (OperationAction.Undo in s.operation.actions) OutlinedButton(onClick = onUndo) { Text("撤销这次添加") }
+            if (OperationAction.Undo in s.operation.actions) OutlinedButton(onClick = onUndo, shape = CircleShape) { Text("撤销这次添加") }
         }
     }
 }
