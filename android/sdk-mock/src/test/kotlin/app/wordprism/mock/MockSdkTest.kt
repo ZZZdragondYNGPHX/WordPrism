@@ -14,10 +14,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.time.ZoneId
 
-/**
- * Pins down behaviours the UI relies on. These test the MOCK; the real core must satisfy the same
- * contract scenarios (listed in docs/frontend/contract-requirements.md).
- */
+/** Regression coverage for the debug SDK implementation. */
 class MockSdkTest {
     @get:Rule val tmp = TemporaryFolder()
     private lateinit var sdk: MockSdk

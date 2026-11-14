@@ -1,14 +1,14 @@
 # 本地后端契约
 
-契约版本：`1` · 产品：`v0.4` · 实现与联调：2026-11-04。
+契约版本：`1`。
 
-唯一业务类型权威是 [WordPrism.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/WordPrism.kt)、[Models.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Models.kt)、[Projections.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Projections.kt)、[Explanations.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Explanations.kt)、[ApiProtocols.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ApiProtocols.kt) 和 [ModelCatalog.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ModelCatalog.kt)。命令、查询、错误、实体、派生事实、讲解、协议和模型目录均从这里定义；[JSON schema](schemas/) 与 [样例](fixtures/) 由同源序列化描述生成。
+业务类型定义在 [WordPrism.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/WordPrism.kt)、[Models.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Models.kt)、[Projections.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Projections.kt)、[Explanations.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Explanations.kt)、[ApiProtocols.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ApiProtocols.kt) 和 [ModelCatalog.kt](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ModelCatalog.kt)。命令、查询、错误、实体、派生事实、讲解、协议和模型目录均从这里定义；[JSON schema](schemas) 与 [样例](fixtures) 由同源序列化描述生成。
 
-Claude 的 Compose 前端现通过 `android/sdk-codex` 调用已发布的本地 Maven 构件。`android/sdk-contract` 是界面门面，适配器负责格式、标签和类型映射；存储、判分、归组、调度和统计集中在 `backend/`。具体对应见[前端映射](../frontend/codex-contract-mapping.md)，构建见 [running.md](running.md)。
+Compose 前端通过 `android/sdk-codex` 调用已发布的本地 Maven 构件。`android/sdk-contract` 是界面门面，适配器负责格式、标签和类型映射；存储、判分、归组、调度和统计集中在 `backend/`。具体对应见[前端映射](../frontend/sdk-mapping.md)，构建见 [running.md](running.md)。
 
 ## 学习模式与托管执行
 
-`UserSettings.learningMode` 默认 `STANDARD`，旧存档无需迁移表结构；`SetLearningMode(mode, expectedVersion)` 使用版本检查切换，`Query.ManagedLearning` 返回当前模式、配置错误、默认预设、待处理与异常任务数及摘要。界面通过 `AdaptationApi.observeManagedLearning / setLearningMode` 访问，详细产品规则仅在[手机学习方案](../plan/mobile-learning.md#ai-托管模式)维护。
+`UserSettings.learningMode` 默认 `STANDARD`，旧存档无需迁移表结构；`SetLearningMode(mode, expectedVersion)` 使用版本检查切换，`Query.ManagedLearning` 返回当前模式、配置错误、默认预设、待处理与异常任务数及摘要。界面通过 `AdaptationApi.observeManagedLearning / setLearningMode` 访问，详细产品规则仅在[手机学习方案](../design/mobile-learning.md#ai-托管模式)维护。
 
 `ManagedLearning.kt` 在命令提交、凭证保存、恢复和任务完成/失败后收敛待办。沿用持久 `Operation / JobData`、现有 provider、用量与撤销；任务以 epoch、义项版本及学习日构成持久去重键。托管有效分析/生成权限与普通设置分开计算，不覆盖原偏好。切换模式递增自动化 epoch，旧自动任务及迟到结果不再应用。
 
@@ -68,7 +68,7 @@ JSON 使用 `type` 判别、枚举原名和字符串 ID。进程内 Kotlin 客�
 
 明确执行 `RetryOperation` 会捕获同一预设最新保存的配置，保留各次尝试的历史版本与用量；运行中或已排队的请求不随预设编辑变化。具体超时、重试规则与前后状态样例见[LLM 协议接入](api-protocols.md#失败取消与用量)。
 
-每日分析由学习日及证据序号去重；暂停会话不等于结束当天。关闭自动分析会使在途自动结果失去提交资格，手动动作依据本次授权执行。分析 AI 可使用 `generate_activity` 把补题作为子任务，原有题目不被替换；能力锁、预设和用户指定的总请求上限仍然适用。旧 `automaticRequestsPerDay`、`preGenerationMaxPerDay` 和 `preGenerateLimit` 保留用于读取历史数据，不再限制调用或作为 AI 可调整项目。调整只能使用能力目录内的动作；不能编辑真实作答、凭证或自动接纳额外推荐词。调用规则见[API 方案](../plan/api-presets.md#调用由用户控制)。
+每日分析由学习日及证据序号去重；暂停会话不等于结束当天。关闭自动分析会使在途自动结果失去提交资格，手动动作依据本次授权执行。分析 AI 可使用 `generate_activity` 把补题作为子任务，原有题目不被替换；能力锁、预设和用户指定的总请求上限仍然适用。旧 `automaticRequestsPerDay`、`preGenerationMaxPerDay` 和 `preGenerateLimit` 保留用于读取历史数据，不再限制调用或作为 AI 可调整项目。调整只能使用能力目录内的动作；不能编辑真实作答、凭证或自动接纳额外推荐词。调用规则见[API 方案](../design/api-presets.md#调用由用户控制)。
 
 ## 随身助教
 
@@ -104,4 +104,4 @@ Android 文件经 SAF/`ContentResolver` 打开流，不要求磁盘路径。`Exp
 
 凭证经 `setCredential(CharArray)` / `deleteCredential`，不进入可序列化请求或备份；输入数组用后清零。设备使用 Keystore AES-GCM，密文与 Room 数据在 `noBackupFilesDir`，完整恢复后须重新填写凭证。界面提供明文输入时，平台文本对象本身不能保证即时擦除，后端不保留可读密钥。
 
-实际执行过的验证及证据边界见 [validation.md](validation.md)。契约夹具是合成状态，不能作为真实模型、真机或长期学习效果证据。
+测试覆盖见[验证状态](../validation.md)。

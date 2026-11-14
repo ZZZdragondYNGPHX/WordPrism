@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WordPrism · 3 种彻底不同的 Apple UI/UX 范式对比总控台</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --sf-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", system-ui, sans-serif;
+      --sf-mono: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+      --sf-serif: "New York", Georgia, "Songti SC", "Noto Serif CJK SC", serif;
+      --spring: cubic-bezier(0.22, 1, 0.36, 1);
+      --spring-bounce: cubic-bezier(0.34, 1.38, 0.64, 1);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: var(--sf-sans); margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    .font-mono-prism { font-family: var(--sf-mono); font-variant-ligatures: none; }
+    .font-serif-ed { font-family: var(--sf-serif); letter-spacing: -0.015em; }
+    .ios-scroll { overflow-y: auto; scrollbar-width: none; }
+    .ios-scroll::-webkit-scrollbar { display: none; }
+    .ios-press { transition: transform 0.22s var(--spring), opacity 0.2s ease; cursor: pointer; }
+    .ios-press:active { transform: scale(0.965); }
+
+    .device-shell {
+      padding: 12px;
+      border-radius: 64px;
+      background: linear-gradient(145deg, #2d2d32, #18181b 48%, #27272c);
+      box-shadow: 0 38px 86px -20px rgba(0,0,0,0.42), 0 0 0 1px rgba(255,255,255,0.14) inset;
+      transition: transform 0.38s var(--spring);
+    }
+    .device-shell.compact {
+      transform: scale(0.84);
+      transform-origin: top center;
+      margin-bottom: -130px;
+    }
+    .phone-frame {
+      position: relative;
+      width: 393px;
+      height: 852px;
+      border-radius: 54px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* ================= PARADIGM A TOKENS ================= */
+    .paradigm-a {
+      --bg: #F2F2F7; --card: #FFFFFF; --card-alt: #F6F6FA; --sunk: #E5E5EA;
+      --ink: #1C1C1E; --muted: #6E6E73; --subtle: #AEAEB2; --hairline: rgba(60,60,67,0.11);
+      --action: #007AFF; --action-soft: rgba(0,122,255,0.12);
+      --ai: #5856D6; --ai-soft: rgba(88,86,214,0.12);
+      --ok: #28A745; --ok-soft: rgba(40,167,69,0.13);
+      --err: #FF3B30; --err-soft: rgba(255,59,48,0.13);
+      --warn: #D97706; --warn-soft: rgba(255,149,0,0.14);
+      --glass: rgba(255,255,255,0.84);
+      --sp-0: #FF3B30; --sp-1: #E67700; --sp-2: #18A34A; --sp-3: #007AFF;
+      background: var(--bg); color: var(--ink);
+    }
+    .paradigm-a.dark {
+      --bg: #000000; --card: #1C1C1E; --card-alt: #252528; --sunk: #2C2C2E;
+      --ink: #F5F5F7; --muted: #98989D; --subtle: #636366; --hairline: rgba(255,255,255,0.12);
+      --action: #0A84FF; --action-soft: rgba(10,132,255,0.20);
+      --ai: #7D7AFF; --ai-soft: rgba(125,122,255,0.20);
+      --ok: #30D158; --ok-soft: rgba(48,209,88,0.18);
+      --err: #FF453A; --err-soft: rgba(255,69,58,0.18);
+      --warn: #FF9F0A; --warn-soft: rgba(255,159,10,0.18);
+      --glass: rgba(28,28,30,0.86);
+      --sp-0: #FF6961; --sp-1: #FFB340; --sp-2: #4ADE80; --sp-3: #409CFF;
+    }
+
+    /* ================= PARADIGM B TOKENS ================= */
+    .paradigm-b {
+      --bg: #EBF0FC; --stage-top: rgba(255,255,255,0.72); --tile: rgba(255,255,255,0.76);
+      --tile-solid: #FFFFFF; --sunk: rgba(110,120,165,0.12);
+      --ink: #101324; --muted: #585D75; --subtle: #8F95AD;
+      --hairline: rgba(255,255,255,0.86); --line: rgba(20,30,70,0.08);
+      --action: #2D5BFF; --action-soft: rgba(45,91,255,0.13);
+      --ai: #6D3BFF; --ai-soft: rgba(109,59,255,0.13);
+      --ok: #10B981; --ok-soft: rgba(16,185,129,0.14);
+      --err: #F43F5E; --err-soft: rgba(244,63,94,0.14);
+      --sp-0: #F43F5E; --sp-1: #F59E0B; --sp-2: #10B981; --sp-3: #2563EB;
+      background: var(--bg); color: var(--ink);
+    }
+    .paradigm-b.dark {
+      --bg: #070913; --stage-top: rgba(24,28,48,0.76); --tile: rgba(28,32,54,0.68);
+      --tile-solid: #171A2B; --sunk: rgba(255,255,255,0.08);
+      --ink: #F5F7FF; --muted: #9BA2C0; --subtle: #646B8A;
+      --hairline: rgba(255,255,255,0.16); --line: rgba(255,255,255,0.10);
+      --action: #6B8AFF; --action-soft: rgba(107,138,255,0.22);
+      --ai: #A88BFF; --ai-soft: rgba(168,139,255,0.22);
+      --ok: #34D399; --ok-soft: rgba(52,211,153,0.18);
+      --err: #FB7185; --err-soft: rgba(251,113,133,0.18);
+      --sp-0: #FB7185; --sp-1: #FBBF24; --sp-2: #34D399; --sp-3: #60A5FA;
+    }
+
+    /* ================= PARADIGM C TOKENS ================= */
+    .paradigm-c {
+      --paper: #F7F4EC; --sheet: #FFFDF8; --ruled: #EFEBE0; --sunk: #E7E1D3;
+      --ink: #1E1C18; --muted: #6C675D; --subtle: #A39D90; --hairline: rgba(30,28,24,0.11);
+      --action: #2346B8; --action-soft: rgba(35,70,184,0.09);
+      --ai: #7E3AF2; --ai-soft: rgba(126,58,242,0.09);
+      --ok: #1E7A50; --ok-soft: rgba(30,122,80,0.11);
+      --err: #C43B2B; --err-soft: rgba(196,59,43,0.11);
+      --sp-0: #C83E2B; --sp-1: #B86E00; --sp-2: #1E7A50;
+      background: var(--paper); color: var(--ink);
+    }
+    .paradigm-c.dark {
+      --paper: #131210; --sheet: #1C1B18; --ruled: #24221E; --sunk: #2C2924;
+      --ink: #F2EFE6; --muted: #A19B8E; --subtle: #6E685D; --hairline: rgba(242,239,230,0.11);
+      --action: #7C9BFF; --action-soft: rgba(124,155,255,0.16);
+      --ai: #C49BFF; --ai-soft: rgba(196,155,255,0.16);
+      --ok: #5CD098; --ok-soft: rgba(92,208,152,0.16);
+      --err: #FF7B6B; --err-soft: rgba(255,123,107,0.16);
+      --sp-0: #FF7B6B; --sp-1: #F2B55A; --sp-2: #5CD098;
+    }
+
+    /* Paradigm A Components */
+    .wallet-stack { position: relative; height: 356px; width: 100%; }
+    .wallet-card {
+      position: absolute; left: 0; right: 0; border-radius: 26px; padding: 20px;
+      background: var(--card); border: 0.5px solid var(--hairline);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.05), 0 12px 28px rgba(0,0,0,0.08);
+      transition: transform 0.45s var(--spring-bounce), opacity 0.3s ease, top 0.45s var(--spring-bounce);
+      cursor: pointer;
+    }
+    .flip-scene { perspective: 1200px; width: 100%; height: 410px; }
+    .flip-card { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s var(--spring-bounce); }
+    .flip-card.flipped { transform: rotateY(180deg); }
+    .flip-face {
+      position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      border-radius: 28px; background: var(--card); border: 0.5px solid var(--hairline);
+      box-shadow: 0 18px 42px -12px rgba(0,0,0,0.12); padding: 22px; display: flex; flex-direction: column;
+    }
+    .flip-back { transform: rotateY(180deg); }
+    .hud-drawer {
+      position: absolute; left: 12px; right: 12px; top: 54px; border-radius: 28px;
+      background: var(--glass); backdrop-filter: blur(30px) saturate(190%);
+      border: 1px solid var(--hairline); box-shadow: 0 24px 56px rgba(0,0,0,0.22);
+      z-index: 45; transform: translateY(-120%); opacity: 0; pointer-events: none;
+      transition: transform 0.42s var(--spring), opacity 0.25s ease;
+    }
+    .hud-drawer.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+    .spotlight-sheet {
+      position: absolute; left: 0; right: 0; bottom: 0; max-height: 76%;
+      border-top-left-radius: 30px; border-top-right-radius: 30px;
+      background: var(--glass); backdrop-filter: blur(32px) saturate(190%);
+      border-top: 1px solid var(--hairline); box-shadow: 0 -16px 48px rgba(0,0,0,0.18);
+      z-index: 50; transform: translateY(105%); transition: transform 0.4s var(--spring);
+    }
+    .spotlight-sheet.open { transform: translateY(0); }
+
+    /* Paradigm B Components */
+    .bento-tile {
+      background: var(--tile); backdrop-filter: blur(24px) saturate(180%);
+      border-radius: 24px; border: 1px solid var(--hairline);
+      box-shadow: 0 10px 28px -8px rgba(32,48,110,0.10);
+    }
+    .diff-char-masked { filter: blur(6px); opacity: 0.35; transition: all 0.45s var(--spring); }
+    .diff-char-revealed { filter: blur(0); opacity: 1; transition: all 0.45s var(--spring); }
+
+    /* Paradigm C Components */
+    .ruled-paper {
+      background-image: repeating-linear-gradient(0deg, transparent, transparent 29px, var(--hairline) 29px, var(--hairline) 30px);
+      background-color: var(--sheet); border: 1px solid var(--hairline); border-radius: 14px;
+    }
+    .inline-blank {
+      display: inline-flex; align-items: center; padding: 1px 10px; margin: 0 2px; border-radius: 8px;
+      font-family: var(--sf-mono); font-size: 14px; font-weight: 700; cursor: pointer;
+      border-bottom: 2px solid var(--action); background: var(--action-soft); color: var(--action);
+    }
+    .inline-popover {
+      background: var(--sheet); border: 1px solid var(--hairline); border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.14); padding: 5px; display: inline-flex; gap: 4px;
+    }
+
+    /* Shared Prism Micro-chars */
+    .prism-cell {
+      display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+      width: 19px; height: 32px; font-family: var(--sf-mono); font-size: 20px; font-weight: 600; position: relative;
+    }
+    .prism-bar { position: absolute; bottom: 2px; left: 2px; right: 2px; height: 2.5px; border-radius: 99px; }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] min-h-screen flex flex-col m-0 p-0">
+  <!-- Top Workbench Bar -->
+  <header class="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--card)]/90 backdrop-blur-xl px-5 py-3.5">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-sm font-bold text-[var(--foreground)]">WordPrism · 3 套彻底不同 UI/UX 范式对比台</h1>
+          <span class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 font-semibold">V2 · 架构级重设计</span>
+        </div>
+        <p class="text-xs text-[var(--muted-foreground)] mt-0.5">三套方案拥有完全不同的导航骨架、首页组织与学习交互流（不再共用布局）</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="inline-flex p-1 rounded-xl bg-[var(--secondary)] border border-[var(--border)]">
+          <button onclick="setActive('a')" id="tab-a" class="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all">A · 空间牌组 3D 翻转</button>
+          <button onclick="setActive('b')" id="tab-b" class="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all">B · 磁贴矩阵 & 双舞台</button>
+          <button onclick="setActive('c')" id="tab-c" class="px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all">C · 伴学手账 & 行内批改</button>
+        </div>
+        <button onclick="toggleCompare()" id="btn-cmp" class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-[var(--border)] bg-[var(--card)] cursor-pointer">三套同屏对比</button>
+        <button onclick="toggleDark()" id="btn-dark" class="px-3 py-1.5 rounded-xl text-xs font-semibold border border-[var(--border)] bg-[var(--card)] cursor-pointer">☀️ 浅色</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-5 py-6">
+    <!-- Single Interactive View -->
+    <div id="single-view" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div class="lg:col-span-5 flex flex-col items-center">
+        <div id="single-mount"></div>
+      </div>
+      <div class="lg:col-span-7 space-y-5">
+        <div id="spec-mount" class="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm"></div>
+        <div class="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-sm space-y-3">
+          <h3 class="text-sm font-bold">三套方案的底层 UX 架构差异一览</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr class="border-b border-[var(--border)] text-[var(--muted-foreground)]">
+                  <th class="py-2 pr-3">维度</th>
+                  <th class="py-2 pr-3">方案 A · Spatial Deck</th>
+                  <th class="py-2 pr-3">方案 B · Bento & Split</th>
+                  <th class="py-2">方案 C · Editorial Stream</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--border)]">
+                <tr>
+                  <td class="py-2.5 pr-3 font-semibold">导航骨架</td>
+                  <td class="py-2.5 pr-3">取消底部四栏；顶部下拉控制中心 + 底部 Spotlight 胶囊</td>
+                  <td class="py-2.5 pr-3">顶部紧凑视图开关；零滚动 2 列不对称 Bento 矩阵</td>
+                  <td class="py-2.5">顶部章节书签丝带 + 右侧 A-Z 词典拇指索引</td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 pr-3 font-semibold">首页形态</td>
+                  <td class="py-2.5 pr-3">Apple Wallet 3D 纵深叠放词组卡</td>
+                  <td class="py-2.5 pr-3">Fitness 双环 + AI 自动驾驶舱 + 实时棱镜轮播块</td>
+                  <td class="py-2.5">连续伴学手账，把今日辨析直接写成一页互动笔记</td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 pr-3 font-semibold">背词交互流</td>
+                  <td class="py-2.5 pr-3">选词后卡片 <strong>180° 3D 翻转</strong>，背面直接揭晓棱镜与 FSRS 调度</td>
+                  <td class="py-2.5 pr-3"><strong>上下双舞台</strong>：上屏恒定棱镜雾化遮罩，下屏单手作答瞬间消融揭示</td>
+                  <td class="py-2.5"><strong>不跳页</strong>：文内点空格弹气泡选词，稿纸造句带行内红笔修订</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Three-Up Side-by-Side Comparison View -->
+    <div id="compare-view" class="hidden grid grid-cols-1 xl:grid-cols-3 gap-6 justify-items-center items-start">
+      <div class="flex flex-col items-center gap-2">
+        <div class="flex items-center gap-2"><span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600">方案 A · Spatial Deck 3D 翻转</span><button onclick="pickFromCmp('a')" class="text-xs underline cursor-pointer bg-transparent border-0 text-[var(--muted-foreground)]">放大操作</button></div>
+        <div id="cmp-a"></div>
+      </div>
+      <div class="flex flex-col items-center gap-2">
+        <div class="flex items-center gap-2"><span class="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-600">方案 B · Bento 矩阵 & 上下双舞台</span><button onclick="pickFromCmp('b')" class="text-xs underline cursor-pointer bg-transparent border-0 text-[var(--muted-foreground)]">放大操作</button></div>
+        <div id="cmp-b"></div>
+      </div>
+      <div class="flex flex-col items-center gap-2">
+        <div class="flex items-center gap-2"><span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-600/10 text-amber-700">方案 C · 连续伴学手账 & 行内批改</span><button onclick="pickFromCmp('c')" class="text-xs underline cursor-pointer bg-transparent border-0 text-[var(--muted-foreground)]">放大操作</button></div>
+        <div id="cmp-c"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const app = { active: 'a', dark: false, compare: false };
+
+    // Independent State for Paradigm A
+    const stA = {
+      screen: 'deck', activeIdx: 0, hud: false, spot: false, ai: false,
+      flipIdx: 0, flipped: false, picked: null, query: ''
+    };
+    const DECK_A = [
+      {
+        title: 'linear / liner / lineage', tag: '待复习 · 2 项到期', tone: 'warn',
+        accent: 'linear-gradient(135deg, rgba(255,59,48,0.12), rgba(0,122,255,0.08))',
+        members: [
+          { lemma: 'linear', diffs: [4,5], pos: 'adj.', gloss: '线性的' },
+          { lemma: 'liner', diffs: [4], pos: 'n.', gloss: '衬里；邮轮' },
+          { lemma: 'lineage', diffs: [4,5,6], pos: 'n.', gloss: '血统世系' }
+        ],
+        summary: '词尾 -ar / -er / -eage 决定词性与具体指代',
+        prompt: 'The new sensor guarantees a ______ response across temperatures.',
+        answer: 'linear', options: ['linear','liner','lineage','linen'],
+        note: '修饰名词 response 需形容词 -ar；liner 是名词（内衬/邮轮）。'
+      },
+      {
+        title: 'adapt / adopt / adept', tag: '学习中 · 新词辨析', tone: 'action',
+        accent: 'linear-gradient(135deg, rgba(88,86,214,0.14), rgba(52,199,89,0.08))',
+        members: [
+          { lemma: 'adapt', diffs: [2], pos: 'v.', gloss: '适应；改编' },
+          { lemma: 'adopt', diffs: [2], pos: 'v.', gloss: '采用；收养' },
+          { lemma: 'adept', diffs: [2], pos: 'adj.', gloss: '熟练的' }
+        ],
+        summary: 'a（适应 apt）、o（选择 option）、e（专家 expert）',
+        prompt: 'The studio decided to ______ a quieter gesture-driven interface.',
+        answer: 'adopt', options: ['adapt','adopt','adept','adult'],
+        note: 'adopt an interface 表示“采纳某种界面方案”，中间元音是 o。'
+      },
+      {
+        title: 'complement / compliment', tag: '已稳定 · 92% 保留', tone: 'ok',
+        accent: 'linear-gradient(135deg, rgba(40,167,69,0.12), rgba(255,149,0,0.08))',
+        members: [
+          { lemma: 'complement', diffs: [5], pos: 'v./n.', gloss: '补全，衬托' },
+          { lemma: 'compliment', diffs: [5], pos: 'n./v.', gloss: '赞美，称赞' }
+        ],
+        summary: 'complEment 补全（Complete）；complIment 赞美（I 爱听赞美）',
+        prompt: 'Haptic feedback can ______ subtle visual transitions.',
+        answer: 'complement', options: ['complement','compliment','complete','comply'],
+        note: '意为“使相辅相成、补充完善”，第 6 个字母用 e。'
+      }
+    ];
+
+    // Independent State for Paradigm B
+    const stB = {
+      route: 'bento', autopilot: true, pairIdx: 0, masked: true, picked: null, splitStep: 'choice', heatDay: 6
+    };
+    const PAIRS_B = [
+      {
+        title: 'linear / liner',
+        members: [{ lemma: 'linear', diffs: [4,5], gloss: 'adj. 线性的' }, { lemma: 'liner ', diffs: [4], gloss: 'n. 衬里；邮轮' }],
+        stem: 'The chart shows a ______ growth curve.', answer: 'linear', options: ['linear','liner','lineage','linen'],
+        tip: '-ar 为形容词后缀，-er 为器物/衬里名词。'
+      },
+      {
+        title: 'adapt / adopt',
+        members: [{ lemma: 'adapt', diffs: [2], gloss: 'v. 适应' }, { lemma: 'adopt', diffs: [2], gloss: 'v. 采用' }],
+        stem: 'Teams must ______ quickly to user feedback.', answer: 'adapt', options: ['adapt','adopt','adept','adult'],
+        tip: 'adapt to = 适应（中间字母 a 联想 apt 恰当）。'
+      }
+    ];
+
+    // Independent State for Paradigm C
+    const stC = {
+      chapter: 'journal', activeBlank: 1, b1: null, b2: null, redpen: true, letter: 'L', intake: false
+    };
+
+    const SPECS = {
+      a: {
+        badge: '方案 A · 苹果 Wallet 牌组流 + 3D 翻转闪卡',
+        title: 'Spatial Deck & Spotlight（无底栏空间手势架构）',
+        desc: '彻底抛弃“底部四栏 Tab + 卡片堆叠 + 弹窗抽屉”的常规套路。首页直接做成 Apple Wallet 风格的纵深叠放牌组；背词时选完即 180° 3D 翻转卡片在背面揭晓棱镜与 FSRS 调度；总览/设置折叠在顶部下拉控制中心内，词库与添词合并进底部 Spotlight 万能胶囊。',
+        pts: [
+          ['操作手势体验', '点击任意叠放卡组抽至顶层 → 展开 3D 翻转闪卡，单手拇指 2×2 键帽极速盲打/选择'],
+          ['如何看总览与设置', '点击顶部「14/30′ · 84% 保持 ▼」状态药丸，从顶部下拉展开控制中心仪表盘'],
+          ['如何查词库与添词', '点击底部悬浮 Spotlight 万能胶囊，上拉秒搜词库或直接输入自然语言交给 AI']
+        ]
+      },
+      b: {
+        badge: '方案 B · 零滚动 Bento 矩阵 + 上下分屏双舞台',
+        title: 'Bento Workbench & Split-Stage（磁贴与光学遮罩仪器）',
+        desc: '面向高效率极客与单手操作党：首页是一屏尽览、不用上下苦滑的 2 列不对称 Apple Bento 矩阵（Fitness 双环、AI 自动驾驶开关、实时棱镜轮播）；进入学习页后，屏幕物理切分为「上屏恒定棱镜光学台 + 下屏拇指热区」，作答前差异字母带磨砂遮罩，作答瞬间遮罩消融点亮光谱！',
+        pts: [
+          ['首屏信息效率', '有效用时/题量双环、AI 托管状态、焦点棱镜轮播、7日曲线与快速添词全部同屏触达'],
+          ['上下双舞台联动', '上屏 40% 固定锁定为“棱镜对比仪器”，支持作答后瞬间消融雾化遮罩，也可点击“偷看光谱”'],
+          ['单手人体工学', '所有题干、选项与造句输入框严格压在下半屏拇指舒适区']
+        ]
+      },
+      c: {
+        badge: '方案 C · 连续伴学手账 + 文内气泡 + 红笔修订',
+        title: 'Editorial Notebook & Co-Pilot Stream（沉浸式书卷流）',
+        desc: '完全打破“首页 / 做题页 / 助教弹窗”的割裂感！打开 App 就是一本由 AI 私人助教与你合写的动态学习手账：昨日标本板、可点击弹气泡的短文完形填空、带横线的造句稿纸与老师红笔式行内修订（Inline Tracked Changes）全融在一页流畅手账中；词库采用苹果通讯录式 A-Z 拇指索引。',
+        pts: [
+          ['章节丝带导航', '顶部采用 §1 今日手账 · §2 棱镜词典 · §3 年鉴设置 书签丝带，毫无工具软件的冰冷感'],
+          ['文内就地作答', '点击英文段落中的横线空白，直接在手账上下文中弹出气泡选项，答错即刻附带朱批旁注'],
+          ['稿纸行内批改', '造句不再只是冰冷对错，而是直观显示划掉错词（linear）并替换为地道绿字（fleece liner）']
+        ]
+      }
+    };
+
+    // =========================================================================
+    // RENDER ENGINE FOR PARADIGM A (SPATIAL DECK & 3D FLIP)
+    // =========================================================================
+    function renderA(compact) {
+      return `
+        <div class="device-shell ${compact ? 'compact' : ''}">
+          <div class="phone-frame paradigm-a ${app.dark ? 'dark' : ''}">
+            <div class="pt-3.5 px-7 pb-2 flex items-center justify-between text-[14px] font-semibold relative z-30">
+              <span class="tabular-nums">9:41</span>
+              <div class="w-28 h-8 rounded-full bg-black"></div>
+              <span class="text-[12px]">5G</span>
+            </div>
+
+            <div class="px-5 pt-1 pb-2 flex items-center justify-between relative z-30">
+              <button onclick="stA.hud=!stA.hud;stA.spot=false;renderAll()" class="ios-press flex items-center gap-2 px-3 py-1.5 rounded-full border-0 text-[12px] font-semibold shadow-sm" style="background:var(--card);color:var(--ink)">
+                <span class="w-2 h-2 rounded-full ${stA.ai?'bg-indigo-500':'bg-emerald-500'}"></span>
+                <span class="tabular-nums">14/30′ · 84% 保持</span>
+                <span class="text-[10px]" style="color:var(--muted)">${stA.hud?'▲':'▼'}</span>
+              </button>
+              <button onclick="stA.ai=!stA.ai;renderAll()" class="ios-press px-3 py-1.5 rounded-full border-0 text-[12px] font-semibold" style="background:${stA.ai?'var(--ai-soft)':'var(--sunk)'};color:${stA.ai?'var(--ai)':'var(--muted)'}">
+                ${stA.ai ? '✦ AI 托管中' : '普通手动'}
+              </button>
+            </div>
+
+            <div class="flex-1 px-5 pt-2 pb-4 flex flex-col justify-between relative z-10 overflow-hidden">
+              ${stA.screen === 'deck' ? `
+                <div class="space-y-3">
+                  <div>
+                    <div class="text-[12px] font-semibold" style="color:var(--muted)">11月13日 · 空间词组牌组</div>
+                    <h2 class="text-[26px] font-bold tracking-tight mt-0.5">${stA.ai ? 'AI 托管今日牌组' : '轻点卡组 · 翻转辨析'}</h2>
+                  </div>
+                  <div class="wallet-stack mt-2">
+                    ${DECK_A.map((c, idx) => {
+                      const off = (idx - stA.activeIdx + DECK_A.length) % DECK_A.length;
+                      const top = off === 0 ? 116 : off === 1 ? 56 : 0;
+                      const sc = off === 0 ? 1 : off === 1 ? 0.95 : 0.90;
+                      const z = off === 0 ? 30 : off === 1 ? 20 : 10;
+                      return `
+                        <div onclick="stA.activeIdx=${idx};renderAll()" class="wallet-card" style="top:${top}px;transform:scale(${sc});z-index:${z};background-image:${c.accent};">
+                          <div class="flex items-center justify-between mb-2.5">
+                            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full" style="background:var(--${c.tone}-soft);color:var(--${c.tone})">${c.tag}</span>
+                            <span class="text-[11px]" style="color:var(--muted)">${off===0?'当前置顶':'点击抽到顶层'}</span>
+                          </div>
+                          <div class="text-[21px] font-bold tracking-tight">
+                            ${c.members.map((m, mi) => `<span style="color:var(--sp-${mi})">${m.lemma}</span>`).join(`<span style="color:var(--subtle)"> / </span>`)}
+                          </div>
+                          <p class="text-[12px] mt-1" style="color:var(--muted)">${c.summary}</p>
+                          ${off === 0 ? `
+                            <div class="mt-3 pt-2.5 border-t space-y-1" style="border-color:var(--hairline)">
+                              ${c.members.map((m, mi) => `<div class="flex justify-between text-[12px]"><span class="font-semibold" style="color:var(--sp-${mi})">${m.lemma}</span><span style="color:var(--muted)">${m.pos} ${m.gloss}</span></div>`).join('')}
+                            </div>
+                            <button onclick="event.stopPropagation();stA.flipIdx=${idx};stA.flipped=false;stA.picked=null;stA.screen='flip';renderAll()" class="ios-press mt-3.5 w-full py-3 rounded-2xl border-0 font-semibold text-[14px] text-white" style="background:var(--action)">
+                              展开 3D 闪卡训练 →
+                            </button>` : ''}
+                        </div>`;
+                    }).join('')}
+                  </div>
+                </div>
+                <div class="flex items-center justify-between px-1">
+                  <div class="flex gap-1.5">
+                    ${DECK_A.map((_, i) => `<button onclick="stA.activeIdx=${i};renderAll()" class="h-2 rounded-full border-0 cursor-pointer" style="width:${stA.activeIdx===i?'20px':'8px'};background:${stA.activeIdx===i?'var(--action)':'var(--subtle)'}"></button>`).join('')}
+                  </div>
+                  <span class="text-[11px]" style="color:var(--muted)">无底栏 · 顶部看总览</span>
+                </div>
+              ` : (() => {
+                const card = DECK_A[stA.flipIdx];
+                const ok = stA.picked === card.answer;
+                return `
+                  <div class="flex flex-col h-full justify-between pb-3">
+                    <div class="flex items-center justify-between">
+                      <button onclick="stA.screen='deck';renderAll()" class="ios-press px-3 py-1.5 rounded-full border-0 text-[12px] font-semibold" style="background:var(--sunk);color:var(--ink)">‹ 返回牌组</button>
+                      <span class="text-[12px] font-semibold tabular-nums" style="color:var(--muted)">${stA.flipIdx+1} / ${DECK_A.length}</span>
+                      <button onclick="stA.spot='tutor';renderAll()" class="ios-press px-3 py-1.5 rounded-full border-0 text-[12px] font-semibold" style="background:var(--ai-soft);color:var(--ai)">✦ 助教</button>
+                    </div>
+                    <div class="flip-scene my-auto">
+                      <div class="flip-card ${stA.flipped ? 'flipped' : ''}">
+                        <div class="flip-face justify-between">
+                          <div>
+                            <div class="text-[11px] font-bold uppercase" style="color:var(--action)">点击选项即 3D 翻转揭晓</div>
+                            <p class="text-[19px] font-semibold leading-relaxed mt-4">${card.prompt.replace('______', `<span class="px-2 py-0.5 rounded-lg font-mono-prism" style="background:var(--action-soft);color:var(--action)">______</span>`)}</p>
+                          </div>
+                          <div class="grid grid-cols-2 gap-2.5">
+                            ${card.options.map(o => `<button onclick="stA.picked='${o}';stA.flipped=true;renderAll()" class="ios-press py-3.5 rounded-2xl border-0 font-semibold text-[16px]" style="background:var(--card-alt);color:var(--ink);border:1px solid var(--hairline)">${o}</button>`).join('')}
+                          </div>
+                        </div>
+                        <div class="flip-face flip-back justify-between">
+                          <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                              <span class="px-2.5 py-1 rounded-full text-[12px] font-bold" style="background:${ok?'var(--ok-soft)':'var(--err-soft)'};color:${ok?'var(--ok)':'var(--err)'}">${ok?`✓ 准确：${card.answer}`:`✕ 错选 ${stA.picked}，应为 ${card.answer}`}</span>
+                              <button onclick="stA.flipped=false;renderAll()" class="text-[11px] border-0 bg-transparent cursor-pointer" style="color:var(--muted)">翻回</button>
+                            </div>
+                            <div class="p-3 rounded-2xl space-y-1" style="background:var(--card-alt)">
+                              ${card.members.map((m, mi) => `
+                                <div class="flex items-center justify-between">
+                                  <div>${m.lemma.split('').map((ch, ci) => {
+                                    const hl = m.diffs.includes(ci);
+                                    return `<span class="prism-cell" style="height:28px;color:${hl?`var(--sp-${mi})`:'var(--ink)'}">${ch}${hl?`<span class="prism-bar" style="background:var(--sp-${mi})"></span>`:''}</span>`;
+                                  }).join('')}</div>
+                                  <span class="text-[11px]" style="color:var(--muted)">${m.pos} ${m.gloss}</span>
+                                </div>`).join('')}
+                            </div>
+                            <p class="text-[12px]" style="color:var(--muted)">${card.note}</p>
+                          </div>
+                          <div class="grid grid-cols-3 gap-2">
+                            <button onclick="stA.flipped=false;stA.picked=null;stA.flipIdx=(stA.flipIdx+1)%3;renderAll()" class="ios-press py-3 rounded-2xl border-0 text-[12px] font-semibold" style="background:var(--err-soft);color:var(--err)">再练</button>
+                            <button onclick="stA.flipped=false;stA.picked=null;stA.flipIdx=(stA.flipIdx+1)%3;renderAll()" class="ios-press py-3 rounded-2xl border-0 text-[12px] font-semibold" style="background:var(--warn-soft);color:var(--warn)">有点难</button>
+                            <button onclick="stA.flipped=false;stA.picked=null;stA.flipIdx=(stA.flipIdx+1)%3;renderAll()" class="ios-press py-3 rounded-2xl border-0 text-[12px] font-semibold text-white" style="background:var(--ok)">稳了·4天</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="text-center text-[11px]" style="color:var(--muted)">3D 翻转闪卡流 · 无底部弹窗遮挡</div>
+                  </div>`;
+              })()}
+            </div>
+
+            ${stA.screen === 'deck' ? `
+              <div class="px-5 pb-6 pt-1 relative z-30">
+                <div class="flex items-center gap-2 p-1.5 rounded-full shadow-lg border" style="background:var(--glass);backdrop-filter:blur(24px);border-color:var(--hairline)">
+                  <button onclick="stA.spot='library';stA.hud=false;renderAll()" class="ios-press h-10 px-3.5 rounded-full border-0 flex items-center gap-1.5 text-[13px] font-semibold" style="background:var(--sunk);color:var(--ink)">🔍 词库</button>
+                  <button onclick="stA.spot='intake';stA.hud=false;renderAll()" class="ios-press flex-1 h-10 px-2 text-left border-0 bg-transparent text-[13px] truncate" style="color:var(--muted)">✦ 说出易混词...</button>
+                  <button onclick="stA.spot='tutor';stA.hud=false;renderAll()" class="ios-press w-10 h-10 rounded-full border-0 flex items-center justify-center text-white" style="background:var(--ai)">✦</button>
+                </div>
+              </div>` : ''}
+
+            ${stA.hud ? `<div onclick="stA.hud=false;renderAll()" class="absolute inset-0 bg-black/25 z-40"></div>` : ''}
+            <div class="hud-drawer ${stA.hud ? 'open' : ''} p-5 space-y-3">
+              <div class="flex justify-between items-center"><span class="text-[12px] font-bold" style="color:var(--muted)">学习控制中心 · FSRS 快照</span><button onclick="stA.hud=false;renderAll()" class="px-2.5 py-1 rounded-full text-[11px] border-0 cursor-pointer" style="background:var(--sunk);color:var(--ink)">收起</button></div>
+              <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="p-2.5 rounded-2xl" style="background:var(--card-alt)"><div class="text-[19px] font-bold">14′</div><div class="text-[10px]" style="color:var(--muted)">今日用时</div></div>
+                <div class="p-2.5 rounded-2xl" style="background:var(--card-alt)"><div class="text-[19px] font-bold" style="color:var(--ok)">84%</div><div class="text-[10px]" style="color:var(--muted)">正确率</div></div>
+                <div class="p-2.5 rounded-2xl" style="background:var(--card-alt)"><div class="text-[19px] font-bold" style="color:var(--ai)">89%</div><div class="text-[10px]" style="color:var(--muted)">FSRS 拟合</div></div>
+              </div>
+              <div class="p-3 rounded-2xl space-y-1.5 text-[12px]" style="background:var(--card-alt)">
+                <div class="flex justify-between"><span>每日预算</span><span class="font-semibold">30 分钟</span></div>
+                <div class="flex justify-between"><span>API 预设</span><span style="color:var(--action)">gpt-6-luna (MAX)</span></div>
+              </div>
+            </div>
+
+            ${stA.spot ? `<div onclick="stA.spot=false;renderAll()" class="absolute inset-0 bg-black/30 z-40"></div>` : ''}
+            <div class="spotlight-sheet ${stA.spot ? 'open' : ''} p-5 pb-8 space-y-3">
+              <div class="w-10 h-1 rounded-full mx-auto" style="background:var(--sunk)"></div>
+              <div class="flex justify-between items-center">
+                <span class="text-[15px] font-bold">${stA.spot==='library'?'Spotlight 词库':stA.spot==='intake'?'✦ AI 添加易混词':'✦ 随身助教'}</span>
+                <button onclick="stA.spot=false;renderAll()" class="text-[12px] border-0 bg-transparent cursor-pointer" style="color:var(--action)">完成</button>
+              </div>
+              ${stA.spot==='library' ? DECK_A.map((d,i)=>`<div onclick="stA.activeIdx=${i};stA.screen='deck';stA.spot=false;renderAll()" class="p-3 rounded-2xl cursor-pointer flex justify-between" style="background:var(--card-alt)"><span class="font-bold text-[14px]">${d.title}</span><span class="text-[11px]" style="color:var(--action)">置顶 ›</span></div>`).join('')
+                : stA.spot==='intake' ? `<textarea rows="2" class="w-full p-3 rounded-xl border-0 text-[13px]" style="background:var(--sunk);color:var(--ink)">stationary 和 stationery</textarea><button onclick="stA.spot=false;renderAll()" class="w-full py-2.5 rounded-full border-0 font-semibold text-white cursor-pointer" style="background:var(--action)">生成新卡片组</button>`
+                : `<p class="text-[13px]" style="color:var(--muted)">-ar 常作形容词（linear 线性的），-er 常指具体物件（liner 内衬）。</p>`}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // =========================================================================
+    // RENDER ENGINE FOR PARADIGM B (BENTO WORKBENCH & SPLIT-STAGE)
+    // =========================================================================
+    function renderB(compact) {
+      const pair = PAIRS_B[stB.pairIdx];
+      const revealed = !stB.masked || stB.picked !== null;
+      const isOk = stB.picked === pair.answer;
+      return `
+        <div class="device-shell ${compact ? 'compact' : ''}">
+          <div class="phone-frame paradigm-b ${app.dark ? 'dark' : ''}">
+            <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+              <div class="absolute -top-12 -left-12 w-72 h-72 rounded-full blur-3xl" style="background:radial-gradient(circle, rgba(45,91,255,0.24), transparent 70%);"></div>
+              <div class="absolute bottom-10 -right-16 w-72 h-72 rounded-full blur-3xl" style="background:radial-gradient(circle, rgba(109,59,255,0.20), transparent 70%);"></div>
+            </div>
+
+            <div class="relative z-20 pt-3.5 px-7 pb-1 flex items-center justify-between text-[14px] font-semibold">
+              <span class="tabular-nums">9:41</span>
+              <div class="w-28 h-8 rounded-full bg-black"></div>
+              <span class="text-[12px]">5G</span>
+            </div>
+
+            ${stB.route === 'split' ? `
+              <div class="relative z-10 flex-1 flex flex-col overflow-hidden">
+                <!-- UPPER STAGE: FIXED PRISM WITH FROSTED MASK -->
+                <div class="px-4 pt-1 pb-3 border-b flex flex-col justify-between" style="height:40%;background:var(--stage-top);backdrop-filter:blur(28px);border-color:var(--line)">
+                  <div class="flex items-center justify-between">
+                    <button onclick="stB.route='bento';stB.picked=null;stB.masked=true;renderAll()" class="ios-press px-3 py-1 rounded-full border-0 text-[12px] font-semibold" style="background:var(--sunk);color:var(--ink)">✕ 退出</button>
+                    <span class="text-[11px] font-bold px-2.5 py-1 rounded-full" style="background:var(--action-soft);color:var(--action)">${revealed?'光谱已解锁':'差异雾化遮罩中'}</span>
+                    <button onclick="stB.masked=!stB.masked;renderAll()" class="ios-press px-2.5 py-1 rounded-full border-0 text-[11px] font-semibold" style="background:var(--sunk);color:var(--muted)">${stB.masked?'偷看光谱':'恢复遮罩'}</button>
+                  </div>
+                  <div class="p-3 rounded-2xl my-auto space-y-1.5" style="background:var(--sunk)">
+                    ${pair.members.map((m, mi) => `
+                      <div class="flex items-center justify-between">
+                        <div>${m.lemma.split('').map((ch, ci) => {
+                          const isDiff = m.diffs.includes(ci);
+                          return `<span class="prism-cell ${isDiff && !revealed ? 'diff-char-masked' : 'diff-char-revealed'}" style="color:${isDiff && revealed ? `var(--sp-${mi})` : 'var(--ink)'}">${ch===' '?'&nbsp;':ch}${isDiff && revealed ? `<span class="prism-bar" style="background:var(--sp-${mi})"></span>` : ''}</span>`;
+                        }).join('')}</div>
+                        <span class="text-[11px]" style="color:var(--muted);opacity:${revealed?1:0.25}">${revealed?m.gloss:'作答揭示'}</span>
+                      </div>`).join('')}
+                  </div>
+                  <div class="text-[11px] text-center" style="color:var(--muted)">${revealed ? `💡 ${pair.tip}` : '上半屏恒定仪器台 · 下半屏作答瞬间消融遮罩'}</div>
+                </div>
+                <!-- LOWER STAGE: THUMB ACTION ZONE -->
+                <div class="flex-1 px-4 pt-3 pb-6 flex flex-col justify-between">
+                  <div class="flex gap-1.5 p-1 rounded-xl" style="background:var(--sunk)">
+                    <button onclick="stB.splitStep='choice';renderAll()" class="flex-1 py-1.5 rounded-lg text-[11px] font-semibold border-0 cursor-pointer" style="${stB.splitStep==='choice'?'background:var(--tile-solid);color:var(--ink);':'background:transparent;color:var(--muted);'}">单手选词台</button>
+                    <button onclick="stB.splitStep='prod';renderAll()" class="flex-1 py-1.5 rounded-lg text-[11px] font-semibold border-0 cursor-pointer" style="${stB.splitStep==='prod'?'background:var(--tile-solid);color:var(--ink);':'background:transparent;color:var(--muted);'}">拇指造句台</button>
+                  </div>
+                  ${stB.splitStep === 'choice' ? `
+                    <div class="bento-tile p-4 my-auto">
+                      <div class="text-[10px] font-bold uppercase" style="color:var(--muted)">语境填空</div>
+                      <p class="text-[18px] font-semibold leading-relaxed mt-1">${pair.stem.replace('______', `<span class="px-2 py-0.5 rounded-lg font-mono-prism" style="background:var(--action-soft);color:var(--action)">${stB.picked||'______'}</span>`)}</p>
+                    </div>
+                    <div class="space-y-2">
+                      <div class="grid grid-cols-2 gap-2">
+                        ${pair.options.map(o => {
+                          const right = stB.picked && o === pair.answer;
+                          const wrong = stB.picked === o && o !== pair.answer;
+                          return `<button onclick="stB.picked='${o}';stB.masked=false;renderAll()" class="ios-press py-3.5 rounded-2xl border-0 font-bold text-[16px]" style="background:${right?'var(--ok-soft)':wrong?'var(--err-soft)':'var(--tile)'};color:${right?'var(--ok)':wrong?'var(--err)':'var(--ink)'};border:1px solid ${right?'var(--ok)':wrong?'var(--err)':'var(--hairline)'}">${o}</button>`;
+                        }).join('')}
+                      </div>
+                      ${stB.picked ? `<button onclick="stB.pairIdx=(stB.pairIdx+1)%2;stB.picked=null;stB.masked=true;renderAll()" class="ios-press w-full py-3 rounded-2xl border-0 font-semibold text-[13px] text-white" style="background:${isOk?'var(--ok)':'var(--action)'}">${isOk?'✓ 正确！下一组 →':'对比上方光谱 · 下一题 →'}</button>` : ''}
+                    </div>
+                  ` : `
+                    <div class="bento-tile p-4 space-y-2 my-auto"><div class="text-[12px] font-bold" style="color:var(--ai)">✦ AI 造句检验</div><textarea rows="3" class="w-full p-2.5 rounded-xl border-0 text-[13px]" style="background:var(--sunk);color:var(--ink)">The chart shows a linear trend.</textarea><div class="text-[11px]" style="color:var(--ok)">✓ 形容词用法精准</div></div>
+                    <button onclick="stB.route='bento';renderAll()" class="ios-press w-full py-3 rounded-2xl border-0 font-semibold text-white" style="background:var(--action)">返回磁贴矩阵</button>
+                  `}
+                </div>
+              </div>
+            ` : `
+              <div class="relative z-10 flex-1 flex flex-col px-4 pt-2 pb-4 overflow-hidden">
+                <div class="flex items-center justify-between mb-2">
+                  <div>
+                    <div class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--action)">BENTO WORKBENCH</div>
+                    <h2 class="text-[21px] font-bold">${stB.route==='bento'?'今日磁贴矩阵':stB.route==='lib'?'双栏词库':'FSRS 健康洞察'}</h2>
+                  </div>
+                  <div class="flex gap-1 p-1 rounded-full" style="background:var(--sunk)">
+                    ${[['bento','矩阵'],['lib','词库'],['stat','总览']].map(([r,l])=>`<button onclick="stB.route='${r}';renderAll()" class="px-2.5 py-1 rounded-full text-[11px] font-semibold border-0 cursor-pointer" style="${stB.route===r?'background:var(--tile-solid);color:var(--ink);':'background:transparent;color:var(--muted);'}">${l}</button>`).join('')}
+                  </div>
+                </div>
+                <div class="flex-1 ios-scroll">
+                  ${stB.route === 'bento' ? `
+                    <div class="grid grid-cols-2 gap-2.5 pb-2">
+                      <div onclick="stB.route='split';stB.picked=null;stB.masked=true;renderAll()" class="ios-press bento-tile p-3.5 flex flex-col justify-between h-[168px]">
+                        <div class="flex justify-between text-[11px] font-bold"><span style="color:var(--muted)">双环进度</span><span style="color:var(--action)">开练 ›</span></div>
+                        <svg class="w-16 h-16 -rotate-90 mx-auto" viewBox="0 0 80 80"><circle cx="40" cy="40" r="32" fill="none" stroke="var(--sunk)" stroke-width="7"/><circle cx="40" cy="40" r="32" fill="none" stroke="var(--action)" stroke-width="7" stroke-linecap="round" stroke-dasharray="201" stroke-dashoffset="105"/><circle cx="40" cy="40" r="22" fill="none" stroke="var(--sunk)" stroke-width="7"/><circle cx="40" cy="40" r="22" fill="none" stroke="var(--ok)" stroke-width="7" stroke-linecap="round" stroke-dasharray="138" stroke-dashoffset="48"/></svg>
+                        <div class="flex justify-between text-[11px] tabular-nums"><span>14/30′</span><span style="color:var(--ok)">6/12题</span></div>
+                      </div>
+                      <div onclick="stB.autopilot=!stB.autopilot;renderAll()" class="ios-press bento-tile p-3.5 flex flex-col justify-between h-[168px]">
+                        <div class="flex justify-between items-center text-[11px] font-bold"><span style="color:${stB.autopilot?'var(--ai)':'var(--muted)'}">✦ 自动驾驶</span><span class="w-2 h-2 rounded-full ${stB.autopilot?'bg-indigo-500 animate-pulse':'bg-slate-400'}"></span></div>
+                        <div><div class="text-[17px] font-bold">${stB.autopilot?'AI 托管中':'手动编排'}</div><p class="text-[11px] mt-1" style="color:var(--muted)">${stB.autopilot?'助教自动备题与分析':'完全自主管理计划'}</p></div>
+                        <div class="py-1 rounded-full text-[10px] font-semibold text-center" style="background:var(--ai-soft);color:var(--ai)">点击切换</div>
+                      </div>
+                      <div class="bento-tile col-span-2 p-3.5 space-y-2.5">
+                        <div class="flex justify-between items-center text-[11px] font-bold"><span style="color:var(--muted)">微型棱镜轮播 · ${pair.title}</span><button onclick="stB.pairIdx=(stB.pairIdx+1)%2;renderAll()" class="px-2 py-0.5 rounded-full border-0 cursor-pointer text-[11px]" style="background:var(--sunk);color:var(--ink)">换组 ↻</button></div>
+                        <div class="p-2.5 rounded-xl space-y-1" style="background:var(--sunk)">
+                          ${pair.members.map((m, mi)=>`<div class="flex justify-between items-center"><div>${m.lemma.split('').map((ch,ci)=>{const hl=m.diffs.includes(ci);return `<span class="prism-cell" style="width:17px;height:26px;font-size:18px;color:${hl?`var(--sp-${mi})`:'var(--ink)'}">${ch===' '?'&nbsp;':ch}${hl?`<span class="prism-bar" style="background:var(--sp-${mi})"></span>`:''}</span>`;}).join('')}</div><span class="text-[11px]" style="color:var(--muted)">${m.gloss}</span></div>`).join('')}
+                        </div>
+                        <button onclick="stB.route='split';stB.picked=null;stB.masked=true;renderAll()" class="ios-press w-full py-2.5 rounded-xl border-0 font-semibold text-[13px] text-white" style="background:linear-gradient(135deg, var(--action), var(--ai))">进入上下双舞台训练 ▶</button>
+                      </div>
+                      <div onclick="stB.route='stat';renderAll()" class="ios-press bento-tile p-3.5 flex flex-col justify-between h-[132px]">
+                        <span class="text-[11px] font-bold" style="color:var(--muted)">FSRS 保持率</span>
+                        <div class="text-[28px] font-bold tabular-nums" style="color:var(--ok)">89%</div>
+                        <div class="flex items-end gap-1 h-7">${[55,70,62,80,75,85,89].map(v=>`<div class="flex-1 rounded-t" style="height:${v}%;background:var(--ok);opacity:0.75"></div>`).join('')}</div>
+                      </div>
+                      <div class="bento-tile p-3.5 flex flex-col justify-between h-[132px]">
+                        <span class="text-[11px] font-bold" style="color:var(--muted)">快速添词</span>
+                        <div class="text-[11px]">“affect / effect”</div>
+                        <button onclick="alert('已放入队列')" class="ios-press py-1.5 rounded-xl border-0 text-[11px] font-semibold" style="background:var(--action-soft);color:var(--action)">+ 立即归组</button>
+                      </div>
+                    </div>
+                  ` : stB.route === 'lib' ? `
+                    <div class="grid grid-cols-2 gap-2.5">
+                      ${[['linear / liner','形似 · 待复习'],['adapt / adopt','形似 · 学习中'],['complement','音似 · 已稳定'],['stationery','待整理']].map(([w,s])=>`<div onclick="stB.route='split';renderAll()" class="ios-press bento-tile p-4 h-[118px] flex flex-col justify-between"><div class="text-[15px] font-bold">${w}</div><div class="text-[11px]" style="color:var(--muted)">${s}</div></div>`).join('')}
+                    </div>
+                  ` : `
+                    <div class="bento-tile p-4 space-y-3">
+                      <div class="flex justify-between text-[13px] font-bold"><span>点击柱条看每日时长</span><span style="color:var(--action)">${[24,32,18,28,12,26,14][stB.heatDay]}′</span></div>
+                      <div class="flex items-end gap-2 h-24">${[24,32,18,28,12,26,14].map((m,i)=>`<button onclick="stB.heatDay=${i};renderAll()" class="flex-1 h-full flex flex-col justify-end border-0 bg-transparent cursor-pointer p-0"><div class="w-full rounded-md" style="height:${(m/36)*100}%;background:${stB.heatDay===i?'var(--action)':'var(--sunk)'}"></div></button>`).join('')}</div>
+                      <div class="text-[11px]" style="color:var(--muted)">gpt-6-luna · 30 分钟质量预算</div>
+                    </div>
+                  `}
+                </div>
+              </div>
+            `}
+          </div>
+        </div>`;
+    }
+
+    // =========================================================================
+    // RENDER ENGINE FOR PARADIGM C (EDITORIAL NOTEBOOK & INLINE STREAM)
+    // =========================================================================
+    function renderC(compact) {
+      const b1Ok = stC.b1 === 'linear';
+      const b2Ok = stC.b2 === 'liner';
+      return `
+        <div class="device-shell ${compact ? 'compact' : ''}">
+          <div class="phone-frame paradigm-c ${app.dark ? 'dark' : ''}">
+            <div class="pt-3.5 px-7 pb-2 flex items-center justify-between text-[14px] font-semibold">
+              <span class="tabular-nums">9:41</span>
+              <div class="w-28 h-8 rounded-full bg-black"></div>
+              <span class="text-[12px]">100%</span>
+            </div>
+
+            <!-- Chapter Ribbon -->
+            <div class="px-5 pt-1 pb-2.5 border-b flex items-center justify-between" style="border-color:var(--hairline)">
+              <div class="flex items-center gap-3.5">
+                ${[['journal','§1 今日手账'],['lexicon','§2 词典'],['almanac','§3 年鉴']].map(([id,l])=>`
+                  <button onclick="stC.chapter='${id}';renderAll()" class="bg-transparent border-0 p-0 pb-1 text-[12px] font-semibold cursor-pointer"
+                    style="color:${stC.chapter===id?'var(--action)':'var(--muted)'};border-bottom:${stC.chapter===id?'2px solid var(--action)':'2px solid transparent'}">${l}</button>
+                `).join('')}
+              </div>
+              <button onclick="stC.intake=!stC.intake;renderAll()" class="px-2 py-0.5 rounded text-[11px] font-semibold border-0 cursor-pointer" style="background:var(--action-soft);color:var(--action)">+ 记词</button>
+            </div>
+
+            ${stC.intake ? `<div class="mx-5 mt-2 p-2.5 rounded-xl border flex gap-2" style="background:var(--sheet);border-color:var(--action)"><input type="text" value="affect / effect" class="flex-1 px-2 py-1 rounded border-0 text-[12px]" style="background:var(--sunk);color:var(--ink)"/><button onclick="stC.intake=false;renderAll()" class="px-2.5 py-1 rounded border-0 text-[11px] font-semibold text-white cursor-pointer" style="background:var(--action)">入账</button></div>` : ''}
+
+            <div class="flex-1 ios-scroll px-5 py-3.5">
+              ${stC.chapter === 'journal' ? `
+                <div class="space-y-5 pb-6">
+                  <div>
+                    <div class="flex justify-between text-[10px] font-semibold uppercase tracking-widest" style="color:var(--muted)"><span>11月13日 · 14/30′</span><span style="color:var(--ai)">✦ 助教伴学手账</span></div>
+                    <h2 class="font-serif-ed text-[26px] font-bold leading-tight mt-0.5">分清 line- 家族的尾缀</h2>
+                  </div>
+
+                  <div class="ruled-paper p-3 space-y-1">
+                    ${[['linear',[4,5],'adj. 线性的'],['liner ',[4],'n. 内衬；邮轮'],['lineage',[4,5,6],'n. 血统世系']].map(([w,d,g],mi)=>`
+                      <div class="flex items-center justify-between">
+                        <div>${w.split('').map((ch,ci)=>{const hl=d.includes(ci);return `<span class="prism-cell" style="height:28px;color:${hl?`var(--sp-${mi})`:'var(--ink)'}">${ch===' '?'&nbsp;':ch}${hl?`<span class="prism-bar" style="background:var(--sp-${mi})"></span>`:''}</span>`;}).join('')}</div>
+                        <span class="text-[11px]" style="color:var(--muted)">${g}</span>
+                      </div>`).join('')}
+                  </div>
+
+                  <div class="space-y-2">
+                    <div class="flex justify-between text-[11px] font-semibold"><span style="color:var(--muted)">二、文内点选填空（不跳页）</span><span style="color:var(--action)">点击蓝框作答</span></div>
+                    <div class="p-3.5 rounded-2xl border leading-[2.05] font-serif-ed text-[16px]" style="background:var(--sheet);border-color:var(--hairline)">
+                      The engineer plotted a
+                      <span onclick="stC.activeBlank=1;renderAll()" class="inline-blank" style="${stC.b1?(b1Ok?'background:var(--ok-soft);color:var(--ok);border-color:var(--ok);':'background:var(--err-soft);color:var(--err);border-color:var(--err);'):''}">${stC.b1||'1. ___'}</span>
+                      trend line, then wore his jacket with a fleece
+                      <span onclick="stC.activeBlank=2;renderAll()" class="inline-blank" style="${stC.b2?(b2Ok?'background:var(--ok-soft);color:var(--ok);border-color:var(--ok);':'background:var(--err-soft);color:var(--err);border-color:var(--err);'):''}">${stC.b2||'2. ___'}</span>
+                      before leaving.
+                    </div>
+                    ${stC.activeBlank ? `
+                      <div class="flex items-center justify-between p-1.5 rounded-xl border" style="background:var(--ruled);border-color:var(--hairline)">
+                        <span class="text-[11px] pl-1 font-semibold" style="color:var(--muted)">第 ${stC.activeBlank} 空：</span>
+                        <div class="inline-popover">
+                          ${['linear','liner','lineage'].map(o=>`<button onclick="if(stC.activeBlank===1){stC.b1='${o}';stC.activeBlank=2;}else{stC.b2='${o}';stC.activeBlank=null;}renderAll()" class="ios-press px-2.5 py-1 rounded-lg border-0 text-[12px] font-semibold" style="background:var(--sunk);color:var(--ink)">${o}</button>`).join('')}
+                        </div>
+                      </div>` : ''}
+                    ${stC.b1 && !b1Ok ? `<div class="p-2.5 rounded-xl text-[11px]" style="background:var(--err-soft);color:var(--err)">✎ 朱批：第 1 空修饰名词 trend line，需形容词 linear。</div>` : ''}
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <div class="flex justify-between text-[11px] font-semibold"><span style="color:var(--muted)">三、稿纸造句 · 红笔修订</span><button onclick="stC.redpen=!stC.redpen;renderAll()" class="border-0 bg-transparent cursor-pointer text-[11px]" style="color:var(--ai)">${stC.redpen?'隐藏红笔':'显示红笔'}</button></div>
+                    <div class="ruled-paper p-3.5 space-y-1.5">
+                      <p class="font-serif-ed text-[15px] leading-[30px]">
+                        I put a warm ${stC.redpen?`<span class="line-through opacity-50" style="color:var(--err)">linear</span> <span class="font-semibold underline" style="color:var(--ok)">fleece liner</span>`:`linear`} <span class="line-through opacity-50" style="color:var(--err)">inside</span> ${stC.redpen?`<span class="font-semibold" style="color:var(--ok)">into</span>`:''} my winter coat.
+                      </p>
+                      ${stC.redpen ? `<div class="text-[11px] pt-1 border-t" style="border-color:var(--hairline);color:var(--ai)">✦ 批注：内衬是 liner，搭配介词 into 更自然。</div>` : ''}
+                    </div>
+                  </div>
+                </div>
+              ` : stC.chapter === 'lexicon' ? `
+                <div class="flex gap-3 h-full">
+                  <div class="flex-1 space-y-2.5">
+                    <h2 class="font-serif-ed text-[22px] font-bold">索引 · ${stC.letter}</h2>
+                    ${({L:[['linear / liner / lineage','形似 · 待复习 2']],A:[['adapt / adopt / adept','元音对比 · 学习中']],C:[['complement / compliment','音似 · 已稳定']]}[stC.letter]||[]).map(([w,s])=>`<div onclick="stC.chapter='journal';renderAll()" class="p-3.5 rounded-xl border cursor-pointer" style="background:var(--sheet);border-color:var(--hairline)"><div class="font-serif-ed text-[17px] font-bold">${w}</div><div class="text-[11px] mt-0.5" style="color:var(--muted)">${s}</div></div>`).join('')}
+                  </div>
+                  <div class="w-6 flex flex-col items-center gap-1 py-2 rounded-full self-center" style="background:var(--sunk)">
+                    ${['A','C','L'].map(c=>`<button onclick="stC.letter='${c}';renderAll()" class="w-5 h-5 rounded-full border-0 text-[10px] font-bold cursor-pointer" style="${stC.letter===c?'background:var(--action);color:white;':'background:transparent;color:var(--muted);'}">${c}</button>`).join('')}
+                  </div>
+                </div>
+              ` : `
+                <div class="space-y-3">
+                  <h2 class="font-serif-ed text-[22px] font-bold">年鉴与引擎</h2>
+                  <div class="p-4 rounded-xl border space-y-2 text-[13px]" style="background:var(--sheet);border-color:var(--hairline)">
+                    <div class="flex justify-between"><span>7 日保持率</span><strong style="color:var(--ok)">84% (FSRS 89%)</strong></div>
+                    <div class="flex justify-between"><span>API 预设</span><span style="color:var(--action)">gpt-6-luna</span></div>
+                    <div class="flex justify-between"><span>每日预算</span><span>30 分钟</span></div>
+                  </div>
+                </div>
+              `}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderAll() {
+      ['a','b','c'].forEach(k => {
+        const el = document.getElementById('tab-' + k);
+        if (app.active === k && !app.compare) {
+          el.style.background = 'var(--primary)';
+          el.style.color = 'var(--primary-foreground)';
+        } else {
+          el.style.background = 'transparent';
+          el.style.color = 'var(--foreground)';
+        }
+      });
+      document.getElementById('btn-dark').textContent = app.dark ? '🌙 深色' : '☀️ 浅色';
+      document.getElementById('btn-cmp').textContent = app.compare ? '返回单机精看' : '三套同屏对比';
+
+      if (app.compare) {
+        document.getElementById('single-view').classList.add('hidden');
+        document.getElementById('compare-view').classList.remove('hidden');
+        document.getElementById('cmp-a').innerHTML = renderA(true);
+        document.getElementById('cmp-b').innerHTML = renderB(true);
+        document.getElementById('cmp-c').innerHTML = renderC(true);
+      } else {
+        document.getElementById('single-view').classList.remove('hidden');
+        document.getElementById('compare-view').classList.add('hidden');
+        document.getElementById('single-mount').innerHTML = app.active === 'a' ? renderA(false) : app.active === 'b' ? renderB(false) : renderC(false);
+        const sp = SPECS[app.active];
+        document.getElementById('spec-mount').innerHTML = `
+          <span class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-600 mb-3">${sp.badge}</span>
+          <h2 class="text-xl font-bold tracking-tight">${sp.title}</h2>
+          <p class="text-sm text-[var(--muted-foreground)] mt-2 leading-relaxed">${sp.desc}</p>
+          <div class="mt-4 pt-4 border-t border-[var(--border)] space-y-2.5">
+            ${sp.pts.map(([k,v]) => `<div class="text-xs"><strong class="text-[var(--foreground)]">${k}：</strong><span class="text-[var(--muted-foreground)]">${v}</span></div>`).join('')}
+          </div>`;
+      }
+    }
+
+    function setActive(k) { app.active = k; app.compare = false; renderAll(); }
+    function toggleCompare() { app.compare = !app.compare; renderAll(); }
+    function toggleDark() { app.dark = !app.dark; renderAll(); }
+    function pickFromCmp(k) { app.active = k; app.compare = false; renderAll(); }
+
+    renderAll();
+  </script>
+</body>
+</html>

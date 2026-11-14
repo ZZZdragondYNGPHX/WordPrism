@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WordPrism · 方案 C：Editorial Notebook & Co-Pilot Stream</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --sf-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", system-ui, sans-serif;
+      --sf-serif: "New York", Georgia, "Songti SC", "Noto Serif CJK SC", serif;
+      --sf-mono: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+      --spring: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: var(--sf-sans); margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    .font-serif-ed { font-family: var(--sf-serif); letter-spacing: -0.015em; }
+    .font-mono-prism { font-family: var(--sf-mono); font-variant-ligatures: none; }
+    .ios-scroll { overflow-y: auto; scrollbar-width: none; }
+    .ios-scroll::-webkit-scrollbar { display: none; }
+    .ios-press { transition: transform 0.2s var(--spring); cursor: pointer; }
+    .ios-press:active { transform: scale(0.975); }
+
+    .paradigm-c {
+      --paper: #F7F4EC;
+      --sheet: #FFFDF8;
+      --ruled: #EFEBE0;
+      --sunk: #E7E1D3;
+      --ink: #1E1C18;
+      --muted: #6C675D;
+      --subtle: #A39D90;
+      --hairline: rgba(30,28,24,0.11);
+      --action: #2346B8;
+      --action-soft: rgba(35,70,184,0.09);
+      --ai: #7E3AF2;
+      --ai-soft: rgba(126,58,242,0.09);
+      --ok: #1E7A50;
+      --ok-soft: rgba(30,122,80,0.11);
+      --err: #C43B2B;
+      --err-soft: rgba(196,59,43,0.11);
+      --sp-0: #C83E2B; --sp-1: #B86E00; --sp-2: #1E7A50;
+    }
+    .paradigm-c.dark {
+      --paper: #131210;
+      --sheet: #1C1B18;
+      --ruled: #24221E;
+      --sunk: #2C2924;
+      --ink: #F2EFE6;
+      --muted: #A19B8E;
+      --subtle: #6E685D;
+      --hairline: rgba(242,239,230,0.11);
+      --action: #7C9BFF;
+      --action-soft: rgba(124,155,255,0.16);
+      --ai: #C49BFF;
+      --ai-soft: rgba(196,155,255,0.16);
+      --ok: #5CD098;
+      --ok-soft: rgba(92,208,152,0.16);
+      --err: #FF7B6B;
+      --err-soft: rgba(255,123,107,0.16);
+      --sp-0: #FF7B6B; --sp-1: #F2B55A; --sp-2: #5CD098;
+    }
+
+    .device-shell {
+      padding: 12px;
+      border-radius: 64px;
+      background: linear-gradient(145deg, #2d2d32, #18181b 48%, #27272c);
+      box-shadow: 0 36px 80px -20px rgba(0,0,0,0.38), 0 0 0 1px rgba(255,255,255,0.14) inset;
+    }
+    .phone-frame {
+      position: relative;
+      width: 393px;
+      height: 852px;
+      border-radius: 54px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    /* Ruled Notebook Lines */
+    .ruled-paper {
+      background-image: repeating-linear-gradient(0deg, transparent, transparent 29px, var(--hairline) 29px, var(--hairline) 30px);
+      background-color: var(--sheet);
+      border: 1px solid var(--hairline);
+      border-radius: 14px;
+    }
+
+    /* Inline Cloze Popover Pill */
+    .inline-blank {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 10px;
+      margin: 0 2px;
+      border-radius: 8px;
+      font-family: var(--sf-mono);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      border-bottom: 2px solid var(--action);
+      background: var(--action-soft);
+      color: var(--action);
+      transition: all 0.2s ease;
+    }
+    .inline-popover {
+      background: var(--sheet);
+      border: 1px solid var(--hairline);
+      border-radius: 14px;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.16);
+      padding: 6px;
+      display: inline-flex;
+      gap: 4px;
+    }
+
+    .prism-char {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      width: 19px;
+      font-family: var(--sf-mono);
+      font-size: 20px;
+      font-weight: 600;
+      position: relative;
+      padding-bottom: 4px;
+    }
+    .prism-bar {
+      position: absolute;
+      bottom: 0; left: 2px; right: 2px;
+      height: 2.5px; border-radius: 99px;
+    }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] min-h-screen flex flex-col items-center py-6 px-4 gap-4">
+  <div class="w-full max-w-md flex items-center justify-between px-2">
+    <div>
+      <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-600/10 text-amber-700">方案 C · Editorial Notebook & Co-Pilot Stream</span>
+      <p class="text-xs text-[var(--muted-foreground)] mt-1">无独立答题割裂 · 连续伴学手账 + 文内气泡选词 + 稿纸行内作文修订</p>
+    </div>
+    <button onclick="dark=!dark;render()" class="px-3 py-1.5 rounded-xl text-xs font-medium border border-[var(--border)] bg-[var(--card)] cursor-pointer" id="dark-btn">☀️ 浅色</button>
+  </div>
+
+  <div id="mount"></div>
+
+  <script>
+    let dark = false;
+    let chapter = 'journal'; // 'journal' | 'lexicon' | 'almanac'
+    let activeBlank = 1;     // 1 or 2 or null
+    let blank1 = null;
+    let blank2 = null;
+    let showCorrection = true;
+    let activeLetter = 'L';
+    let intakeOpen = false;
+
+    function render() {
+      document.getElementById('dark-btn').textContent = dark ? '🌙 深色' : '☀️ 浅色';
+      document.getElementById('mount').innerHTML = `
+        <div class="device-shell">
+          <div class="phone-frame paradigm-c ${dark ? 'dark' : ''}">
+            <!-- Status Bar -->
+            <div class="pt-3.5 px-7 pb-2 flex items-center justify-between text-[14px] font-semibold">
+              <span class="tabular-nums">9:41</span>
+              <div class="w-28 h-8 rounded-full bg-black"></div>
+              <span class="text-[12px]">100%</span>
+            </div>
+
+            <!-- Editorial Chapter Ribbon (Replaces Bottom Tab Bar) -->
+            <div class="px-5 pt-1 pb-2.5 border-b flex items-center justify-between" style="border-color:var(--hairline)">
+              <div class="flex items-center gap-4">
+                ${[['journal','§1 今日手账'],['lexicon','§2 棱镜词典'],['almanac','§3 年鉴设置']].map(([id,lbl])=>`
+                  <button onclick="chapter='${id}';render()" class="bg-transparent border-0 p-0 pb-1 text-[13px] font-semibold cursor-pointer transition-all"
+                    style="color:${chapter===id?'var(--action)':'var(--muted)'};border-bottom:${chapter===id?'2px solid var(--action)':'2px solid transparent'}">${lbl}</button>
+                `).join('')}
+              </div>
+              <button onclick="intakeOpen=!intakeOpen;render()" class="px-2.5 py-1 rounded-md text-[11px] font-semibold border-0 cursor-pointer" style="background:var(--action-soft);color:var(--action)">+ 记词</button>
+            </div>
+
+            ${intakeOpen ? `
+              <div class="mx-5 mt-3 p-3 rounded-xl border space-y-2" style="background:var(--sheet);border-color:var(--action)">
+                <div class="flex justify-between text-[12px] font-semibold"><span>随手记入容易混的词</span><button onclick="intakeOpen=false;render()" class="border-0 bg-transparent cursor-pointer" style="color:var(--muted)">收起</button></div>
+                <div class="flex gap-2">
+                  <input type="text" value="affect 和 effect" class="flex-1 px-2.5 py-1.5 rounded-lg border-0 text-[13px]" style="background:var(--sunk);color:var(--ink)"/>
+                  <button onclick="intakeOpen=false;render()" class="px-3 py-1.5 rounded-lg border-0 text-[12px] font-semibold text-white cursor-pointer" style="background:var(--action)">入账</button>
+                </div>
+              </div>` : ''}
+
+            <div class="flex-1 ios-scroll px-5 py-4">
+              ${chapter === 'journal' ? renderLivingJournal() : chapter === 'lexicon' ? renderLexicon() : renderAlmanac()}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // 1. CONTINUOUS INTERACTIVE STUDY NOTEBOOK (NO MODAL / SCREEN JUMP)
+    function renderLivingJournal() {
+      const b1Ok = blank1 === 'linear';
+      const b2Ok = blank2 === 'liner';
+      return `
+        <div class="space-y-6 pb-8">
+          <!-- Title Header like Apple Journal / Books -->
+          <div class="space-y-1">
+            <div class="flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest" style="color:var(--muted)">
+              <span>2026年11月13日 · 第 14 分钟 / 30′ 预算</span>
+              <span style="color:var(--ai)">✦ 助教伴学手账</span>
+            </div>
+            <h1 class="font-serif-ed text-[28px] font-bold leading-tight">分清 line- 家族的尾缀</h1>
+          </div>
+
+          <!-- Section 1: Specimen Plate Embedded in Flow -->
+          <div class="space-y-2">
+            <div class="text-[12px] font-semibold" style="color:var(--muted)">一、昨日错题标本</div>
+            <div class="ruled-paper p-3.5 space-y-1.5">
+              ${[
+                { w: 'linear', diffs: [4,5], gloss: 'adj. 线性的（-ar 形容词尾）' },
+                { w: 'liner ', diffs: [4], gloss: 'n. 内衬；邮轮（-er 器物尾）' },
+                { w: 'lineage', diffs: [4,5,6], gloss: 'n. 血统世系（-eage 集合尾）' }
+              ].map((m, mi) => `
+                <div class="flex items-center justify-between">
+                  <div>
+                    ${m.w.split('').map((ch, ci) => {
+                      const hl = m.diffs.includes(ci);
+                      return `<span class="prism-char" style="color:${hl?`var(--sp-${mi})`:'var(--ink)'}">${ch===' '?'&nbsp;':ch}${hl?`<span class="prism-bar" style="background:var(--sp-${mi})"></span>`:''}</span>`;
+                    }).join('')}
+                  </div>
+                  <span class="text-[11px]" style="color:var(--muted)">${m.gloss}</span>
+                </div>`).join('')}
+            </div>
+          </div>
+
+          <!-- Section 2: Inline Interactive Cloze Passage (Popover right inside prose!) -->
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[12px] font-semibold" style="color:var(--muted)">二、在短文里点选填空（文内气泡交互）</span>
+              <span class="text-[11px]" style="color:var(--action)">点击蓝框作答</span>
+            </div>
+            <div class="p-4 rounded-2xl border leading-[2.1] font-serif-ed text-[17px]" style="background:var(--sheet);border-color:var(--hairline)">
+              The engineer plotted a
+              <span onclick="activeBlank=1;render()" class="inline-blank" style="${blank1?(b1Ok?'background:var(--ok-soft);color:var(--ok);border-color:var(--ok);':'background:var(--err-soft);color:var(--err);border-color:var(--err);'):''}">
+                ${blank1 || '1. ___ ? ___'}
+              </span>
+              trend line on the paper, then slipped on his jacket with a warm fleece
+              <span onclick="activeBlank=2;render()" class="inline-blank" style="${blank2?(b2Ok?'background:var(--ok-soft);color:var(--ok);border-color:var(--ok);':'background:var(--err-soft);color:var(--err);border-color:var(--err);'):''}">
+                ${blank2 || '2. ___ ? ___'}
+              </span>
+              before stepping out.
+            </div>
+
+            <!-- Contextual Inline Popover Bar -->
+            ${activeBlank ? `
+              <div class="flex items-center justify-between gap-2 p-2 rounded-2xl border" style="background:var(--ruled);border-color:var(--hairline)">
+                <span class="text-[11px] font-semibold pl-1" style="color:var(--muted)">第 ${activeBlank} 空可选：</span>
+                <div class="inline-popover">
+                  ${['linear','liner','lineage'].map(opt => `
+                    <button onclick="pickInline(${activeBlank}, '${opt}')" class="ios-press px-3 py-1.5 rounded-xl border-0 text-[13px] font-semibold" style="background:var(--sunk);color:var(--ink)">${opt}</button>
+                  `).join('')}
+                </div>
+              </div>` : ''}
+
+            ${blank1 && !b1Ok ? `<div class="p-3 rounded-xl text-[12px]" style="background:var(--err-soft);color:var(--err)">✎ 助教朱批：第 1 空修饰名词 trend line，需形容词 <strong>linear</strong>。</div>` : ''}
+            ${b1Ok && b2Ok ? `<div class="p-3 rounded-xl text-[12px]" style="background:var(--ok-soft);color:var(--ok)">✓ 语境全对！FSRS 已将 linear / liner 的下次复习延后至 4 天后。</div>` : ''}
+          </div>
+
+          <!-- Section 3: Lined Composition Paper with Inline Tracked Changes -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[12px] font-semibold" style="color:var(--muted)">三、稿纸造句 · 助教红笔修订</span>
+              <button onclick="showCorrection=!showCorrection;render()" class="text-[11px] font-semibold border-0 bg-transparent cursor-pointer" style="color:var(--ai)">${showCorrection?'隐藏批改':'显示 AI 红笔'}</button>
+            </div>
+            <div class="ruled-paper p-4 space-y-2">
+              <div class="text-[11px]" style="color:var(--muted)">用 <strong>liner</strong> 写一句“我在冬衣里加了毛绒内衬”：</div>
+              <p class="font-serif-ed text-[16px] leading-[30px]">
+                I put a warm
+                ${showCorrection ? `<span class="line-through opacity-50" style="color:var(--err)">linear</span> <span class="font-semibold underline decoration-2" style="color:var(--ok)">fleece liner</span>` : `<span>linear</span>`}
+                <span class="line-through opacity-50" style="color:var(--err)">inside</span>
+                ${showCorrection ? `<span class="font-semibold" style="color:var(--ok)">into</span>` : ''}
+                my winter coat.
+              </p>
+              ${showCorrection ? `
+                <div class="pt-2 border-t text-[12px] leading-relaxed" style="border-color:var(--hairline);color:var(--ai)">
+                  ✦ 批注：你把内衬错拼成了 <em>linear</em>（线性的）。另外“把内衬装进外套”用 <em>zip/slip a liner into</em> 更地道。
+                </div>` : ''}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // 2. A-Z THUMB-INDEX LEXICON
+    function renderLexicon() {
+      const entries = {
+        L: [
+          { w: 'linear / liner / lineage', desc: '形似辨析 · 3 词组 · 待复习 2' },
+          { w: 'loose / lose', desc: '形似音近 · 2 词组 · 已稳定' }
+        ],
+        A: [
+          { w: 'adapt / adopt / adept', desc: '中间元音辨析 · 3 词组 · 学习中' }
+        ],
+        C: [
+          { w: 'complement / compliment', desc: '同音异形 · 2 词组 · 已稳定' }
+        ]
+      };
+      const items = entries[activeLetter] || entries.L;
+      return `
+        <div class="flex gap-3 h-full pb-6">
+          <div class="flex-1 space-y-3">
+            <h2 class="font-serif-ed text-[24px] font-bold">索引词典 · ${activeLetter}</h2>
+            <div class="space-y-2.5">
+              ${items.map(it => `
+                <div onclick="chapter='journal';render()" class="ios-press p-4 rounded-xl border" style="background:var(--sheet);border-color:var(--hairline)">
+                  <div class="font-serif-ed text-[19px] font-bold">${it.w}</div>
+                  <div class="text-[12px] mt-1" style="color:var(--muted)">${it.desc}</div>
+                </div>`).join('')}
+            </div>
+          </div>
+          <!-- Apple Contacts / Dictionary Thumb Index -->
+          <div class="w-6 flex flex-col items-center justify-center gap-1 py-2 rounded-full self-center" style="background:var(--sunk)">
+            ${['A','C','L','S'].map(ch => `
+              <button onclick="activeLetter='${ch}';render()" class="w-5 h-5 rounded-full border-0 text-[10px] font-bold cursor-pointer"
+                style="${activeLetter===ch?'background:var(--action);color:white;':'background:transparent;color:var(--muted);'}">${ch}</button>
+            `).join('')}
+          </div>
+        </div>`;
+    }
+
+    // 3. ALMANAC & ENGINE SETTINGS
+    function renderAlmanac() {
+      return `
+        <div class="space-y-4 pb-8">
+          <h2 class="font-serif-ed text-[24px] font-bold">记忆年鉴与引擎</h2>
+          <div class="p-4 rounded-xl border space-y-2" style="background:var(--sheet);border-color:var(--hairline)">
+            <div class="flex justify-between text-[14px]"><span>7 日回忆保持率</span><strong style="color:var(--ok)">84% (FSRS 预测 89%)</strong></div>
+            <div class="flex justify-between text-[14px]"><span>每日专注预算</span><strong>30 分钟 / 日</strong></div>
+            <div class="flex justify-between text-[14px]"><span>API 预设</span><span style="color:var(--action)">OpenAI · gpt-6-luna</span></div>
+            <div class="flex justify-between text-[14px]"><span>数据档案</span><span style="color:var(--muted)">.wordprism 完整备份</span></div>
+          </div>
+        </div>`;
+    }
+
+    function pickInline(num, word) {
+      if (num === 1) { blank1 = word; activeBlank = 2; }
+      else { blank2 = word; activeBlank = null; }
+      render();
+    }
+
+    render();
+  </script>
+</body>
+</html>

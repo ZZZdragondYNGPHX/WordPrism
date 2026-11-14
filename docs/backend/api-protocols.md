@@ -1,8 +1,6 @@
 # LLM 协议接入
 
-产品：`v0.4` · 本地契约版本：`1` · 更新：2026-11-04。
-
-已实现 Chat Completions 兼容接口和原生 OpenAI Responses 接口。两者由手机中的同一个 `OpenAiCompatibleProvider` 发起 HTTPS 请求，共用持久任务、功能绑定、凭证、额度、取消和用量记录。接口与数据定义见[本地后端契约](contract.md)，调用授权规则见[API 预设方案](../plan/api-presets.md)。
+已实现 Chat Completions 兼容接口和原生 OpenAI Responses 接口。两者由手机中的同一个 `OpenAiCompatibleProvider` 发起 HTTPS 请求，共用持久任务、功能绑定、凭证、额度、取消和用量记录。接口与数据定义见[本地后端契约](contract.md)，调用规则见[API 预设](../design/api-presets.md)。
 
 ## 选择与配置
 
@@ -17,7 +15,7 @@
 
 协议 ID 与支持目录由 [`ApiProtocols.kt`](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/ApiProtocols.kt) 统一维护。`Query.Protocols` 返回完整目录，预设校验和生成样例复用同一来源。前端的选项、说明以及已保存预设的协议名称均读取该目录。
 
-输出上限和超时可以分别留空。[保存样例](fixtures/save-unlimited-preset.request.json)中 `maxOutputTokens: null` 表示请求不发送输出额度参数，由服务商及模型的默认值和限制决定；这不是无限模型上下文或无限计费额度。`timeoutSeconds: null` 关闭应用的 HTTP 连接、读写和整次调用计时器，模型目录也使用该设置；网络、服务商或 Android 后台调度仍可能中断任务，用户仍可取消。有限输出额度接受正整数；有限超时接受 5–2,147,483 秒（底层 HTTP 客户端支持的数值范围）。历史数值预设保持原值；留空后的新配置需要保存，重试时捕获保存后的版本。请求 256 KiB、响应 2 MiB 的数据大小限制仍生效。
+输出上限和超时可以分别留空。[保存样例](fixtures/save-unlimited-preset.request.json)中 `maxOutputTokens: null` 表示请求不发送输出额度参数，由服务商及模型的默认值和限制决定。`timeoutSeconds: null` 关闭应用的 HTTP 连接、读写和整次调用计时器，模型目录也使用该设置；网络、服务商或 Android 后台调度仍可能中断任务，用户仍可取消。有限输出额度接受正整数；有限超时接受 5–2,147,483 秒（底层 HTTP 客户端支持的数值范围）。历史数值预设保持原值；留空后的新配置需要保存，重试时捕获保存后的版本。请求 256 KiB、响应 2 MiB 的数据大小限制仍生效。
 
 ## 思维程度
 
@@ -35,7 +33,7 @@ Responses 使用 `reasoning: { effort: ... }`；Chat Completions 使用 `reasoni
 
 修改后须保存，再点击“测试连接”。新任务使用保存后的预设版本，排队或在途任务保留原快照；用量同样保留当次思维程度。完整备份保留当前值和历史版本，恢复不会自动启用调用。选择默认会真实清除显式配置，`preserveAdvancedSettings` 只保留 `enabled/jsonMode/temperature`，不会覆盖提交的思维程度。
 
-同源样例：[保存高思维程度](fixtures/save-reasoning-preset.request.json)、[返回的预设](fixtures/reasoning-preset.json)、[恢复模型默认](fixtures/reset-reasoning-preset.request.json)。不携带密钥或真实学习资料。
+同源样例：[保存高思维程度](fixtures/save-reasoning-preset.request.json)、[返回的预设](fixtures/reasoning-preset.json)、[恢复模型默认](fixtures/reset-reasoning-preset.request.json)。
 
 ## 拉取模型
 
@@ -56,7 +54,7 @@ UI 门面为 `PresetsApi.listModels(ModelCatalogDraft, secret)`。点击才发�
 | 无效 JSON、缺少 `data` 数组或非法 ID | `INVALID_RESPONSE` |
 | 空 `data` | 成功的空列表，提示手动填写 |
 
-目录请求不执行自动重试、备用预设或重定向。示例：[新表单请求](fixtures/unsaved-models.catalog-request.json)、[复用凭证请求](fixtures/saved-models.catalog-request.json)、[模型列表](fixtures/models.json)、[空列表](fixtures/empty-models.json)、[列表不可用](fixtures/models-unavailable.json)。示例没有密钥，模型 ID 与所有者是合成值。
+目录请求不执行自动重试、备用预设或重定向。示例：[新表单请求](fixtures/unsaved-models.catalog-request.json)、[复用凭证请求](fixtures/saved-models.catalog-request.json)、[模型列表](fixtures/models.json)、[空列表](fixtures/empty-models.json)、[列表不可用](fixtures/models-unavailable.json)。
 
 ## 请求与返回映射
 
@@ -73,9 +71,9 @@ UI 门面为 `PresetsApi.listModels(ModelCatalogDraft, secret)`。点击才发�
 
 Responses 每次发送 `store: false`、`stream: false`。当前任务使用独立请求，不保存远端会话 ID，也不依赖 `previous_response_id`。原始 HTTP 不提供 SDK 的 `output_text` 便利属性，因此不会把该属性或第一个推理项当成模型答案。模型文本先验证为 JSON 对象，再按对应业务类型校验，全部有效后才提交本地变更。
 
-Responses JSON 模式的输入检查要求 `input` 消息包含 JSON 指令；只在 `instructions` 中声明会被真实服务以 HTTP 400 拒绝。适配器在 `input` 的业务数据之前加一条固定 JSON 输出指令，业务结构和主指令保持完整。此行为由用户临时 key 的真实调用定位，不能以本地合成响应的通过替代验证。
+Responses JSON 模式的输入检查要求 `input` 消息包含 JSON 指令；只在 `instructions` 中声明会被真实服务以 HTTP 400 拒绝。适配器在 `input` 的业务数据之前加一条固定 JSON 输出指令，业务结构和主指令保持完整。
 
-`ApiPreset.jsonMode` 默认为 `true`；关闭时省略相应格式参数。`temperature` 默认为 `null`，不发送模型可能不支持的采样参数。当前 Compose 表单保留这些高级字段，配置入口仍以本地契约为准。没有新增依赖或供应商 SDK。
+`ApiPreset.jsonMode` 默认为 `true`；关闭时省略相应格式参数。`temperature` 默认为 `null`，不发送模型可能不支持的采样参数。当前 Compose 表单保留这些高级字段，配置入口仍以本地契约为准。
 
 ## 失败、取消与用量
 
@@ -101,7 +99,7 @@ HTTP 错误保留状态码，以及核心白名单内的参数名、服务商 co
 
 每次尝试保留实际协议、预设版本、模型与已知用量。`output_tokens` 已包含 reasoning tokens，不再叠加子项；缺失、负数或畸形 token 数保留未知。即使生成被截断、拒绝或失败，服务商已提供的有效用量仍写入任务记录。取消或关闭后的结果是否可提交继续由核心的持久状态及版本校验决定。
 
-`TRUNCATED_RESPONSE` 明确提示未保存不完整内容，并说明可提高输出上限或降低思维程度，保存后再重试。连接测试的小请求成功，不代表讲解、短文或分析也能在同一预算内完成。test.6 的真实讲解在 `MAX / 8000` 下仍出现截断；同一任务保存 `MAX / 16384 / 180 秒` 后重试成功，实际输出 11,315 tokens。该配置是已通过的样本，不保证所有内容都能在额度内完成；应用不隐式改变用户配置或拆分付费请求。完整实测见[验证记录](validation.md#test6词源与助记及完整-ai-流程)。
+`TRUNCATED_RESPONSE` 明确提示未保存不完整内容，并说明可提高输出上限或降低思维程度，保存后再重试。连接测试的小请求成功，不代表讲解、短文或分析也能在同一预算内完成。
 
 限流和服务不可用只按用户已有重试次数及备用预设执行，可以在两个协议之间切换；超时和未知结果不会触发这类自动切换。HTTP 重定向不转发凭证，OkHttp 不自行重试。请求上限 256 KiB，响应上限 2 MiB。凭证数组在发送后以及校验失败等退出路径均清零。
 
@@ -115,14 +113,6 @@ HTTP 错误保留状态码，以及核心白名单内的参数名、服务商 co
 
 新增 `reasoningEffort` 为可选字段；旧 Room / SQLite 行、任务与 `.wordprism` 备份缺少字段时采用 `null`，无需迁移数据库结构。默认 `null` 在序列化时省略，保留旧 `SavePreset` 命令的摘要与幂等身份；非空档位参与摘要，同键改变档位仍返回 `IDEMPOTENCY_CONFLICT`。保存命令中省略或显式传 `null` 均表示恢复供应商默认，不表示保留原档位。历史记录、默认预设的请求行为保持兼容；客户端与核心仍共同构建。新枚举值对旧版客户端不承诺可执行，备份恢复规则继续由专属格式维护。
 
-## 依据与验证边界
+## 参考
 
-按 OpenAI 官方的 [Responses 迁移指南](https://developers.openai.com/api/docs/guides/migrate-to-responses?api-mode=responses)、[文本输出指南](https://developers.openai.com/api/docs/guides/text)及 [Create response API 参考](https://developers.openai.com/api/reference/resources/responses/methods/create.md)核对请求字段、输出项、状态和用量含义。
-
-模型目录按官方 [List models API 参考](https://developers.openai.com/api/reference/resources/models/methods/list.md)核对 GET 路径、鉴权与 `data` 字段。供应商未实现此接口时，保留手动输入，不内置一份可能过时的模型名单。
-
-思维程度及模型差异依据官方 [Reasoning models](https://developers.openai.com/api/docs/guides/reasoning)、[Create chat completion](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)与 Create response 参考。JSON 输入要求见 [Structured outputs / JSON mode](https://developers.openai.com/api/docs/guides/structured-outputs#json-mode)，HTTP 400 的实际响应将问题定位到 `input`。
-
-超时行为已核对所采用版本的 [OkHttp 4.12.0 源码](https://github.com/square/okhttp/blob/parent-4.12.0/okhttp/src/main/kotlin/okhttp3/OkHttpClient.kt)，未增加依赖。按用户截图的 `gpt-6-luna / MAX / 8000 / 180 秒` 配置，修复前的完整 AI 添加在约 11.4 秒超时，修复后约 12.5 秒成功并写入两个词与一个组；具体宿主和设备证据见[验证记录](validation.md)。
-
-回归使用真实 OkHttp 与本地 `MockWebServer`，覆盖 HTTP 格式、错误与取消；任务执行器验证离线排队、同键重放、预设快照和跨协议备用重试，SQLite 与完整备份验证配置兼容。另按用户授权使用临时 key，对 OpenAI `gpt-6-luna` 真实验证 Responses、Chat 低档连接及模型目录。test.6 扩展到真实添加、持续归组、词族与组推荐、讲解、六种题型、表达反馈、日终和手动分析；正式 Android APK 也完成真实添加、讲解重试与持久化。分析样本证据不足时保留策略，没有产生自动调整动作；自动变更与迟到结果的验证使用脚本响应。具体用量、失败与修复见[验证记录](validation.md)，这些证据不代表物理手机、其他模型或长期学习质量已验证。
+[Responses API](https://platform.openai.com/docs/api-reference/responses)、[结构化输出](https://platform.openai.com/docs/guides/structured-outputs)、[项目验证状态](../validation.md)。

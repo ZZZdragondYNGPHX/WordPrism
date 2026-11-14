@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WordPrism · 方案 A：Spatial Deck & Spotlight</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --sf-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", system-ui, sans-serif;
+      --sf-mono: "SF Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
+      --spring: cubic-bezier(0.22, 1, 0.36, 1);
+      --spring-bounce: cubic-bezier(0.34, 1.35, 0.64, 1);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: var(--sf-sans); margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    .font-mono-prism { font-family: var(--sf-mono); font-variant-ligatures: none; }
+    .ios-scroll { overflow-y: auto; scrollbar-width: none; }
+    .ios-scroll::-webkit-scrollbar { display: none; }
+    .ios-press { transition: transform 0.22s var(--spring), opacity 0.2s ease; cursor: pointer; }
+    .ios-press:active { transform: scale(0.965); }
+
+    .paradigm-a {
+      --bg: #F2F2F7;
+      --card: #FFFFFF;
+      --card-alt: #F7F7FA;
+      --sunk: #E5E5EA;
+      --ink: #1C1C1E;
+      --muted: #6E6E73;
+      --subtle: #AEAEB2;
+      --hairline: rgba(60,60,67,0.11);
+      --action: #007AFF;
+      --action-soft: rgba(0,122,255,0.12);
+      --ai: #5856D6;
+      --ai-soft: rgba(88,86,214,0.12);
+      --ok: #28A745;
+      --ok-soft: rgba(40,167,69,0.13);
+      --err: #FF3B30;
+      --err-soft: rgba(255,59,48,0.13);
+      --warn: #D97706;
+      --warn-soft: rgba(255,149,0,0.14);
+      --glass: rgba(255,255,255,0.82);
+      --sp-0: #FF3B30; --sp-1: #E67700; --sp-2: #18A34A; --sp-3: #007AFF;
+    }
+    .paradigm-a.dark {
+      --bg: #000000;
+      --card: #1C1C1E;
+      --card-alt: #242426;
+      --sunk: #2C2C2E;
+      --ink: #F5F5F7;
+      --muted: #98989D;
+      --subtle: #636366;
+      --hairline: rgba(255,255,255,0.12);
+      --action: #0A84FF;
+      --action-soft: rgba(10,132,255,0.20);
+      --ai: #7D7AFF;
+      --ai-soft: rgba(125,122,255,0.20);
+      --ok: #30D158;
+      --ok-soft: rgba(48,209,88,0.18);
+      --err: #FF453A;
+      --err-soft: rgba(255,69,58,0.18);
+      --warn: #FF9F0A;
+      --warn-soft: rgba(255,159,10,0.18);
+      --glass: rgba(28,28,30,0.86);
+      --sp-0: #FF6961; --sp-1: #FFB340; --sp-2: #4ADE80; --sp-3: #409CFF;
+    }
+
+    .device-shell {
+      padding: 12px;
+      border-radius: 64px;
+      background: linear-gradient(145deg, #2d2d32, #18181b 48%, #27272c);
+      box-shadow: 0 36px 80px -20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.14) inset;
+    }
+    .phone-frame {
+      position: relative;
+      width: 393px;
+      height: 852px;
+      border-radius: 54px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    /* Wallet Stacked Deck */
+    .wallet-stack {
+      position: relative;
+      height: 360px;
+      width: 100%;
+    }
+    .wallet-card {
+      position: absolute;
+      left: 0; right: 0;
+      border-radius: 26px;
+      padding: 20px;
+      background: var(--card);
+      border: 0.5px solid var(--hairline);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.06), 0 12px 28px rgba(0,0,0,0.08);
+      transition: transform 0.45s var(--spring-bounce), opacity 0.35s ease, top 0.45s var(--spring-bounce), z-index 0s;
+      cursor: pointer;
+    }
+
+    /* 3D Flip Card Stage */
+    .flip-scene {
+      perspective: 1200px;
+      width: 100%;
+      height: 410px;
+    }
+    .flip-card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.62s var(--spring-bounce);
+    }
+    .flip-card.flipped {
+      transform: rotateY(180deg);
+    }
+    .flip-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 28px;
+      background: var(--card);
+      border: 0.5px solid var(--hairline);
+      box-shadow: 0 18px 42px -12px rgba(0,0,0,0.12);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+    }
+    .flip-back {
+      transform: rotateY(180deg);
+    }
+
+    /* Top Control Center Pull-down HUD */
+    .hud-drawer {
+      position: absolute;
+      left: 12px; right: 12px; top: 52px;
+      border-radius: 30px;
+      background: var(--glass);
+      backdrop-filter: blur(32px) saturate(190%);
+      -webkit-backdrop-filter: blur(32px) saturate(190%);
+      border: 1px solid var(--hairline);
+      box-shadow: 0 24px 56px rgba(0,0,0,0.22);
+      z-index: 45;
+      transform: translateY(-120%);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.45s var(--spring), opacity 0.3s ease;
+    }
+    .hud-drawer.open {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Bottom Spotlight Drawer */
+    .spotlight-sheet {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      max-height: 76%;
+      border-top-left-radius: 30px;
+      border-top-right-radius: 30px;
+      background: var(--glass);
+      backdrop-filter: blur(32px) saturate(190%);
+      -webkit-backdrop-filter: blur(32px) saturate(190%);
+      border-top: 1px solid var(--hairline);
+      box-shadow: 0 -16px 48px rgba(0,0,0,0.18);
+      z-index: 50;
+      transform: translateY(105%);
+      transition: transform 0.42s var(--spring);
+    }
+    .spotlight-sheet.open {
+      transform: translateY(0);
+    }
+
+    .prism-char {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      width: 19px;
+      font-family: var(--sf-mono);
+      font-size: 21px;
+      font-weight: 600;
+      position: relative;
+      padding-bottom: 5px;
+    }
+    .prism-bar {
+      position: absolute;
+      bottom: 0; left: 2px; right: 2px;
+      height: 2.5px;
+      border-radius: 99px;
+    }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] min-h-screen flex flex-col items-center py-6 px-4 gap-4">
+  <div class="w-full max-w-md flex items-center justify-between px-2">
+    <div>
+      <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600">方案 A · Spatial Deck & Spotlight</span>
+      <p class="text-xs text-[var(--muted-foreground)] mt-1">无底栏空间卡组 · Apple Wallet 堆叠 + 3D 翻转闪卡 + 下拉控制中心 + Spotlight</p>
+    </div>
+    <button onclick="dark=!dark;render()" class="px-3 py-1.5 rounded-xl text-xs font-medium border border-[var(--border)] bg-[var(--card)] cursor-pointer" id="dark-btn">☀️ 浅色</button>
+  </div>
+
+  <div id="mount"></div>
+
+  <script>
+    let dark = false;
+    let screen = 'deck';        // 'deck' | 'flip'
+    let activeCardIdx = 0;      // 0..2 in wallet stack
+    let hudOpen = false;
+    let spotlightOpen = false;  // false | 'library' | 'intake' | 'tutor'
+    let aiManaged = false;
+    let flipIndex = 0;
+    let isFlipped = false;
+    let pickedChoice = null;
+    let searchQuery = '';
+
+    const DECK = [
+      {
+        title: 'linear / liner / lineage',
+        tag: '待复习 · 2 项到期',
+        tagTone: 'warn',
+        accent: 'linear-gradient(135deg, rgba(255,59,48,0.12), rgba(0,122,255,0.08))',
+        members: [
+          { lemma: 'linear', diffs: [4,5], pos: 'adj.', gloss: '线性的' },
+          { lemma: 'liner', diffs: [4], pos: 'n.', gloss: '衬里；邮轮' },
+          { lemma: 'lineage', diffs: [4,5,6], pos: 'n.', gloss: '血统世系' }
+        ],
+        summary: '词尾 -ar / -er / -eage 决定词性与具体指代',
+        prompt: 'The new sensor guarantees a ______ response across all temperatures.',
+        answer: 'linear',
+        options: ['linear', 'liner', 'lineage', 'linen'],
+        note: '这里修饰名词 response，需要形容词 -ar；liner 是名词（衬里/邮轮）。'
+      },
+      {
+        title: 'adapt / adopt / adept',
+        tag: '学习中 · 新词辨析',
+        tagTone: 'action',
+        accent: 'linear-gradient(135deg, rgba(88,86,214,0.14), rgba(52,199,89,0.08))',
+        members: [
+          { lemma: 'adapt', diffs: [2], pos: 'v.', gloss: '适应；改编' },
+          { lemma: 'adopt', diffs: [2], pos: 'v.', gloss: '采用；收养' },
+          { lemma: 'adept', diffs: [2], pos: 'adj.', gloss: '熟练的' }
+        ],
+        summary: 'a（适应 apt）、o（选择 option）、e（专家 expert）',
+        prompt: 'The studio decided to ______ a quieter, gesture-driven interface.',
+        answer: 'adopt',
+        options: ['adapt', 'adopt', 'adept', 'adult'],
+        note: 'adopt an interface 表示“采纳某种界面方案”，中间元音是 o。'
+      },
+      {
+        title: 'complement / compliment',
+        tag: '已稳定 · 92% 保留',
+        tagTone: 'ok',
+        accent: 'linear-gradient(135deg, rgba(40,167,69,0.12), rgba(255,149,0,0.08))',
+        members: [
+          { lemma: 'complement', diffs: [5], pos: 'v./n.', gloss: '补全，衬托' },
+          { lemma: 'compliment', diffs: [5], pos: 'n./v.', gloss: '赞美，称赞' }
+        ],
+        summary: 'complEment 补全（Complete）；complIment 赞美（I 爱听赞美）',
+        prompt: 'Haptic feedback can ______ subtle visual transitions.',
+        answer: 'complement',
+        options: ['complement', 'compliment', 'complete', 'comply'],
+        note: '意为“使相辅相成、补充完善”，第 6 个字母用 e。'
+      }
+    ];
+
+    function render() {
+      document.getElementById('dark-btn').textContent = dark ? '🌙 深色' : '☀️ 浅色';
+      document.getElementById('mount').innerHTML = `
+        <div class="device-shell">
+          <div class="phone-frame paradigm-a ${dark ? 'dark' : ''}">
+            <!-- Status Bar -->
+            <div class="pt-3.5 px-7 pb-2 flex items-center justify-between text-[14px] font-semibold relative z-30">
+              <span class="tabular-nums">9:41</span>
+              <div class="w-28 h-8 rounded-full bg-black"></div>
+              <span class="text-[12px]">5G</span>
+            </div>
+
+            <!-- Top Status Pill (Tap to pull down iOS Control Center HUD) -->
+            <div class="px-5 pt-1 pb-2 flex items-center justify-between relative z-30">
+              <button onclick="hudOpen=!hudOpen;spotlightOpen=false;render()" class="ios-press flex items-center gap-2 px-3 py-1.5 rounded-full border-0 text-[12px] font-semibold shadow-sm"
+                style="background:var(--card);color:var(--ink)">
+                <span class="w-2 h-2 rounded-full ${aiManaged?'bg-indigo-500':'bg-emerald-500'}"></span>
+                <span class="tabular-nums">14/30′ · 84% 保持</span>
+                <span class="text-[10px]" style="color:var(--muted)">${hudOpen?'▲':'▼'}</span>
+              </button>
+
+              <button onclick="aiManaged=!aiManaged;render()" class="ios-press px-3 py-1.5 rounded-full border-0 text-[12px] font-semibold"
+                style="background:${aiManaged?'var(--ai-soft)':'var(--sunk)'};color:${aiManaged?'var(--ai)':'var(--muted)'}">
+                ${aiManaged ? '✦ AI 托管中' : '普通手动'}
+              </button>
+            </div>
+
+            <!-- Main Canvas (Either Wallet Deck or 3D Flip Session) -->
+            <div class="flex-1 px-5 pt-2 pb-4 flex flex-col justify-between relative z-10 overflow-hidden">
+              ${screen === 'deck' ? renderWalletHome() : renderFlipSession()}
+            </div>
+
+            <!-- Bottom Spotlight Bar (Replaces Traditional 4-Tab Bar) -->
+            ${screen === 'deck' ? `
+              <div class="px-5 pb-6 pt-1 relative z-30">
+                <div class="flex items-center gap-2 p-1.5 rounded-full shadow-lg border" style="background:var(--glass);backdrop-filter:blur(24px);border-color:var(--hairline)">
+                  <button onclick="spotlightOpen='library';hudOpen=false;render()" class="ios-press h-10 px-3.5 rounded-full border-0 flex items-center gap-1.5 text-[13px] font-semibold" style="background:var(--sunk);color:var(--ink)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <span>词库</span>
+                  </button>
+                  <button onclick="spotlightOpen='intake';hudOpen=false;render()" class="ios-press flex-1 h-10 px-3 text-left border-0 bg-transparent text-[13px] truncate" style="color:var(--muted)">
+                    ✦ 输入易混词让 AI 整理...
+                  </button>
+                  <button onclick="spotlightOpen='tutor';hudOpen=false;render()" class="ios-press w-10 h-10 rounded-full border-0 flex items-center justify-center text-white text-[14px]" style="background:var(--ai)">✦</button>
+                </div>
+              </div>` : ''}
+
+            <!-- Pull-Down Control Center HUD (Overview + Presets + Budget) -->
+            ${hudOpen ? `<div onclick="hudOpen=false;render()" class="absolute inset-0 bg-black/25 z-40"></div>` : ''}
+            <div class="hud-drawer ${hudOpen ? 'open' : ''} p-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <span class="text-[13px] font-bold uppercase tracking-wider" style="color:var(--muted)">学习控制中心 · FSRS 快照</span>
+                <button onclick="hudOpen=false;render()" class="px-2.5 py-1 rounded-full text-[11px] font-semibold border-0 cursor-pointer" style="background:var(--sunk);color:var(--ink)">收起</button>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="p-3 rounded-2xl" style="background:var(--card-alt)"><div class="text-[20px] font-bold tabular-nums">14′</div><div class="text-[10px]" style="color:var(--muted)">今日用时</div></div>
+                <div class="p-3 rounded-2xl" style="background:var(--card-alt)"><div class="text-[20px] font-bold tabular-nums" style="color:var(--ok)">84%</div><div class="text-[10px]" style="color:var(--muted)">7日正确率</div></div>
+                <div class="p-3 rounded-2xl" style="background:var(--card-alt)"><div class="text-[20px] font-bold tabular-nums" style="color:var(--ai)">89%</div><div class="text-[10px]" style="color:var(--muted)">FSRS 拟合</div></div>
+              </div>
+              <div class="p-3 rounded-2xl space-y-2" style="background:var(--card-alt)">
+                <div class="flex justify-between text-[12px]"><span>每日学习预算</span><span class="font-semibold tabular-nums">30 分钟</span></div>
+                <div class="flex justify-between text-[12px]"><span>API 默认预设</span><span class="font-semibold" style="color:var(--action)">gpt-6-luna (MAX)</span></div>
+                <div class="flex justify-between text-[12px]"><span>本地数据备份</span><span style="color:var(--muted)">.wordprism · Room</span></div>
+              </div>
+            </div>
+
+            <!-- Bottom Spotlight Overlay (Library / AI Intake / Tutor) -->
+            ${spotlightOpen ? `<div onclick="spotlightOpen=false;render()" class="absolute inset-0 bg-black/30 z-40"></div>` : ''}
+            <div class="spotlight-sheet ${spotlightOpen ? 'open' : ''} p-5 pb-8 flex flex-col gap-3">
+              ${renderSpotlightContent()}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderWalletHome() {
+      return `
+        <div class="space-y-3">
+          <div>
+            <div class="text-[12px] font-semibold" style="color:var(--muted)">11月13日 · 空间词组牌组</div>
+            <h1 class="text-[28px] font-bold tracking-tight mt-0.5">${aiManaged ? 'AI 托管今日牌组' : '轻点卡组 · 翻转辨析'}</h1>
+          </div>
+
+          <!-- Apple Wallet Style Layered Deck -->
+          <div class="wallet-stack mt-2">
+            ${DECK.map((c, idx) => {
+              const offset = (idx - activeCardIdx + DECK.length) % DECK.length; // 0 = front, 1 = mid, 2 = back
+              const topPx = offset === 0 ? 118 : offset === 1 ? 56 : 0;
+              const scale = offset === 0 ? 1 : offset === 1 ? 0.95 : 0.90;
+              const z = offset === 0 ? 30 : offset === 1 ? 20 : 10;
+              const opacity = offset === 0 ? 1 : offset === 1 ? 0.94 : 0.85;
+              return `
+                <div onclick="selectDeckCard(${idx})" class="wallet-card" style="top:${topPx}px;transform:scale(${scale});z-index:${z};opacity:${opacity};background-image:${c.accent};">
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full" style="background:var(--${c.tagTone}-soft);color:var(--${c.tagTone})">${c.tag}</span>
+                    <span class="text-[11px] font-medium" style="color:var(--muted)">${offset === 0 ? '当前置顶' : '点击抽到顶层'}</span>
+                  </div>
+                  <div class="text-[22px] font-bold tracking-tight">
+                    ${c.members.map((m, mi) => `<span style="color:var(--sp-${mi})">${m.lemma}</span>`).join(`<span style="color:var(--subtle)"> / </span>`)}
+                  </div>
+                  <p class="text-[12px] mt-1.5" style="color:var(--muted)">${c.summary}</p>
+                  ${offset === 0 ? `
+                    <div class="mt-4 pt-3 border-t space-y-1" style="border-color:var(--hairline)">
+                      ${c.members.map((m, mi) => `
+                        <div class="flex items-center justify-between text-[13px]">
+                          <span class="font-semibold" style="color:var(--sp-${mi})">${m.lemma}</span>
+                          <span style="color:var(--muted)">${m.pos} ${m.gloss}</span>
+                        </div>`).join('')}
+                    </div>
+                    <button onclick="event.stopPropagation();startFlip(${idx})" class="ios-press mt-4 w-full py-3 rounded-2xl border-0 font-semibold text-[14px] text-white" style="background:var(--action)">
+                      展开 3D 闪卡训练 →
+                    </button>
+                  ` : ''}
+                </div>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Subtle Deck Switch Dots + End Day Quick Action -->
+        <div class="flex items-center justify-between px-1 pt-2">
+          <div class="flex items-center gap-1.5">
+            ${DECK.map((_, idx) => `
+              <button onclick="activeCardIdx=${idx};render()" class="h-2 rounded-full border-0 cursor-pointer transition-all"
+                style="width:${activeCardIdx===idx?'20px':'8px'};background:${activeCardIdx===idx?'var(--action)':'var(--subtle)'}"></button>
+            `).join('')}
+          </div>
+          <span class="text-[12px]" style="color:var(--muted)">点击顶部胶囊查看总览与设置</span>
+        </div>`;
+    }
+
+    function renderFlipSession() {
+      const card = DECK[flipIndex];
+      const ok = pickedChoice === card.answer;
+      return `
+        <div class="flex flex-col h-full justify-between pb-4">
+          <!-- Session Top Bar -->
+          <div class="flex items-center justify-between">
+            <button onclick="screen='deck';isFlipped=false;pickedChoice=null;render()" class="ios-press px-3 py-1.5 rounded-full border-0 text-[12px] font-semibold" style="background:var(--sunk);color:var(--ink)">‹ 返回牌组</button>
+            <span class="text-[12px] font-semibold tabular-nums" style="color:var(--muted)">卡片 ${flipIndex + 1} / ${DECK.length}</span>
+            <button onclick="spotlightOpen='tutor';render()" class="ios-press px-3 py-1.5 rounded-full border-0 text-[12px] font-semibold" style="background:var(--ai-soft);color:var(--ai)">✦ 问助教</button>
+          </div>
+
+          <!-- 3D Flipping Flashcard -->
+          <div class="flip-scene my-auto">
+            <div class="flip-card ${isFlipped ? 'flipped' : ''}">
+              <!-- FRONT: Prompt + 2x2 Keycap Grid -->
+              <div class="flip-face justify-between">
+                <div>
+                  <div class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--action)">语境回忆 · 点击选项即翻转揭晓</div>
+                  <p class="text-[20px] font-semibold leading-relaxed mt-4">${card.prompt.replace('______', `<span class="px-2.5 py-0.5 rounded-lg font-mono-prism" style="background:var(--action-soft);color:var(--action)">______</span>`)}</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5 pt-4">
+                  ${card.options.map(opt => `
+                    <button onclick="pickFlip('${opt}')" class="ios-press py-4 rounded-2xl border-0 font-semibold text-[17px]" style="background:var(--card-alt);color:var(--ink);border:1px solid var(--hairline)">
+                      ${opt}
+                    </button>`).join('')}
+                </div>
+              </div>
+
+              <!-- BACK: Optical Prism Strip + Schedule Action -->
+              <div class="flip-face flip-back justify-between">
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="px-2.5 py-1 rounded-full text-[12px] font-bold" style="background:${ok?'var(--ok-soft)':'var(--err-soft)'};color:${ok?'var(--ok)':'var(--err)'}">
+                      ${ok ? `✓ 准确：${card.answer}` : `✕ 选了 ${pickedChoice}，应为 ${card.answer}`}
+                    </span>
+                    <button onclick="isFlipped=false;render()" class="text-[11px] font-semibold bg-transparent border-0 cursor-pointer" style="color:var(--muted)">翻回正面</button>
+                  </div>
+
+                  <!-- Precision Prism Alignment on Card Back -->
+                  <div class="p-3 rounded-2xl space-y-1" style="background:var(--card-alt)">
+                    ${card.members.map((m, mi) => `
+                      <div class="flex items-center justify-between">
+                        <div>
+                          ${m.lemma.split('').map((ch, ci) => {
+                            const hl = m.diffs.includes(ci);
+                            return `<span class="prism-char" style="color:${hl?`var(--sp-${mi})`:'var(--ink)'}">${ch}${hl?`<span class="prism-bar" style="background:var(--sp-${mi})"></span>`:''}</span>`;
+                          }).join('')}
+                        </div>
+                        <span class="text-[11px]" style="color:var(--muted)">${m.pos} ${m.gloss}</span>
+                      </div>`).join('')}
+                  </div>
+
+                  <p class="text-[12px] leading-relaxed" style="color:var(--muted)">${card.note}</p>
+                </div>
+
+                <!-- FSRS Feedback Buttons -->
+                <div class="grid grid-cols-3 gap-2 pt-2">
+                  <button onclick="nextFlipCard()" class="ios-press py-3 rounded-2xl border-0 text-[12px] font-semibold" style="background:var(--err-soft);color:var(--err)">再练一次</button>
+                  <button onclick="nextFlipCard()" class="ios-press py-3 rounded-2xl border-0 text-[12px] font-semibold" style="background:var(--warn-soft);color:var(--warn)">有点难</button>
+                  <button onclick="nextFlipCard()" class="ios-press py-3 rounded-2xl border-0 text-[12px] font-semibold text-white" style="background:var(--ok)">稳了 · 4天后</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-center text-[11px]" style="color:var(--muted)">无底部弹窗遮挡 · 正反 3D 翻转完成回忆与棱镜复盘</div>
+        </div>`;
+    }
+
+    function renderSpotlightContent() {
+      if (spotlightOpen === 'library') {
+        const list = DECK.filter(d => !searchQuery || d.title.toLowerCase().includes(searchQuery.toLowerCase()));
+        return `
+          <div class="w-10 h-1 rounded-full mx-auto" style="background:var(--sunk)"></div>
+          <div class="flex items-center justify-between">
+            <span class="text-[16px] font-bold">词库检索 (Spotlight)</span>
+            <button onclick="spotlightOpen=false;render()" class="text-[12px] font-semibold border-0 bg-transparent cursor-pointer" style="color:var(--action)">完成</button>
+          </div>
+          <input type="text" value="${searchQuery}" oninput="searchQuery=this.value;render()" placeholder="输入词组或词根..." class="w-full px-3.5 py-2.5 rounded-xl border-0 outline-none text-[14px]" style="background:var(--sunk);color:var(--ink)"/>
+          <div class="ios-scroll space-y-2 max-h-[320px]">
+            ${list.map((d, i) => `
+              <div onclick="activeCardIdx=${i};screen='deck';spotlightOpen=false;render()" class="ios-press p-3.5 rounded-2xl flex items-center justify-between" style="background:var(--card-alt)">
+                <div>
+                  <div class="text-[15px] font-bold">${d.title}</div>
+                  <div class="text-[11px]" style="color:var(--muted)">${d.summary}</div>
+                </div>
+                <span class="text-[12px]" style="color:var(--action)">抽到桌面 ›</span>
+              </div>`).join('')}
+          </div>`;
+      }
+      if (spotlightOpen === 'intake') {
+        return `
+          <div class="w-10 h-1 rounded-full mx-auto" style="background:var(--sunk)"></div>
+          <div class="text-[16px] font-bold">✦ AI 快速添词入组</div>
+          <textarea rows="3" class="w-full p-3.5 rounded-2xl border-0 outline-none text-[14px] resize-none" style="background:var(--sunk);color:var(--ink)">stationary 和 stationery 我经常写反</textarea>
+          <div class="text-[11px]" style="color:var(--muted)">提交后调用「gpt-6-luna」，自动生成新卡组插入 Wallet 牌堆。</div>
+          <button onclick="spotlightOpen=false;render()" class="ios-press w-full py-3 rounded-full border-0 font-semibold text-white" style="background:var(--action)">放入牌组队列</button>`;
+      }
+      return `
+        <div class="w-10 h-1 rounded-full mx-auto" style="background:var(--sunk)"></div>
+        <div class="flex items-center justify-between">
+          <span class="text-[16px] font-bold" style="color:var(--ai)">✦ 随身助教 Spotlight</span>
+          <button onclick="spotlightOpen=false;render()" class="text-[12px] border-0 bg-transparent cursor-pointer" style="color:var(--muted)">收起</button>
+        </div>
+        <div class="p-3.5 rounded-2xl text-[13px] leading-relaxed" style="background:var(--card-alt)">
+          这组牌的难点在于词尾后缀：记住 <strong>-ar</strong> 常作形容词（linear 线性的），<strong>-er</strong> 常指具体物件（liner 内衬）。
+        </div>`;
+    }
+
+    function selectDeckCard(idx) { activeCardIdx = idx; render(); }
+    function startFlip(idx) { flipIndex = idx; isFlipped = false; pickedChoice = null; screen = 'flip'; render(); }
+    function pickFlip(opt) { pickedChoice = opt; isFlipped = true; render(); }
+    function nextFlipCard() {
+      isFlipped = false;
+      pickedChoice = null;
+      flipIndex = (flipIndex + 1) % DECK.length;
+      render();
+    }
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # 类型化讲解、词源与助记
 
-实现入口为核心 `Command.ExplainSense(Ref)` / `Query.GetExplanation(senseId)`，继续使用 `Feature.EXPLANATION`。唯一业务类型见 [`Explanations.kt`](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Explanations.kt)。这里维护接口行为，产品规则见[词源与助记](../plan/ai-intake.md#词源与助记)。
+实现入口为核心 `Command.ExplainSense(Ref)` / `Query.GetExplanation(senseId)`，继续使用 `Feature.EXPLANATION`。唯一业务类型见 [`Explanations.kt`](../../backend/core-contract/src/main/kotlin/dev/wordprism/contract/Explanations.kt)。这里维护接口行为，产品规则见[词源与助记](../design/ai-intake.md#词源与助记)。
 
 `Sense.explanation` 保存 `SenseExplanation`：内容版本、依据的义项版本、`ExplanationContent`、推荐 ID 和 `Provenance`。内容包含 `explanation`、可选 `englishDefinition`、`wordParts`、`etymology`、`mnemonic`、`usageNotes`、`examples`。词源与助记分开，生成内容不宣称词典已核验。
 
@@ -11,7 +11,7 @@
 - 讲解请求包含当前义项、同组相关义项、已有讲解，以及最近最多 8 次实际作答及其对应题目版本。没有记录时不声称掌握程度。
 - `GenerateActivity` 的 `studyExplanation` 使用当前有效的讲解，在新语境中练习词义、搭配和区别。旧版内容不参与出题，助记故事不能成为词源事实或判分依据。
 - `AnalyzeLearning` 的 `explanations` 摘要包含可用性、过期状态、来源、内容版本和任务状态。AI 可通过同一 `explain_sense` 能力为薄弱义项补充内容；读取或生成讲解不算掌握。
-- 自动讲解是分析任务的可追溯子任务，可在 AI 调整中通过 `explain_sense` 能力锁控制，并遵循[调用规则](../plan/api-presets.md#调用由用户控制)。取消或撤销父任务后，迟到结果不能安装讲解或词族候选；供应商已报告的用量仍保留。旧数据中的 `automaticGeneration` 保留为自动讲解的已有偏好，解锁该能力时启用。
+- 自动讲解是分析任务的可追溯子任务，可在 AI 调整中通过 `explain_sense` 能力锁控制，并遵循[调用规则](../design/api-presets.md#调用由用户控制)。取消或撤销父任务后，迟到结果不能安装讲解或词族候选；供应商已报告的用量仍保留。旧数据中的 `automaticGeneration` 保留为自动讲解的已有偏好，解锁该能力时启用。
 
 生成目标是约 500–800 个汉字和简短英文组成的学习卡片，包含两个短例句及最多三个优先候选。校验上限留出兼容空间：正文总计不超过 24,000 字符，构词最多 8 项，候选最多 6 项。字段可为空，缺乏可靠词源时允许省略，不以字形相似杜撰词根。服务商实际生成仍受用户所设 token 和超时上限约束，不会隐式降低思维程度、增加额度或拆成多个付费请求。
 
@@ -41,4 +41,4 @@
 
 完整备份保留讲解、候选、用量、任务、撤销关系及真实学习历史。内容包携带所选词的讲解和它引用的词族内容，清除个人接纳记录和词库状态，不夹带 API 配置、凭证或个人作答。导入校验所有讲解版本和候选引用；完整恢复后的未完成任务仍须重新授权。
 
-同源示例包括 [空讲解](fixtures/explanation-empty.json)、[保存成功](fixtures/explanation-saved.json)、[过期](fixtures/explanation-stale.json)、[取消](fixtures/explanation-cancelled.json)、[生成命令](fixtures/explain-sense.request.json)、[接纳词族](fixtures/accept-word-family.request.json)。[hospital 参考包](packages/example-explanation.wordprism)是人工合成示例，不能当作真实模型或词源核验结果。实际服务、Room、模拟器和未验证范围见[验证记录](validation.md)。
+同源示例包括 [空讲解](fixtures/explanation-empty.json)、[保存成功](fixtures/explanation-saved.json)、[过期](fixtures/explanation-stale.json)、[取消](fixtures/explanation-cancelled.json)、[生成命令](fixtures/explain-sense.request.json)、[接纳词族](fixtures/accept-word-family.request.json)。[hospital 参考包](packages/example-explanation.wordprism)提供人工编写的讲解内容。测试覆盖见[验证状态](../validation.md)。

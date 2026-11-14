@@ -3,19 +3,10 @@ package app.wordprism.sdk
 import kotlinx.serialization.Serializable
 
 /**
- * DRAFT frontend-facing contract for the WordPrism local SDK.
+ * Frontend-facing types for [WordPrismSdk].
  *
- * Authored by the frontend (Claude) from docs/plan/frontend-backend-boundary.md because no
- * backend contract existed yet. Ownership transfers to Codex's `core-contract`: Codex may adopt
- * these types directly or ship its own and provide a thin adapter implementing [WordPrismSdk].
- * Gaps and open questions are tracked in docs/frontend/contract-requirements.md.
- *
- * Rules of the road:
- *  - The UI never computes business facts (scores, schedules, grouping, budgets). Everything it
- *    shows comes from these types.
- *  - Every enum-like value that may grow uses a string-backed value class with an `Unknown`
- *    recovery path so an older UI survives a newer core.
- *  - All mutating calls take a client-generated [ClientRequestId] for idempotency.
+ * sdk-codex maps these views to backend/core-contract; see docs/frontend/sdk-mapping.md.
+ * Business facts come from the core. Mutations use [ClientRequestId] for idempotency.
  */
 
 @JvmInline
