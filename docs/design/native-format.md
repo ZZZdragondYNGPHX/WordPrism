@@ -15,7 +15,7 @@ WordPrism 使用 `.wordprism` 文件携带词库和学习资料。文件是带�
 
 清单记录格式版本、生产者、包及资料库身份、模块 schema、依赖和 SHA-256。当前容器版本为 `1`，已知模块 schema 为 `2`。
 
-已支持的旧版本按迁移路径读取；未知可选模块或字段保留，未知必需模块、过新的已知模块或非法引用返回兼容性错误。详细结构见[schema](../backend/schemas/)与[格式实现](../../backend/core-engine/src/main/kotlin/dev/wordprism/engine/Packages.kt)。
+已支持的旧版本按迁移路径读取；未知可选模块或字段保留，未知必需模块、过新的已知模块或非法引用返回兼容性错误。详细结构见[schema](../core/schemas)与[格式实现](../../core/core-engine/src/main/kotlin/dev/wordprism/engine/Packages.kt)。
 
 ## 导入与恢复行为
 
@@ -26,6 +26,6 @@ WordPrism 使用 `.wordprism` 文件携带词库和学习资料。文件是带�
 
 完整恢复保留原始身份和学习历史，重新配置凭证，关闭自动调用，并将未完成任务置为待处理。普通应用重启继续使用本机已保存设置。
 
-Android 通过系统文件选择器读写流。导出收据用于重复提交去重，文件提供方与数据库之间的中断恢复规则见[文件契约](../backend/contract.md#文件与凭证)。
+Android 通过系统文件选择器读写流。导出收据用于重复提交去重，文件提供方与数据库之间的中断恢复规则见[文件契约](../core/contract.md#文件与凭证)。
 
-[可导入参考包](../backend/packages/README.md) · [使用指南](../guide.md#备份与换机)
+[可导入参考包](../core/packages/README.md) · [使用指南](../guide.md#备份与换机)

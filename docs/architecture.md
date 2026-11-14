@@ -19,18 +19,18 @@ flowchart TD
 
 | 目录 | 职责 |
 | --- | --- |
-| `android/app` | Compose 页面、导航、输入与 Android 文件选择 |
-| `android/sdk-contract` | 供页面使用的挂起方法、状态类型与 Flow |
-| `android/sdk-codex` | 将界面门面映射到正式核心契约 |
-| `android/sdk-mock` | Debug 开发替身 |
-| `backend/core-contract` | 稳定实体、命令、查询、结果与错误类型 |
-| `backend/core-engine` | 词库、会话、计划、任务、分析、撤销与包格式 |
-| `backend/platform-android` | Room、Keystore、联网监听和 WorkManager |
-| `backend/platform-jvm` | 宿主 SQLite 实现与集成测试 |
-| `backend/memory-core`、`memory-native` | Kotlin 算法接口与 Rust JNI 内核 |
-| `backend/contract-fixtures` | 从契约生成 schema、样例与参考包 |
+| `app` | Compose 页面、导航、输入与 Android 文件选择 |
+| `sdk/contract` | 供页面使用的挂起方法、状态类型与 Flow |
+| `sdk/adapter` | 将界面门面映射到正式核心契约 |
+| `sdk/mock` | Debug 开发替身 |
+| `core/core-contract` | 稳定实体、命令、查询、结果与错误类型 |
+| `core/core-engine` | 词库、会话、计划、任务、分析、撤销与包格式 |
+| `core/platform-android` | Room、Keystore、联网监听和 WorkManager |
+| `core/platform-jvm` | 宿主 SQLite 实现与集成测试 |
+| `core/memory-core`、`core/memory-native` | Kotlin 算法接口与 Rust JNI 内核 |
+| `core/contract-fixtures` | 从契约生成 schema、样例与参考包 |
 
-两个 Gradle 工程通过 `backend/build/repository` 的 Maven 构件衔接，各自保留工具链版本。应用的 `SdkProvider` 打开进程级 `AndroidWordPrism`，页面使用 `WordPrismSdk`；判分、调度、统计和持久化集中在核心。具体调用见[契约](backend/contract.md)与[门面映射](frontend/sdk-mapping.md)。
+两个 Gradle 工程通过 `core/build/repository` 的 Maven 构件衔接，应用工程位于仓库根目录，核心工程位于 `core/`。两者分别使用 JDK 25 / 21 与各自的 Gradle Wrapper。应用的 `SdkProvider` 打开进程级 `AndroidWordPrism`，页面使用 `WordPrismSdk`；判分、调度、统计和持久化集中在核心。具体调用见[契约](core/contract.md)与[门面映射](frontend/sdk-mapping.md)。
 
 ## 状态与任务
 
@@ -44,4 +44,4 @@ Android 存储按 SQLite revision 复用快照，事务只写变化记录；外�
 
 已保存词库、学习、调度、总览和文件导入导出可在本机完成。新的 AI 添加、讲解、练习和表达反馈等待联网；已有内容仍可使用。后台执行时机由 Android 调度。
 
-详细规则见[产品设计](design/README.md)，环境要求见[构建说明](backend/running.md)。
+详细规则见[产品设计](design/README.md)，环境要求见[构建说明](core/running.md)。

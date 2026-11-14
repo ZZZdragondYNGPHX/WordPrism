@@ -12,4 +12,4 @@ WordPrism 采用间隔练习、主动检索与围绕具体混淆的辨析。相�
 | 自适应教学与认知负荷 | 简短针对性解释、理解追问、自定速度和按需总结 | [R54–R60](sources.md#r54) |
 | 原生界面与无障碍 | 清晰层级、足够触控尺寸、键盘可达与减少动态效果 | [R44](sources.md#r44)、[R61–R63](sources.md#r61) |
 
-[完整来源](sources.md)保留论文、官方文档和候选产品链接。实际采用的依赖及许可见[第三方声明](../../backend/third-party/wordprism-notices/README.md)。
+[完整来源](sources.md)保留论文、官方文档和候选产品链接。实际采用的依赖及许可见[第三方声明](../../core/third-party/wordprism-notices/README.md)。

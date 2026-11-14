@@ -4,7 +4,7 @@
 
 安装 [Releases](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/latest) 中的测试版 APK。首次打开时，点击首页的导入入口，或进入“设置 → 导入与导出”，选择 `.wordprism` 文件。
 
-可以先导入[示例词库](backend/packages/example-content.wordprism)，体验 `linear / liner / linen` 的辨析与离线学习。[hospital 讲解包](backend/packages/example-explanation.wordprism)包含构词、助记和词族示例。
+可以先导入[示例词库](core/packages/example-content.wordprism)，体验 `linear / liner / linen` 的辨析与离线学习。[hospital 讲解包](core/packages/example-explanation.wordprism)包含构词、助记和词族示例。
 
 词库内容包追加内容；完整备份会替换当前资料。导入预览会说明文件用途和实际影响。
 
@@ -22,7 +22,7 @@
 2. 模型可以手动填写，也可以点击“拉取模型”后搜索选择。
 3. 保存并设为默认预设；需要时再为讲解、练习或分析单独分配模型。
 
-支持 Chat Completions 兼容接口与原生 Responses。思维程度、输出上限和超时使用所选模型支持的值，通常可先保留默认设置。[协议配置说明](backend/api-protocols.md)。
+支持 Chat Completions 兼容接口与原生 Responses。思维程度、输出上限和超时使用所选模型支持的值，通常可先保留默认设置。[协议配置说明](core/api-protocols.md)。
 
 AI 请求会将相关词条、题目或学习记录发送给所选服务商，并可能产生费用。任务失败时可查看原因，修改并保存预设后点击“重试”。已有词库和离线题目不依赖 AI 配置。
 

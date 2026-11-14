@@ -4,7 +4,7 @@
 
 ## 配置
 
-支持 Chat Completions 兼容接口与原生 Responses。模型可手动填写或从服务商列表选择，思维程度、输出上限和超时按预设保存。接口字段和映射见[API 协议](../backend/api-protocols.md)。
+支持 Chat Completions 兼容接口与原生 Responses。模型可手动填写或从服务商列表选择，思维程度、输出上限和超时按预设保存。接口字段和映射见[API 协议](../core/api-protocols.md)。
 
 密钥使用 Android Keystore 保护的本机存储；读取预设只返回凭证状态。保存是本地操作，连接测试会调用所选模型。
 

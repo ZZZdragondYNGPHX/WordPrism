@@ -16,18 +16,21 @@
 
 支持 Android 8.0 及以上，提供 `arm64-v8a` 和 `x86_64` 构建。[测试版下载](https://github.com/ZZZdragondYNGPHX/WordPrism/releases/latest)。
 
-首次启动可从首页导入[示例词库](docs/backend/packages/example-content.wordprism)，直接体验离线学习。需要 AI 时，在设置中添加 API 预设；日常操作见[使用指南](docs/guide.md)。
+首次启动可从首页导入[示例词库](docs/core/packages/example-content.wordprism)，直接体验离线学习。需要 AI 时，在设置中添加 API 预设；日常操作见[使用指南](docs/guide.md)。
 
-从源码构建见[构建说明](docs/backend/running.md)。当前重构已通过构建、单元测试与 Android 模拟器界面测试，覆盖范围见[验证状态](docs/validation.md)。
+在 Android Studio 中打开仓库根目录即可导入应用工程。从源码构建见[构建说明](docs/core/running.md)。当前重构已通过构建、单元测试与 Android 模拟器界面测试，覆盖范围见[验证状态](docs/validation.md)。
 
 ## 项目结构
 
 ```text
-android/    Compose 应用、界面 SDK 与核心适配器
-backend/    Kotlin 业务核心、Android 平台接入、Rust FSRS 内核
-  scripts/      构建、契约与 APK 校验工具
-  third-party/  依赖声明、许可证与必要源码附件
-docs/       使用指南、架构、接口和设计说明
+app/          Android 应用入口、Compose 页面与资源
+sdk/          界面契约、核心适配器与开发替身
+core/         本机业务、存储、调度与 Rust 内核
+  scripts/        原生构建、契约与 APK 校验工具
+  third-party/    依赖声明、许可证与必要源码附件
+docs/         使用指南、架构、接口和设计说明
+gradle/       应用构建配置与 Wrapper
+gradlew       应用构建入口
 ```
 
-[文档目录](docs/README.md) · [架构](docs/architecture.md) · [第三方许可](backend/third-party/wordprism-notices/README.md)
+[文档目录](docs/README.md) · [架构](docs/architecture.md) · [第三方许可](core/third-party/wordprism-notices/README.md)

@@ -1,10 +1,10 @@
 # Android 前端
 
-原生 Kotlin / Jetpack Compose 应用，通过 `sdk-codex` 接入本机核心。页面使用 ViewModel、SavedStateHandle 和 Flow 管理状态，导航参数传稳定 ID。[门面映射](sdk-mapping.md) · [构建](../backend/running.md) · [验证](../validation.md)。
+原生 Kotlin / Jetpack Compose 应用，通过 `sdk/adapter` 接入本机核心。页面使用 ViewModel、SavedStateHandle 和 Flow 管理状态，导航参数传稳定 ID。[门面映射](sdk-mapping.md) · [构建](../core/running.md) · [验证](../validation.md)。
 
 ## 目录
 
-`android/app/src/main/java/app/wordprism/ui/` 按功能组织：
+`app/src/main/java/app/wordprism/ui/` 按功能组织：
 
 | 目录 | 内容 |
 | --- | --- |
@@ -24,7 +24,7 @@
 - 切题、作答和输入即时响应；面板使用短暂淡入 / 缩放，实时遵循系统关闭动画设置。
 - 交互目标采用至少 48dp；搜索提供输入语义，导航提供选中状态，抽屉与编辑区支持键盘和内容滚动。
 
-视觉参考集中在 [proposals/](proposals/)：当前实现采用 [Spatial Deck & Spotlight](proposals/proposal-a-cupertino-pure.html)，其余 HTML 为方案比较稿。
+视觉参考集中在 [proposals/](proposals)：当前实现采用 [Spatial Deck & Spotlight](proposals/proposal-a-cupertino-pure.html)，其余 HTML 为方案比较稿。
 
 ## 状态与输入
 
